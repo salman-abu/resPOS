@@ -11,10 +11,10 @@ import {
   OpenShiftDto,
   CloseShiftDto,
 } from './dto/billing.dto';
-import { TaxSlab } from '@prisma/client';
+import { $Enums } from '@prisma/client';
 
 // ─── Tax Rate Map ────────────────────────────────────────────────────────────
-const TAX_RATES: Record<TaxSlab, number> = {
+const TAX_RATES: Record<$Enums.TaxSlab, number> = {
   EXEMPT: 0,
   GST_5: 5,
   GST_12: 12,

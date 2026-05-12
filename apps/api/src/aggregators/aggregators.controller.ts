@@ -7,7 +7,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { AggregatorsService } from './aggregators.service';
-import { AggregatorSource } from '@prisma/client';
+import { $Enums } from '@prisma/client';
 
 @Controller('aggregators')
 export class AggregatorsController {
@@ -29,8 +29,8 @@ export class AggregatorsController {
       throw new UnauthorizedException('Missing webhook signature');
     }
 
-    const aggregator = aggregatorStr.toUpperCase() as AggregatorSource;
-    if (!Object.values(AggregatorSource).includes(aggregator)) {
+    const aggregator = aggregatorStr.toUpperCase() as $Enums.AggregatorSource;
+    if (!Object.values($Enums.AggregatorSource).includes(aggregator)) {
       throw new Error(`Unsupported aggregator: ${aggregator}`);
     }
 
@@ -45,7 +45,7 @@ export class AggregatorsController {
     @Param('aggregator') aggregatorStr: string,
     @Param('tenantId') tenantId: string,
   ) {
-    const aggregator = aggregatorStr.toUpperCase() as AggregatorSource;
+    const aggregator = aggregatorStr.toUpperCase() as $Enums.AggregatorSource;
     return this.aggregatorsService.syncMenu(tenantId, aggregator);
   }
 }
