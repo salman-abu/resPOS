@@ -10,7 +10,10 @@ async function bootstrap() {
 
   // CORS — allow frontend (localhost + any Vercel domain)
   app.enableCors({
-    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    origin: (
+      origin: string | undefined,
+      callback: (err: Error | null, allow?: boolean) => void,
+    ) => {
       callback(null, true);
     },
     credentials: true,
