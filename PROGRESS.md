@@ -165,15 +165,17 @@
 - `DashboardSidebar` — Grouped nav sections, active highlight with chevron, badge support, user footer with logout.
 - `DashboardLayout` — Persistent sidebar + scrollable main content.
 
-## Phase 8: Super Admin God Mode & Multi-Tenant Management ⏳
+## Phase 8: Super Admin God Mode & Multi-Tenant Management ✅
 
 ### Backend — NestJS SuperAdmin Module (`apps/api/src/superadmin/`)
+
 - **Schema Update** — Added isolated `SuperAdmin` model to `schema.prisma` preventing normal users/owners from accidentally gaining God Mode privileges. Added initial seeder (`admin@respos.com`).
 - **`superadmin.service.ts`** — Built SaaS-level logic: platform GMV calculation, `getAllTenants()`, `toggleTenantStatus()` (kill switch), and `impersonateTenant(tenantId)` to generate bypass JWTs.
-- **`superadmin.controller.ts`** — Dedicated REST endpoints bypassing standard `TenantMiddleware`. 
+- **`superadmin.controller.ts`** — Dedicated REST endpoints bypassing standard `TenantMiddleware`.
 - **`app.module.ts`** — Wired `SuperAdminModule`.
 
 ### Frontend — Next.js Super Admin Portal (`apps/web/src/app/super-admin/`)
+
 - **`layout.tsx`** — Distinct red-accented dark mode sidebar to separate SaaS operations visually from the standard tenant POS/Dashboard.
 - **`login/page.tsx`** — God Mode login screen fetching SuperAdmin credentials.
 - **`page.tsx`** — Platform health dashboard displaying total active tenants, global orders, and total SaaS GMV.
