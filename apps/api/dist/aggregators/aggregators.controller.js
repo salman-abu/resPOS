@@ -26,7 +26,7 @@ let AggregatorsController = class AggregatorsController {
             throw new common_1.UnauthorizedException('Missing webhook signature');
         }
         const aggregator = aggregatorStr.toUpperCase();
-        if (!Object.values(client_1.AggregatorSource).includes(aggregator)) {
+        if (!Object.values(client_1.$Enums.AggregatorSource).includes(aggregator)) {
             throw new Error(`Unsupported aggregator: ${aggregator}`);
         }
         return this.aggregatorsService.handleWebhook(tenantId, aggregator, payload);

@@ -15,7 +15,9 @@ const client_1 = require("@prisma/client");
 let PrismaService = class PrismaService extends client_1.PrismaClient {
     constructor() {
         super({
-            log: process.env.NODE_ENV === 'development' ? ['query', 'warn', 'error'] : ['error'],
+            log: process.env.NODE_ENV === 'development'
+                ? ['query', 'warn', 'error']
+                : ['error'],
         });
     }
     async onModuleInit() {

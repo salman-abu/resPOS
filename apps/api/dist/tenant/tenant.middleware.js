@@ -21,7 +21,7 @@ let TenantMiddleware = class TenantMiddleware {
         const tenantId = req.headers['x-tenant-id'];
         if (tenantId) {
             const tenant = await this.prisma.tenant.findUnique({
-                where: { id: tenantId, is_active: true }
+                where: { id: tenantId, is_active: true },
             });
             if (!tenant) {
                 throw new common_1.BadRequestException('Invalid or inactive tenant');

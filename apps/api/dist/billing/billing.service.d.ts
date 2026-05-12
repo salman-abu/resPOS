@@ -1,5 +1,6 @@
 import { PrismaService } from '../prisma/prisma.service';
 import { GenerateInvoiceDto, SettleInvoiceDto, OpenShiftDto, CloseShiftDto } from './dto/billing.dto';
+import { $Enums } from '@prisma/client';
 export declare class BillingService {
     private prisma;
     constructor(prisma: PrismaService);
@@ -7,34 +8,34 @@ export declare class BillingService {
     generateInvoice(tenantId: string, dto: GenerateInvoiceDto): Promise<{
         invoice: {
             payments: {
+                status: $Enums.PaymentStatus;
                 id: string;
                 created_at: Date;
-                status: import("@prisma/client").$Enums.PaymentStatus;
+                invoice_id: string;
                 amount: number;
-                method: import("@prisma/client").$Enums.PaymentMethod;
+                method: $Enums.PaymentMethod;
                 upi_ref: string | null;
                 transaction_id: string | null;
-                invoice_id: string;
             }[];
         } & {
             id: string;
             order_id: string;
             printed_at: Date | null;
-            discount: number;
-            discount_type: import("@prisma/client").$Enums.DiscountType | null;
-            discount_approved_by: string | null;
-            service_charge: number;
             invoice_number: string;
             subtotal: number;
             cgst: number;
             sgst: number;
             igst: number;
+            service_charge: number;
+            discount: number;
+            discount_type: $Enums.DiscountType | null;
+            discount_approved_by: string | null;
             total: number;
         };
         order: {
             id: string;
             table_number: string | undefined;
-            order_type: import("@prisma/client").$Enums.OrderType;
+            order_type: $Enums.OrderType;
             pax_count: number | null;
             items: {
                 name: string;
@@ -42,7 +43,7 @@ export declare class BillingService {
                 quantity: number;
                 unit_price: number;
                 line_total: number;
-                tax_slab: import("@prisma/client").$Enums.TaxSlab;
+                tax_slab: $Enums.TaxSlab;
             }[];
         };
     }>;
@@ -54,12 +55,13 @@ export declare class BillingService {
             order_items: ({
                 item: {
                     name: string;
-                    tax_slab: import("@prisma/client").$Enums.TaxSlab;
+                    tax_slab: $Enums.TaxSlab;
                 };
                 variant: {
                     name: string;
                 } | null;
             } & {
+                status: $Enums.OrderItemStatus;
                 id: string;
                 item_id: string;
                 variant_id: string | null;
@@ -68,18 +70,17 @@ export declare class BillingService {
                 notes: string | null;
                 course_number: number;
                 order_id: string;
-                status: import("@prisma/client").$Enums.OrderItemStatus;
                 kot_id: string | null;
             })[];
         } & {
+            status: $Enums.OrderStatus;
             id: string;
             tenant_id: string;
             created_at: Date;
-            order_type: import("@prisma/client").$Enums.OrderType;
+            order_type: $Enums.OrderType;
             table_id: string | null;
             pax_count: number | null;
-            status: import("@prisma/client").$Enums.OrderStatus;
-            aggregator_source: import("@prisma/client").$Enums.AggregatorSource | null;
+            aggregator_source: $Enums.AggregatorSource | null;
             aggregator_order_id: string | null;
             external_ref: string | null;
             settled_at: Date | null;
@@ -88,28 +89,28 @@ export declare class BillingService {
             captain_id: string | null;
         };
         payments: {
+            status: $Enums.PaymentStatus;
             id: string;
             created_at: Date;
-            status: import("@prisma/client").$Enums.PaymentStatus;
+            invoice_id: string;
             amount: number;
-            method: import("@prisma/client").$Enums.PaymentMethod;
+            method: $Enums.PaymentMethod;
             upi_ref: string | null;
             transaction_id: string | null;
-            invoice_id: string;
         }[];
     } & {
         id: string;
         order_id: string;
         printed_at: Date | null;
-        discount: number;
-        discount_type: import("@prisma/client").$Enums.DiscountType | null;
-        discount_approved_by: string | null;
-        service_charge: number;
         invoice_number: string;
         subtotal: number;
         cgst: number;
         sgst: number;
         igst: number;
+        service_charge: number;
+        discount: number;
+        discount_type: $Enums.DiscountType | null;
+        discount_approved_by: string | null;
         total: number;
     }>;
     settleInvoice(tenantId: string, invoiceId: string, dto: SettleInvoiceDto): Promise<{
@@ -118,9 +119,9 @@ export declare class BillingService {
         total_paid: number;
     }>;
     openShift(tenantId: string, cashierId: string, dto: OpenShiftDto): Promise<{
+        status: $Enums.ShiftStatus;
         id: string;
         tenant_id: string;
-        status: import("@prisma/client").$Enums.ShiftStatus;
         outlet_id: string;
         opening_float: number;
         closing_float: number | null;
@@ -132,9 +133,9 @@ export declare class BillingService {
     }>;
     closeShift(tenantId: string, dto: CloseShiftDto): Promise<{
         shift: {
+            status: $Enums.ShiftStatus;
             id: string;
             tenant_id: string;
-            status: import("@prisma/client").$Enums.ShiftStatus;
             outlet_id: string;
             opening_float: number;
             closing_float: number | null;
@@ -164,9 +165,9 @@ export declare class BillingService {
         };
     }>;
     getZReport(tenantId: string): Promise<{
+        status: $Enums.ShiftStatus;
         id: string;
         tenant_id: string;
-        status: import("@prisma/client").$Enums.ShiftStatus;
         outlet_id: string;
         opening_float: number;
         closing_float: number | null;
@@ -179,15 +180,15 @@ export declare class BillingService {
     getTables(tenantId: string): Promise<({
         tables: ({
             orders: {
+                status: $Enums.OrderStatus;
                 id: string;
                 created_at: Date;
                 pax_count: number | null;
-                status: import("@prisma/client").$Enums.OrderStatus;
             }[];
         } & {
+            status: $Enums.TableStatus;
             id: string;
             tenant_id: string;
-            status: import("@prisma/client").$Enums.TableStatus;
             zone_id: string;
             table_number: string;
             capacity: number;

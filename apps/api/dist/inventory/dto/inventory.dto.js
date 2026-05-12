@@ -25,7 +25,7 @@ __decorate([
     __metadata("design:type", String)
 ], CreateIngredientDto.prototype, "name", void 0);
 __decorate([
-    (0, class_validator_1.IsEnum)(client_1.IngredientUnit),
+    (0, class_validator_1.IsEnum)(client_1.$Enums.IngredientUnit),
     __metadata("design:type", String)
 ], CreateIngredientDto.prototype, "unit", void 0);
 __decorate([

@@ -19,7 +19,7 @@ exports.InventoryModule = InventoryModule = __decorate([
         imports: [prisma_module_1.PrismaModule],
         controllers: [inventory_controller_1.InventoryController],
         providers: [inventory_service_1.InventoryService],
-        exports: [inventory_service_1.InventoryService]
+        exports: [inventory_service_1.InventoryService],
     })
 ], InventoryModule);
 //# sourceMappingURL=inventory.module.js.map

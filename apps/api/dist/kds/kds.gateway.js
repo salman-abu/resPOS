@@ -46,8 +46,12 @@ let KdsGateway = KdsGateway_1 = class KdsGateway {
         this.server.to(kdsRoom(tenantId, 'ALL')).emit('kot:item_done', payload);
     }
     emitKotBumped(tenantId, station, kotId) {
-        this.server.to(kdsRoom(tenantId, station)).emit('kot:bumped', { kot_id: kotId });
-        this.server.to(kdsRoom(tenantId, 'ALL')).emit('kot:bumped', { kot_id: kotId });
+        this.server
+            .to(kdsRoom(tenantId, station))
+            .emit('kot:bumped', { kot_id: kotId });
+        this.server
+            .to(kdsRoom(tenantId, 'ALL'))
+            .emit('kot:bumped', { kot_id: kotId });
     }
     emitKotStatus(tenantId, station, payload) {
         this.server.to(kdsRoom(tenantId, station)).emit('kot:status', payload);

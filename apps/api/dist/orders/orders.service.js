@@ -60,7 +60,10 @@ let OrdersService = class OrdersService {
             },
             include: {
                 order_items: {
-                    include: { item: { select: { name: true, station_route: true } }, variant: true },
+                    include: {
+                        item: { select: { name: true, station_route: true } },
+                        variant: true,
+                    },
                 },
                 table: { select: { table_number: true } },
             },
@@ -93,7 +96,10 @@ let OrdersService = class OrdersService {
                 course_number: i.course_number ?? 1,
                 status: 'PENDING',
             },
-            include: { item: { select: { name: true, station_route: true } }, variant: true },
+            include: {
+                item: { select: { name: true, station_route: true } },
+                variant: true,
+            },
         })));
         return { order_id: orderId, added_items: newItems };
     }
@@ -127,14 +133,16 @@ let OrdersService = class OrdersService {
         });
         const kots = [];
         for (const [station, stationItems] of stationGroups) {
-            const kotCount = await this.prisma.kOT.count({ where: { tenant_id: tenantId } });
+            const kotCount = await this.prisma.kOT.count({
+                where: { tenant_id: tenantId },
+            });
             const kotNumber = `KOT-${String(kotCount + 1).padStart(4, '0')}`;
             const kot = await this.prisma.kOT.create({
                 data: {
                     tenant_id: tenantId,
                     order_id: orderId,
                     kot_number: kotNumber,
-                    station,
+                    station: station,
                     status: 'PRINTED',
                     printed_at: new Date(),
                     fired_by_id: userId,
@@ -144,7 +152,10 @@ let OrdersService = class OrdersService {
                 },
                 include: {
                     items: {
-                        include: { item: { select: { name: true } }, variant: { select: { name: true } } },
+                        include: {
+                            item: { select: { name: true } },
+                            variant: { select: { name: true } },
+                        },
                     },
                 },
             });
@@ -159,7 +170,7 @@ let OrdersService = class OrdersService {
                 table_number: order.table?.table_number,
                 pax_count: order.pax_count,
                 created_at: new Date().toISOString(),
-                items: kot.items.map(i => ({
+                items: kot.items.map((i) => ({
                     id: i.id,
                     name: i.item.name,
                     variant: i.variant?.name,
@@ -172,7 +183,7 @@ let OrdersService = class OrdersService {
                 where: { id: { in: stationItems.map((i) => i.id) } },
                 data: { status: 'SENT_TO_KDS', kot_id: kot.id },
             });
-            this.inventoryService.deductForKot(tenantId, kot.id).catch(e => {
+            this.inventoryService.deductForKot(tenantId, kot.id).catch((e) => {
                 console.error(`Inventory deduction failed for KOT ${kot.id}`, e);
             });
         }
@@ -194,7 +205,9 @@ let OrdersService = class OrdersService {
             include: {
                 order_items: {
                     include: {
-                        item: { select: { name: true, item_type: true, station_route: true } },
+                        item: {
+                            select: { name: true, item_type: true, station_route: true },
+                        },
                         variant: true,
                     },
                 },
@@ -215,7 +228,9 @@ let OrdersService = class OrdersService {
             },
             include: {
                 table: { select: { table_number: true } },
-                order_items: { select: { id: true, quantity: true, status: true, unit_price: true } },
+                order_items: {
+                    select: { id: true, quantity: true, status: true, unit_price: true },
+                },
             },
             orderBy: { created_at: 'desc' },
         });

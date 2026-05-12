@@ -1,7 +1,7 @@
-import { IngredientUnit } from '@prisma/client';
+import { $Enums } from '@prisma/client';
 export declare class CreateIngredientDto {
     name: string;
-    unit: IngredientUnit;
+    unit: $Enums.IngredientUnit;
     current_stock: number;
     reorder_level: number;
     cost_per_unit: number;

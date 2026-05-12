@@ -63,7 +63,9 @@ let BillingService = class BillingService {
         let cgst = 0;
         let sgst = 0;
         let igst = 0;
-        const isInterState = outlet.state_code && tenant?.state_code && outlet.state_code !== tenant.state_code;
+        const isInterState = outlet.state_code &&
+            tenant?.state_code &&
+            outlet.state_code !== tenant.state_code;
         for (const oi of order.order_items) {
             if (oi.status === 'VOID')
                 continue;
@@ -160,7 +162,10 @@ let BillingService = class BillingService {
     async settleInvoice(tenantId, invoiceId, dto) {
         const invoice = await this.prisma.invoice.findFirst({
             where: { id: invoiceId, order: { tenant_id: tenantId } },
-            include: { payments: true, order: { select: { table_id: true, id: true } } },
+            include: {
+                payments: true,
+                order: { select: { table_id: true, id: true } },
+            },
         });
         if (!invoice)
             throw new common_1.NotFoundException('Invoice not found.');
@@ -191,7 +196,11 @@ let BillingService = class BillingService {
                 data: { status: 'DIRTY', current_order_id: null },
             });
         }
-        return { success: true, invoice_id: invoiceId, total_paid: alreadyPaid + newTotal };
+        return {
+            success: true,
+            invoice_id: invoiceId,
+            total_paid: alreadyPaid + newTotal,
+        };
     }
     async openShift(tenantId, cashierId, dto) {
         const outlet = await this.getDefaultOutlet(tenantId);
@@ -224,15 +233,18 @@ let BillingService = class BillingService {
             },
             include: {
                 invoices: { include: { payments: true } },
-                order_items: { where: { status: { not: 'VOID' } }, select: { unit_price: true, quantity: true } },
+                order_items: {
+                    where: { status: { not: 'VOID' } },
+                    select: { unit_price: true, quantity: true },
+                },
             },
         });
         const paymentSummary = {};
         let grossSales = 0;
         let totalDiscount = 0;
         let totalTax = 0;
-        let totalOrders = orders.length;
-        let voidCount = 0;
+        const totalOrders = orders.length;
+        const voidCount = 0;
         for (const order of orders) {
             for (const inv of order.invoices) {
                 grossSales += inv.subtotal;
@@ -240,13 +252,18 @@ let BillingService = class BillingService {
                 totalTax += inv.cgst + inv.sgst + inv.igst;
                 for (const pmt of inv.payments) {
                     if (pmt.status === 'SUCCESS') {
-                        paymentSummary[pmt.method] = (paymentSummary[pmt.method] ?? 0) + pmt.amount;
+                        paymentSummary[pmt.method] =
+                            (paymentSummary[pmt.method] ?? 0) + pmt.amount;
                     }
                 }
             }
         }
         const voidOrders = await this.prisma.order.count({
-            where: { tenant_id: tenantId, status: 'VOID', created_at: { gte: shift.opened_at } },
+            where: {
+                tenant_id: tenantId,
+                status: 'VOID',
+                created_at: { gte: shift.opened_at },
+            },
         });
         const zReportData = {
             shift_id: shift.id,
@@ -263,8 +280,13 @@ let BillingService = class BillingService {
             total_orders: totalOrders,
             void_orders: voidOrders,
             payment_summary: paymentSummary,
-            cash_expected: (paymentSummary['CASH'] ?? 0) + shift.opening_float - (dto.petty_cash ?? 0),
-            cash_variance: dto.closing_float - ((paymentSummary['CASH'] ?? 0) + shift.opening_float - (dto.petty_cash ?? 0)),
+            cash_expected: (paymentSummary['CASH'] ?? 0) +
+                shift.opening_float -
+                (dto.petty_cash ?? 0),
+            cash_variance: dto.closing_float -
+                ((paymentSummary['CASH'] ?? 0) +
+                    shift.opening_float -
+                    (dto.petty_cash ?? 0)),
         };
         const closed = await this.prisma.shift.update({
             where: { id: shift.id },
@@ -296,7 +318,12 @@ let BillingService = class BillingService {
                     include: {
                         orders: {
                             where: { status: { notIn: ['SETTLED', 'VOID'] } },
-                            select: { id: true, status: true, created_at: true, pax_count: true },
+                            select: {
+                                id: true,
+                                status: true,
+                                created_at: true,
+                                pax_count: true,
+                            },
                             take: 1,
                             orderBy: { created_at: 'desc' },
                         },

@@ -76,7 +76,7 @@ let AuthService = class AuthService {
                 name: user.name,
                 role: user.role,
                 tenant_id: user.tenant_id,
-            }
+            },
         };
     }
     async loginOwner(email, pin) {
@@ -98,7 +98,7 @@ let AuthService = class AuthService {
                 name: user.name,
                 role: user.role,
                 tenant_id: user.tenant_id,
-            }
+            },
         };
     }
 };

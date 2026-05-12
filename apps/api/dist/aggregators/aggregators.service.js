@@ -24,28 +24,38 @@ let AggregatorsService = AggregatorsService_1 = class AggregatorsService {
     }
     async handleWebhook(tenantId, aggregator, payload) {
         this.logger.log(`Received ${aggregator} webhook for tenant ${tenantId}. Ref: ${payload.external_order_id}`);
-        const outlet = await this.prisma.outlet.findFirst({ where: { tenant_id: tenantId } });
+        const outlet = await this.prisma.outlet.findFirst({
+            where: { tenant_id: tenantId },
+        });
         if (!outlet)
             throw new common_1.BadRequestException('No outlet found for this tenant.');
         const systemUser = await this.prisma.user.findFirst({
-            where: { tenant_id: tenantId, role: { in: ['OWNER', 'MANAGER'] } }
+            where: { tenant_id: tenantId, role: { in: ['OWNER', 'MANAGER'] } },
         });
         const orderItems = [];
         for (const item of payload.items) {
             const mapping = await this.prisma.aggregatorMenu.findFirst({
-                where: { tenant_id: tenantId, aggregator, aggregator_item_id: item.aggregator_item_id },
+                where: {
+                    tenant_id: tenantId,
+                    aggregator,
+                    aggregator_item_id: item.aggregator_item_id,
+                },
             });
             if (!mapping) {
                 this.logger.warn(`Unmapped aggregator item ID: ${item.aggregator_item_id}. Skipping.`);
                 continue;
             }
-            const internalItem = await this.prisma.item.findUnique({ where: { id: mapping.pos_item_id } });
+            const internalItem = await this.prisma.item.findUnique({
+                where: { id: mapping.pos_item_id },
+            });
             if (!internalItem)
                 continue;
             orderItems.push({
                 item_id: internalItem.id,
                 quantity: item.quantity,
-                unit_price: mapping.aggregator_price > 0 ? mapping.aggregator_price : internalItem.base_price,
+                unit_price: mapping.aggregator_price > 0
+                    ? mapping.aggregator_price
+                    : internalItem.base_price,
             });
         }
         if (orderItems.length === 0) {
@@ -68,11 +78,11 @@ let AggregatorsService = AggregatorsService_1 = class AggregatorsService {
                     })),
                 },
             },
-            include: { order_items: true }
+            include: { order_items: true },
         });
         if (systemUser && order.order_items.length > 0) {
             try {
-                const itemIds = order.order_items.map(i => i.id);
+                const itemIds = order.order_items.map((i) => i.id);
                 await this.ordersService.fireKot(tenantId, order.id, systemUser.id, itemIds);
                 this.logger.log(`Fired KOT for aggregator order ${order.id}`);
             }
@@ -84,15 +94,26 @@ let AggregatorsService = AggregatorsService_1 = class AggregatorsService {
             success: true,
             order_id: order.id,
             external_ref: payload.external_order_id,
-            message: 'Order ingested and KOT fired successfully'
+            message: 'Order ingested and KOT fired successfully',
         };
     }
     async syncMenu(tenantId, aggregator) {
         const mappings = await this.prisma.aggregatorMenu.findMany({
             where: { tenant_id: tenantId, aggregator },
             include: {
-                tenant: { select: { items: { select: { id: true, name: true, base_price: true, is_available: true } } } }
-            }
+                tenant: {
+                    select: {
+                        items: {
+                            select: {
+                                id: true,
+                                name: true,
+                                base_price: true,
+                                is_available: true,
+                            },
+                        },
+                    },
+                },
+            },
         });
         return { success: true, count: mappings.length, aggregator };
     }

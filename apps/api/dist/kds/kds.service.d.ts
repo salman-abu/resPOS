@@ -20,6 +20,7 @@ export declare class KdsService {
                 name: string;
             } | null;
         } & {
+            status: import("@prisma/client").$Enums.OrderItemStatus;
             id: string;
             item_id: string;
             variant_id: string | null;
@@ -28,16 +29,15 @@ export declare class KdsService {
             notes: string | null;
             course_number: number;
             order_id: string;
-            status: import("@prisma/client").$Enums.OrderItemStatus;
             kot_id: string | null;
         })[];
     } & {
+        status: import("@prisma/client").$Enums.KotStatus;
         id: string;
         tenant_id: string;
         order_id: string;
         station: import("@prisma/client").$Enums.StationRoute;
         kot_number: string;
-        status: import("@prisma/client").$Enums.KotStatus;
         printed_at: Date | null;
         fired_by_id: string;
     })[]>;

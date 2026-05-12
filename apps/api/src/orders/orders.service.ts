@@ -143,7 +143,10 @@ export class OrdersService {
       throw new BadRequestException('No pending items to fire.');
 
     // Group items by station_route
-    const stationGroups = new Map<$Enums.StationRoute, typeof order.order_items>();
+    const stationGroups = new Map<
+      $Enums.StationRoute,
+      typeof order.order_items
+    >();
     order.order_items.forEach((oi) => {
       const station = oi.item.station_route;
       if (!stationGroups.has(station)) stationGroups.set(station, []);
@@ -164,7 +167,7 @@ export class OrdersService {
           tenant_id: tenantId,
           order_id: orderId,
           kot_number: kotNumber,
-          station: station as $Enums.StationRoute,
+          station: station,
           status: 'PRINTED',
           printed_at: new Date(),
           fired_by_id: userId,

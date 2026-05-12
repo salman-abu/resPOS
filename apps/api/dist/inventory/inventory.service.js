@@ -22,7 +22,7 @@ let InventoryService = InventoryService_1 = class InventoryService {
     async getIngredients(tenantId) {
         return this.prisma.ingredient.findMany({
             where: { tenant_id: tenantId },
-            orderBy: { name: 'asc' }
+            orderBy: { name: 'asc' },
         });
     }
     async createIngredient(tenantId, dto) {
@@ -34,12 +34,12 @@ let InventoryService = InventoryService_1 = class InventoryService {
                 current_stock: dto.current_stock,
                 reorder_level: dto.reorder_level,
                 cost_per_unit: dto.cost_per_unit,
-            }
+            },
         });
     }
     async updateStock(tenantId, ingredientId, dto, userId) {
         const ingredient = await this.prisma.ingredient.findFirst({
-            where: { id: ingredientId, tenant_id: tenantId }
+            where: { id: ingredientId, tenant_id: tenantId },
         });
         if (!ingredient)
             throw new common_1.NotFoundException('Ingredient not found');
@@ -47,7 +47,7 @@ let InventoryService = InventoryService_1 = class InventoryService {
         return this.prisma.$transaction(async (tx) => {
             const updated = await tx.ingredient.update({
                 where: { id: ingredientId },
-                data: { current_stock: newStock }
+                data: { current_stock: newStock },
             });
             if (dto.reason) {
                 this.logger.log(`Stock adjusted manually. Reason: ${dto.reason}`);
@@ -62,11 +62,11 @@ let InventoryService = InventoryService_1 = class InventoryService {
                 items: {
                     include: {
                         item: {
-                            include: { recipes: true }
-                        }
-                    }
-                }
-            }
+                            include: { recipes: true },
+                        },
+                    },
+                },
+            },
         });
         if (!kot) {
             this.logger.error(`KOT not found for deduction: ${kotId}`);
@@ -90,8 +90,8 @@ let InventoryService = InventoryService_1 = class InventoryService {
                     await tx.ingredient.update({
                         where: { id: ingredientId },
                         data: {
-                            current_stock: { decrement: amountToDeduct }
-                        }
+                            current_stock: { decrement: amountToDeduct },
+                        },
                     });
                 }
             });

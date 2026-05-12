@@ -1,4 +1,5 @@
 import { AggregatorsService } from './aggregators.service';
+import { $Enums } from '@prisma/client';
 export declare class AggregatorsController {
     private readonly aggregatorsService;
     constructor(aggregatorsService: AggregatorsService);
@@ -11,6 +12,6 @@ export declare class AggregatorsController {
     syncMenu(aggregatorStr: string, tenantId: string): Promise<{
         success: boolean;
         count: number;
-        aggregator: import("@prisma/client").$Enums.AggregatorSource;
+        aggregator: $Enums.AggregatorSource;
     }>;
 }

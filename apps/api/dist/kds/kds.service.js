@@ -54,7 +54,7 @@ let KdsService = class KdsService {
         });
         if (!kot)
             throw new common_1.NotFoundException('KOT not found');
-        const itemBelongs = kot.items.some(i => i.id === orderItemId);
+        const itemBelongs = kot.items.some((i) => i.id === orderItemId);
         if (!itemBelongs)
             throw new common_1.BadRequestException('Item not in this KOT');
         await this.prisma.orderItem.update({
@@ -62,21 +62,27 @@ let KdsService = class KdsService {
             data: { status: done ? 'READY' : 'SENT_TO_KDS' },
         });
         const allDone = kot.items
-            .map(i => (i.id === orderItemId ? done : i.status === 'READY'))
+            .map((i) => (i.id === orderItemId ? done : i.status === 'READY'))
             .every(Boolean);
         if (allDone) {
             await this.prisma.kOT.update({
                 where: { id: kotId },
                 data: { status: 'READY' },
             });
-            this.kdsGateway.emitKotStatus(tenantId, kot.station, { kot_id: kotId, status: 'READY' });
+            this.kdsGateway.emitKotStatus(tenantId, kot.station, {
+                kot_id: kotId,
+                status: 'READY',
+            });
         }
         else if (done) {
             await this.prisma.kOT.update({
                 where: { id: kotId },
                 data: { status: 'PREPARING' },
             });
-            this.kdsGateway.emitKotStatus(tenantId, kot.station, { kot_id: kotId, status: 'PREPARING' });
+            this.kdsGateway.emitKotStatus(tenantId, kot.station, {
+                kot_id: kotId,
+                status: 'PREPARING',
+            });
         }
         this.kdsGateway.emitItemDone(tenantId, kot.station, {
             kot_id: kotId,
@@ -107,7 +113,7 @@ let KdsService = class KdsService {
             },
         });
         if (order) {
-            const allServed = order.order_items.every(oi => ['SERVED', 'VOID'].includes(oi.status));
+            const allServed = order.order_items.every((oi) => ['SERVED', 'VOID'].includes(oi.status));
             if (allServed) {
                 await this.prisma.order.update({
                     where: { id: order.id },
@@ -133,15 +139,29 @@ let KdsService = class KdsService {
             data: { status: 'SENT_TO_KDS' },
         });
         const recalled = await this.getKotById(tenantId, kotId);
-        this.kdsGateway.emitNewKot(tenantId, kot.station, { ...recalled, recalled: true });
+        this.kdsGateway.emitNewKot(tenantId, kot.station, {
+            ...recalled,
+            recalled: true,
+        });
         return { success: true };
     }
     async getKotById(tenantId, kotId) {
         return this.prisma.kOT.findFirst({
             where: { id: kotId, tenant_id: tenantId },
             include: {
-                order: { select: { order_type: true, pax_count: true, table: { select: { table_number: true } } } },
-                items: { include: { item: { select: { name: true } }, variant: { select: { name: true } } } },
+                order: {
+                    select: {
+                        order_type: true,
+                        pax_count: true,
+                        table: { select: { table_number: true } },
+                    },
+                },
+                items: {
+                    include: {
+                        item: { select: { name: true } },
+                        variant: { select: { name: true } },
+                    },
+                },
             },
         });
     }

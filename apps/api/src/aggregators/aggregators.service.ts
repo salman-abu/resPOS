@@ -1,7 +1,7 @@
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { OrdersService } from '../orders/orders.service';
-import { AggregatorSource } from '@prisma/client';
+import { $Enums } from '@prisma/client';
 
 @Injectable()
 export class AggregatorsService {
@@ -18,7 +18,7 @@ export class AggregatorsService {
    */
   async handleWebhook(
     tenantId: string,
-    aggregator: AggregatorSource,
+    aggregator: $Enums.AggregatorSource,
     payload: any,
   ) {
     this.logger.log(
@@ -38,7 +38,11 @@ export class AggregatorsService {
     });
 
     // 1. Map aggregator items to internal POS items
-    const orderItems = [];
+    const orderItems: {
+      item_id: string;
+      quantity: number;
+      unit_price: number;
+    }[] = [];
     for (const item of payload.items) {
       const mapping = await this.prisma.aggregatorMenu.findFirst({
         where: {
@@ -126,7 +130,7 @@ export class AggregatorsService {
 
   // ─── Menu Sync Helpers ───────────────────────────────────────────────────
 
-  async syncMenu(tenantId: string, aggregator: AggregatorSource) {
+  async syncMenu(tenantId: string, aggregator: $Enums.AggregatorSource) {
     // In a real system, we'd push the internal menu to the aggregator via API.
     // For now, we'll just return the mapped menu.
     const mappings = await this.prisma.aggregatorMenu.findMany({

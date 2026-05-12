@@ -1,12 +1,12 @@
 import { IsString, IsNumber, IsEnum, Min, IsOptional } from 'class-validator';
-import { IngredientUnit } from '@prisma/client';
+import { $Enums } from '@prisma/client';
 
 export class CreateIngredientDto {
   @IsString()
   name: string;
 
-  @IsEnum(IngredientUnit)
-  unit: IngredientUnit;
+  @IsEnum($Enums.IngredientUnit)
+  unit: $Enums.IngredientUnit;
 
   @IsNumber()
   @Min(0)

@@ -19,6 +19,7 @@ export declare class OrdersController {
                 additional_price: number;
             } | null;
         } & {
+            status: import("@prisma/client").$Enums.OrderItemStatus;
             id: string;
             item_id: string;
             variant_id: string | null;
@@ -27,17 +28,16 @@ export declare class OrdersController {
             notes: string | null;
             course_number: number;
             order_id: string;
-            status: import("@prisma/client").$Enums.OrderItemStatus;
             kot_id: string | null;
         })[];
     } & {
+        status: import("@prisma/client").$Enums.OrderStatus;
         id: string;
         tenant_id: string;
         created_at: Date;
         order_type: import("@prisma/client").$Enums.OrderType;
         table_id: string | null;
         pax_count: number | null;
-        status: import("@prisma/client").$Enums.OrderStatus;
         aggregator_source: import("@prisma/client").$Enums.AggregatorSource | null;
         aggregator_order_id: string | null;
         external_ref: string | null;
@@ -51,19 +51,19 @@ export declare class OrdersController {
             table_number: string;
         } | null;
         order_items: {
+            status: import("@prisma/client").$Enums.OrderItemStatus;
             id: string;
             quantity: number;
             unit_price: number;
-            status: import("@prisma/client").$Enums.OrderItemStatus;
         }[];
     } & {
+        status: import("@prisma/client").$Enums.OrderStatus;
         id: string;
         tenant_id: string;
         created_at: Date;
         order_type: import("@prisma/client").$Enums.OrderType;
         table_id: string | null;
         pax_count: number | null;
-        status: import("@prisma/client").$Enums.OrderStatus;
         aggregator_source: import("@prisma/client").$Enums.AggregatorSource | null;
         aggregator_order_id: string | null;
         external_ref: string | null;
@@ -74,9 +74,9 @@ export declare class OrdersController {
     })[]>;
     getOrder(req: any, id: string): Promise<{
         table: {
+            status: import("@prisma/client").$Enums.TableStatus;
             id: string;
             tenant_id: string;
-            status: import("@prisma/client").$Enums.TableStatus;
             zone_id: string;
             table_number: string;
             capacity: number;
@@ -84,6 +84,7 @@ export declare class OrdersController {
         } | null;
         kots: ({
             items: {
+                status: import("@prisma/client").$Enums.OrderItemStatus;
                 id: string;
                 item_id: string;
                 variant_id: string | null;
@@ -92,16 +93,15 @@ export declare class OrdersController {
                 notes: string | null;
                 course_number: number;
                 order_id: string;
-                status: import("@prisma/client").$Enums.OrderItemStatus;
                 kot_id: string | null;
             }[];
         } & {
+            status: import("@prisma/client").$Enums.KotStatus;
             id: string;
             tenant_id: string;
             order_id: string;
             station: import("@prisma/client").$Enums.StationRoute;
             kot_number: string;
-            status: import("@prisma/client").$Enums.KotStatus;
             printed_at: Date | null;
             fired_by_id: string;
         })[];
@@ -118,6 +118,7 @@ export declare class OrdersController {
                 additional_price: number;
             } | null;
         } & {
+            status: import("@prisma/client").$Enums.OrderItemStatus;
             id: string;
             item_id: string;
             variant_id: string | null;
@@ -126,43 +127,42 @@ export declare class OrdersController {
             notes: string | null;
             course_number: number;
             order_id: string;
-            status: import("@prisma/client").$Enums.OrderItemStatus;
             kot_id: string | null;
         })[];
         invoices: ({
             payments: {
+                status: import("@prisma/client").$Enums.PaymentStatus;
                 id: string;
                 created_at: Date;
-                status: import("@prisma/client").$Enums.PaymentStatus;
+                invoice_id: string;
                 amount: number;
                 method: import("@prisma/client").$Enums.PaymentMethod;
                 upi_ref: string | null;
                 transaction_id: string | null;
-                invoice_id: string;
             }[];
         } & {
             id: string;
             order_id: string;
             printed_at: Date | null;
-            discount: number;
-            discount_type: import("@prisma/client").$Enums.DiscountType | null;
-            discount_approved_by: string | null;
-            service_charge: number;
             invoice_number: string;
             subtotal: number;
             cgst: number;
             sgst: number;
             igst: number;
+            service_charge: number;
+            discount: number;
+            discount_type: import("@prisma/client").$Enums.DiscountType | null;
+            discount_approved_by: string | null;
             total: number;
         })[];
     } & {
+        status: import("@prisma/client").$Enums.OrderStatus;
         id: string;
         tenant_id: string;
         created_at: Date;
         order_type: import("@prisma/client").$Enums.OrderType;
         table_id: string | null;
         pax_count: number | null;
-        status: import("@prisma/client").$Enums.OrderStatus;
         aggregator_source: import("@prisma/client").$Enums.AggregatorSource | null;
         aggregator_order_id: string | null;
         external_ref: string | null;
@@ -185,6 +185,7 @@ export declare class OrdersController {
                 additional_price: number;
             } | null;
         } & {
+            status: import("@prisma/client").$Enums.OrderItemStatus;
             id: string;
             item_id: string;
             variant_id: string | null;
@@ -193,7 +194,6 @@ export declare class OrdersController {
             notes: string | null;
             course_number: number;
             order_id: string;
-            status: import("@prisma/client").$Enums.OrderItemStatus;
             kot_id: string | null;
         })[];
     }>;
@@ -202,36 +202,7 @@ export declare class OrdersController {
     }): Promise<{
         order_id: string;
         table_number: string | undefined;
-        kots: ({
-            items: ({
-                item: {
-                    name: string;
-                };
-                variant: {
-                    name: string;
-                } | null;
-            } & {
-                id: string;
-                item_id: string;
-                variant_id: string | null;
-                quantity: number;
-                unit_price: number;
-                notes: string | null;
-                course_number: number;
-                order_id: string;
-                status: import("@prisma/client").$Enums.OrderItemStatus;
-                kot_id: string | null;
-            })[];
-        } & {
-            id: string;
-            tenant_id: string;
-            order_id: string;
-            station: import("@prisma/client").$Enums.StationRoute;
-            kot_number: string;
-            status: import("@prisma/client").$Enums.KotStatus;
-            printed_at: Date | null;
-            fired_by_id: string;
-        })[];
+        kots: any[];
     }>;
     voidOrder(req: any, id: string, reason: string): Promise<{
         success: boolean;
