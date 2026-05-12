@@ -5,7 +5,6 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrderDto, AddItemsToOrderDto } from './dto/order.dto';
-import { StationRoute } from '@prisma/client';
 import { KdsGateway } from '../kds/kds.gateway';
 import { InventoryService } from '../inventory/inventory.service';
 
@@ -143,7 +142,7 @@ export class OrdersService {
       throw new BadRequestException('No pending items to fire.');
 
     // Group items by station_route
-    const stationGroups = new Map<StationRoute, typeof order.order_items>();
+    const stationGroups = new Map<string, typeof order.order_items>();
     order.order_items.forEach((oi) => {
       const station = oi.item.station_route;
       if (!stationGroups.has(station)) stationGroups.set(station, []);
