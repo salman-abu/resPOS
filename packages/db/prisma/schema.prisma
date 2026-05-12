@@ -1,0 +1,511 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum SubscriptionPlan {
+  STARTER
+  GROWTH
+  ENTERPRISE
+}
+
+enum Role {
+  OWNER
+  MANAGER
+  CASHIER
+  WAITER
+  KITCHEN
+  CAPTAIN
+}
+
+enum ItemType {
+  VEG
+  NON_VEG
+  EGG
+  VEGAN
+}
+
+enum TaxSlab {
+  EXEMPT
+  GST_5
+  GST_12
+  GST_18
+  GST_28
+}
+
+enum StationRoute {
+  HOT_KITCHEN
+  COLD_KITCHEN
+  BAR
+  BAKERY
+}
+
+enum TableStatus {
+  AVAILABLE
+  OCCUPIED
+  BILLED
+  RESERVED
+  DIRTY
+}
+
+enum OrderType {
+  DINE_IN
+  TAKEAWAY
+  DELIVERY
+  AGGREGATOR
+}
+
+enum OrderStatus {
+  DRAFT
+  PLACED
+  PREPARING
+  READY
+  SERVED
+  BILLED
+  SETTLED
+  VOID
+}
+
+enum AggregatorSource {
+  ZOMATO
+  SWIGGY
+  UBER_EATS
+  ONDC
+}
+
+enum OrderItemStatus {
+  PENDING
+  SENT_TO_KDS
+  PREPARING
+  READY
+  SERVED
+  VOID
+}
+
+enum KotStatus {
+  PRINTED
+  PREPARING
+  READY
+  CANCELLED
+}
+
+enum DiscountType {
+  PERCENT
+  FLAT
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  UPI
+  WALLET
+  COMPLIMENTARY
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+enum ShiftStatus {
+  OPEN
+  CLOSED
+}
+
+enum AuditAction {
+  VOID_BILL
+  DELETE_KOT
+  APPLY_DISCOUNT
+  REFUND
+  SHIFT_CLOSE
+  ITEM_86
+  PRICE_CHANGE
+}
+
+enum IngredientUnit {
+  GRAM
+  KG
+  ML
+  LITRE
+  PIECE
+  DOZEN
+}
+
+enum POStatus {
+  DRAFT
+  SENT
+  RECEIVED
+  CANCELLED
+}
+
+model Tenant {
+  id                String           @id @default(uuid())
+  name              String
+  slug              String           @unique
+  gstin             String?
+  state_code        String?
+  address           String?
+  subscription_plan SubscriptionPlan @default(STARTER)
+  settings          Json?
+  is_active         Boolean          @default(true)
+  created_at        DateTime         @default(now())
+
+  users             User[]
+  outlets           Outlet[]
+  categories        Category[]
+  items             Item[]
+  combo_meals       ComboMeal[]
+  tables            Table[]
+  zones             Zone[]
+  orders            Order[]
+  kots              KOT[]
+  shifts            Shift[]
+  audit_logs        AuditLog[]
+  ingredients       Ingredient[]
+  vendors           Vendor[]
+  purchase_orders   PurchaseOrder[]
+  customers         Customer[]
+  aggregator_menus  AggregatorMenu[]
+}
+
+model User {
+  id          String   @id @default(uuid())
+  tenant_id   String
+  tenant      Tenant   @relation(fields: [tenant_id], references: [id])
+  name        String
+  mobile      String
+  email       String?
+  role        Role
+  pin_hash    String
+  is_active   Boolean  @default(true)
+
+  waiter_orders   Order[] @relation("waiter_orders")
+  captain_orders  Order[] @relation("captain_orders")
+  kots_fired      KOT[]   @relation("kot_fired_by")
+  shifts          Shift[] @relation("shift_cashier")
+}
+
+model Outlet {
+  id                  String   @id @default(uuid())
+  tenant_id           String
+  tenant              Tenant   @relation(fields: [tenant_id], references: [id])
+  name                String
+  address             String?
+  state_code          String?
+  is_central_kitchen  Boolean  @default(false)
+  parent_outlet_id    String?
+  parent_outlet       Outlet?  @relation("franchise", fields: [parent_outlet_id], references: [id])
+  child_outlets       Outlet[] @relation("franchise")
+
+  orders              Order[]
+  shifts              Shift[]
+  purchase_orders     PurchaseOrder[]
+}
+
+model Category {
+  id          String   @id @default(uuid())
+  tenant_id   String
+  tenant      Tenant   @relation(fields: [tenant_id], references: [id])
+  name        String
+  sort_order  Int      @default(0)
+  color       String?
+  icon_url    String?
+  is_active   Boolean  @default(true)
+
+  items       Item[]
+}
+
+model Item {
+  id              String       @id @default(uuid())
+  tenant_id       String
+  tenant          Tenant       @relation(fields: [tenant_id], references: [id])
+  category_id     String
+  category        Category     @relation(fields: [category_id], references: [id])
+  name            String
+  description     String?
+  base_price      Int
+  image_url       String?
+  item_type       ItemType
+  hsn_code        String?
+  tax_slab        TaxSlab
+  is_available    Boolean      @default(true)
+  station_route   StationRoute
+  sort_order      Int          @default(0)
+
+  variants        Variant[]
+  addons          Addon[]
+  combo_meals     ComboMealItem[]
+  order_items     OrderItem[]
+  recipes         Recipe[]
+}
+
+model Variant {
+  id               String   @id @default(uuid())
+  item_id          String
+  item             Item     @relation(fields: [item_id], references: [id])
+  name             String
+  additional_price Int
+
+  order_items      OrderItem[]
+}
+
+model Addon {
+  id           String   @id @default(uuid())
+  item_id      String
+  item         Item     @relation(fields: [item_id], references: [id])
+  name         String
+  price        Int
+  is_available Boolean  @default(true)
+}
+
+model ComboMeal {
+  id          String   @id @default(uuid())
+  tenant_id   String
+  tenant      Tenant   @relation(fields: [tenant_id], references: [id])
+  name        String
+  combo_price Int
+  items       ComboMealItem[]
+}
+
+model ComboMealItem {
+  id            String    @id @default(uuid())
+  combo_meal_id String
+  combo_meal    ComboMeal @relation(fields: [combo_meal_id], references: [id])
+  item_id       String
+  item          Item      @relation(fields: [item_id], references: [id])
+}
+
+model Zone {
+  id          String   @id @default(uuid())
+  tenant_id   String
+  tenant      Tenant   @relation(fields: [tenant_id], references: [id])
+  name        String
+
+  tables      Table[]
+}
+
+model Table {
+  id               String      @id @default(uuid())
+  tenant_id        String
+  tenant           Tenant      @relation(fields: [tenant_id], references: [id])
+  zone_id          String
+  zone             Zone        @relation(fields: [zone_id], references: [id])
+  table_number     String
+  capacity         Int
+  status           TableStatus @default(AVAILABLE)
+  current_order_id String?
+
+  orders           Order[]
+}
+
+model Order {
+  id                  String           @id @default(uuid())
+  tenant_id           String
+  tenant              Tenant           @relation(fields: [tenant_id], references: [id])
+  outlet_id           String
+  outlet              Outlet           @relation(fields: [outlet_id], references: [id])
+  table_id            String?
+  table               Table?           @relation(fields: [table_id], references: [id])
+  order_type          OrderType
+  status              OrderStatus      @default(DRAFT)
+  waiter_id           String?
+  waiter              User?            @relation("waiter_orders", fields: [waiter_id], references: [id])
+  captain_id          String?
+  captain             User?            @relation("captain_orders", fields: [captain_id], references: [id])
+  aggregator_source   AggregatorSource?
+  aggregator_order_id String?
+  external_ref        String?
+  pax_count           Int?
+  created_at          DateTime         @default(now())
+  settled_at          DateTime?
+
+  order_items         OrderItem[]
+  kots                KOT[]
+  invoices            Invoice[]
+}
+
+model OrderItem {
+  id            String          @id @default(uuid())
+  order_id      String
+  order         Order           @relation(fields: [order_id], references: [id])
+  item_id       String
+  item          Item            @relation(fields: [item_id], references: [id])
+  variant_id    String?
+  variant       Variant?        @relation(fields: [variant_id], references: [id])
+  quantity      Int
+  unit_price    Int
+  notes         String?
+  course_number Int             @default(1)
+  status        OrderItemStatus @default(PENDING)
+  kot_id        String?
+  kot           KOT?            @relation(fields: [kot_id], references: [id])
+}
+
+model KOT {
+  id          String       @id @default(uuid())
+  tenant_id   String
+  tenant      Tenant       @relation(fields: [tenant_id], references: [id])
+  order_id    String
+  order       Order        @relation(fields: [order_id], references: [id])
+  kot_number  String
+  station     StationRoute
+  status      KotStatus    @default(PRINTED)
+  printed_at  DateTime?
+  fired_by_id String
+  fired_by    User         @relation("kot_fired_by", fields: [fired_by_id], references: [id])
+
+  items       OrderItem[]
+}
+
+model Invoice {
+  id                   String       @id @default(uuid())
+  order_id             String
+  order                Order        @relation(fields: [order_id], references: [id])
+  invoice_number       String       @unique
+  subtotal             Int
+  cgst                 Int
+  sgst                 Int
+  igst                 Int
+  service_charge       Int
+  discount             Int
+  discount_type        DiscountType?
+  discount_approved_by String?
+  total                Int
+  printed_at           DateTime?
+
+  payments             Payment[]
+}
+
+model Payment {
+  id             String        @id @default(uuid())
+  invoice_id     String
+  invoice        Invoice       @relation(fields: [invoice_id], references: [id])
+  amount         Int
+  method         PaymentMethod
+  upi_ref        String?
+  transaction_id String?
+  status         PaymentStatus @default(PENDING)
+  created_at     DateTime      @default(now())
+}
+
+model Shift {
+  id             String      @id @default(uuid())
+  tenant_id      String
+  tenant         Tenant      @relation(fields: [tenant_id], references: [id])
+  outlet_id      String
+  outlet         Outlet      @relation(fields: [outlet_id], references: [id])
+  cashier_id     String
+  cashier        User        @relation("shift_cashier", fields: [cashier_id], references: [id])
+  opening_float  Int
+  closing_float  Int?
+  petty_cash     Int?
+  status         ShiftStatus @default(OPEN)
+  opened_at      DateTime    @default(now())
+  closed_at      DateTime?
+  z_report_data  Json?
+}
+
+model AuditLog {
+  id             String      @id @default(uuid())
+  tenant_id      String
+  tenant         Tenant      @relation(fields: [tenant_id], references: [id])
+  action         AuditAction
+  entity_type    String
+  entity_id      String
+  performed_by   String
+  authorized_by  String?
+  reason         String?
+  old_value      Json?
+  new_value      Json?
+  ip_address     String?
+  created_at     DateTime    @default(now())
+}
+
+model Ingredient {
+  id             String         @id @default(uuid())
+  tenant_id      String
+  tenant         Tenant         @relation(fields: [tenant_id], references: [id])
+  name           String
+  unit           IngredientUnit
+  current_stock  Int
+  reorder_level  Int
+  cost_per_unit  Int
+
+  recipes        Recipe[]
+}
+
+model Recipe {
+  id             String     @id @default(uuid())
+  item_id        String
+  item           Item       @relation(fields: [item_id], references: [id])
+  ingredient_id  String
+  ingredient     Ingredient @relation(fields: [ingredient_id], references: [id])
+  quantity_used  Int
+}
+
+model Vendor {
+  id             String          @id @default(uuid())
+  tenant_id      String
+  tenant         Tenant          @relation(fields: [tenant_id], references: [id])
+  name           String
+  contact        String?
+  gstin          String?
+  email          String?
+
+  purchase_orders PurchaseOrder[]
+}
+
+model PurchaseOrder {
+  id             String    @id @default(uuid())
+  tenant_id      String
+  tenant         Tenant    @relation(fields: [tenant_id], references: [id])
+  vendor_id      String
+  vendor         Vendor    @relation(fields: [vendor_id], references: [id])
+  outlet_id      String
+  outlet         Outlet    @relation(fields: [outlet_id], references: [id])
+  status         POStatus  @default(DRAFT)
+  total          Int
+  items          Json
+  created_by     String
+  created_at     DateTime  @default(now())
+}
+
+model Customer {
+  id             String    @id @default(uuid())
+  tenant_id      String
+  tenant         Tenant    @relation(fields: [tenant_id], references: [id])
+  name           String
+  mobile         String
+  email          String?
+  total_visits   Int       @default(0)
+  total_spent    Int       @default(0)
+  loyalty_points Int       @default(0)
+  birthday       DateTime?
+  last_visit_at  DateTime?
+}
+
+model AggregatorMenu {
+  id                 String           @id @default(uuid())
+  tenant_id          String
+  tenant             Tenant           @relation(fields: [tenant_id], references: [id])
+  aggregator         AggregatorSource
+  pos_item_id        String
+  aggregator_item_id String
+  aggregator_price   Int
+  is_synced          Boolean          @default(false)
+  last_synced_at     DateTime?
+}
+
+model HsnCode {
+  id          String @id @default(uuid())
+  code        String @unique
+  description String?
+  tax_rate    Int
+}

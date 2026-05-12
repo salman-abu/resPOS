@@ -1,0 +1,11 @@
+{
+  "name": "@respos/utils",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "dependencies": {
+    "@respos/types": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  }
+}
