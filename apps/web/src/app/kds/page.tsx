@@ -335,7 +335,7 @@ export default function KDSPage() {
     station,
     token,
     onNewKot: useCallback(
-      (kot) => {
+      (kot: KdsTicket) => {
         setTickets((prev) => {
           // Prevent duplicates
           if (prev.some((t) => t.id === kot.id)) return prev;
@@ -345,14 +345,14 @@ export default function KDSPage() {
       },
       [playAlert],
     ),
-    onKotBumped: useCallback((kotId) => {
+    onKotBumped: useCallback((kotId: string) => {
       setBumped((prev) => [...prev, kotId]);
       setTimeout(() => {
         setTickets((prev) => prev.filter((t) => t.id !== kotId));
         setBumped((prev) => prev.filter((b) => b !== kotId));
       }, 400);
     }, []),
-    onItemDone: useCallback((kotId, itemId, done) => {
+    onItemDone: useCallback((kotId: string, itemId: string, done: boolean) => {
       setTickets((prev) =>
         prev.map((t) => {
           if (t.id !== kotId) return t;
@@ -365,7 +365,7 @@ export default function KDSPage() {
         }),
       );
     }, []),
-    onKotStatus: useCallback((kotId, status) => {
+    onKotStatus: useCallback((kotId: string, status: string) => {
       setTickets((prev) =>
         prev.map((t) => {
           if (t.id !== kotId) return t;
