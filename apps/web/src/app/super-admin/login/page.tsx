@@ -28,7 +28,8 @@ export default function SuperAdminLoginPage() {
     setLoading(true);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+      const apiUrl =
+        process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
       const res = await fetch(`${apiUrl}/super-admin/auth/login`, {
         method: 'POST',
         headers: {
@@ -84,7 +85,10 @@ export default function SuperAdminLoginPage() {
               </div>
             )}
             <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-neutral-700 font-semibold text-sm">
+              <Label
+                htmlFor="email"
+                className="text-neutral-700 font-semibold text-sm"
+              >
                 Admin Email
               </Label>
               <div className="relative">
@@ -101,7 +105,10 @@ export default function SuperAdminLoginPage() {
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="password" className="text-neutral-700 font-semibold text-sm">
+              <Label
+                htmlFor="password"
+                className="text-neutral-700 font-semibold text-sm"
+              >
                 Master Password
               </Label>
               <div className="relative">
