@@ -1,9 +1,15 @@
-"use client";
+'use client';
 
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { LayoutDashboard, Users, LogOut, Settings, Building2 } from "lucide-react";
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import {
+  LayoutDashboard,
+  Users,
+  LogOut,
+  Settings,
+  Building2,
+} from 'lucide-react';
 
 export default function SuperAdminLayout({
   children,
@@ -17,11 +23,11 @@ export default function SuperAdminLayout({
 
   useEffect(() => {
     setIsMounted(true);
-    const token = localStorage.getItem("super_admin_token");
-    if (!token && !pathname.includes("/super-admin/login")) {
-      router.push("/super-admin/login");
+    const token = localStorage.getItem('super_admin_token');
+    if (!token && !pathname.includes('/super-admin/login')) {
+      router.push('/super-admin/login');
     } else {
-      const storedAdmin = localStorage.getItem("super_admin_user");
+      const storedAdmin = localStorage.getItem('super_admin_user');
       if (storedAdmin) {
         setAdmin(JSON.parse(storedAdmin));
       }
@@ -30,21 +36,21 @@ export default function SuperAdminLayout({
 
   if (!isMounted) return null;
 
-  if (pathname.includes("/super-admin/login")) {
+  if (pathname.includes('/super-admin/login')) {
     return <>{children}</>;
   }
 
   const handleLogout = () => {
-    localStorage.removeItem("super_admin_token");
-    localStorage.removeItem("super_admin_user");
-    router.push("/super-admin/login");
+    localStorage.removeItem('super_admin_token');
+    localStorage.removeItem('super_admin_user');
+    router.push('/super-admin/login');
   };
 
   const navItems = [
-    { name: "Platform Stats", href: "/super-admin", icon: LayoutDashboard },
-    { name: "Tenants", href: "/super-admin/tenants", icon: Building2 },
-    { name: "SaaS Users", href: "#", icon: Users },
-    { name: "Platform Settings", href: "#", icon: Settings },
+    { name: 'Platform Stats', href: '/super-admin', icon: LayoutDashboard },
+    { name: 'Tenants', href: '/super-admin/tenants', icon: Building2 },
+    { name: 'SaaS Users', href: '#', icon: Users },
+    { name: 'Platform Settings', href: '#', icon: Settings },
   ];
 
   return (
@@ -55,7 +61,9 @@ export default function SuperAdminLayout({
           <h2 className="text-xl font-bold bg-gradient-to-r from-red-400 to-red-600 bg-clip-text text-transparent">
             ResPOS Admin
           </h2>
-          <p className="text-xs text-neutral-500 font-mono mt-1">GOD MODE ENABLED</p>
+          <p className="text-xs text-neutral-500 font-mono mt-1">
+            GOD MODE ENABLED
+          </p>
         </div>
         <nav className="flex-1 p-4 space-y-1">
           {navItems.map((item) => {
@@ -66,11 +74,13 @@ export default function SuperAdminLayout({
                 href={item.href}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                   isActive
-                    ? "bg-red-500/10 text-red-500"
-                    : "text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200"
+                    ? 'bg-red-500/10 text-red-500'
+                    : 'text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200'
                 }`}
               >
-                <item.icon className={`w-5 h-5 ${isActive ? "text-red-500" : "text-neutral-500"}`} />
+                <item.icon
+                  className={`w-5 h-5 ${isActive ? 'text-red-500' : 'text-neutral-500'}`}
+                />
                 {item.name}
               </Link>
             );
@@ -82,8 +92,12 @@ export default function SuperAdminLayout({
               {(admin?.name as string)?.[0] || 'A'}
             </div>
             <div>
-              <p className="text-sm font-medium leading-none">{(admin?.name as string) || 'Admin'}</p>
-              <p className="text-xs text-neutral-500 mt-1">Level {(admin?.level as number) || 3}</p>
+              <p className="text-sm font-medium leading-none">
+                {(admin?.name as string) || 'Admin'}
+              </p>
+              <p className="text-xs text-neutral-500 mt-1">
+                Level {(admin?.level as number) || 3}
+              </p>
             </div>
           </div>
           <button

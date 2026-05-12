@@ -1,11 +1,9 @@
 import { SuperAdminService } from './superadmin.service';
+import { SuperAdminLoginDto } from './superadmin.dto';
 export declare class SuperAdminController {
     private readonly superAdminService;
     constructor(superAdminService: SuperAdminService);
-    login(body: {
-        email: string;
-        passwordString: string;
-    }): Promise<{
+    login(body: SuperAdminLoginDto): Promise<{
         access_token: string;
         admin: {
             name: string;

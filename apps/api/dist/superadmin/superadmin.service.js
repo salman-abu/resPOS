@@ -65,18 +65,25 @@ let SuperAdminService = class SuperAdminService {
         if (!isMatch) {
             throw new common_1.UnauthorizedException('Invalid credentials');
         }
-        const payload = { sub: admin.id, email: admin.email, is_super_admin: true, level: admin.level };
+        const payload = {
+            sub: admin.id,
+            email: admin.email,
+            is_super_admin: true,
+            level: admin.level,
+        };
         return {
             access_token: this.jwtService.sign(payload),
-            admin: { name: admin.name, email: admin.email, level: admin.level }
+            admin: { name: admin.name, email: admin.email, level: admin.level },
         };
     }
     async getDashboardStats() {
         const totalTenants = await this.prisma.tenant.count();
-        const activeTenants = await this.prisma.tenant.count({ where: { is_active: true } });
+        const activeTenants = await this.prisma.tenant.count({
+            where: { is_active: true },
+        });
         const totalOrders = await this.prisma.order.count();
         const invoices = await this.prisma.invoice.findMany({
-            select: { total: true }
+            select: { total: true },
         });
         const totalGmv = invoices.reduce((acc, curr) => acc + curr.total, 0);
         return {
@@ -90,21 +97,21 @@ let SuperAdminService = class SuperAdminService {
         return this.prisma.tenant.findMany({
             include: {
                 _count: {
-                    select: { outlets: true, users: true, orders: true }
-                }
+                    select: { outlets: true, users: true, orders: true },
+                },
             },
-            orderBy: { created_at: 'desc' }
+            orderBy: { created_at: 'desc' },
         });
     }
     async toggleTenantStatus(id, is_active) {
         return this.prisma.tenant.update({
             where: { id },
-            data: { is_active }
+            data: { is_active },
         });
     }
     async impersonateTenant(tenantId) {
         const tenant = await this.prisma.tenant.findUnique({
-            where: { id: tenantId }
+            where: { id: tenantId },
         });
         if (!tenant) {
             throw new common_1.NotFoundException('Tenant not found');
@@ -113,11 +120,11 @@ let SuperAdminService = class SuperAdminService {
             sub: `impersonate_${tenantId}`,
             tenant_id: tenantId,
             role: 'OWNER',
-            is_impersonated: true
+            is_impersonated: true,
         };
         return {
             access_token: this.jwtService.sign(payload),
-            tenant_name: tenant.name
+            tenant_name: tenant.name,
         };
     }
 };

@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.SuperAdminController = void 0;
 const common_1 = require("@nestjs/common");
 const superadmin_service_1 = require("./superadmin.service");
+const superadmin_dto_1 = require("./superadmin.dto");
 let SuperAdminController = class SuperAdminController {
     superAdminService;
     constructor(superAdminService) {
@@ -41,7 +42,7 @@ __decorate([
     (0, common_1.Post)('auth/login'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [superadmin_dto_1.SuperAdminLoginDto]),
     __metadata("design:returntype", void 0)
 ], SuperAdminController.prototype, "login", null);
 __decorate([

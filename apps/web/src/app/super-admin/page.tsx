@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2, Server, TrendingUp, Users } from "lucide-react";
+import { useEffect, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Building2, Server, TrendingUp, Users } from 'lucide-react';
 
 export default function SuperAdminDashboard() {
   const [stats, setStats] = useState<Record<string, number> | null>(null);
@@ -11,12 +11,13 @@ export default function SuperAdminDashboard() {
   useEffect(() => {
     async function fetchStats() {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-        const token = localStorage.getItem("super_admin_token");
+        const apiUrl =
+          process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+        const token = localStorage.getItem('super_admin_token');
         const res = await fetch(`${apiUrl}/super-admin/stats`, {
           headers: {
-            Authorization: `Bearer ${token}`
-          }
+            Authorization: `Bearer ${token}`,
+          },
         });
         if (res.ok) {
           setStats(await res.json());
@@ -34,40 +35,46 @@ export default function SuperAdminDashboard() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Platform Overview</h1>
-        <p className="text-neutral-400 mt-1">Real-time metrics across all SaaS tenants.</p>
+        <p className="text-neutral-400 mt-1">
+          Real-time metrics across all SaaS tenants.
+        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Total Tenants"
-          value={loading ? "..." : stats?.totalTenants || 0}
+          value={loading ? '...' : stats?.totalTenants || 0}
           icon={Building2}
           color="text-blue-500"
           bg="bg-blue-500/10"
         />
         <StatCard
           title="Active Tenants"
-          value={loading ? "..." : stats?.activeTenants || 0}
+          value={loading ? '...' : stats?.activeTenants || 0}
           icon={Server}
           color="text-green-500"
           bg="bg-green-500/10"
         />
         <StatCard
           title="Total Orders Processed"
-          value={loading ? "..." : stats?.totalOrders || 0}
+          value={loading ? '...' : stats?.totalOrders || 0}
           icon={Users}
           color="text-purple-500"
           bg="bg-purple-500/10"
         />
         <StatCard
           title="Platform GMV"
-          value={loading ? "..." : `₹${((stats?.totalGmv || 0) / 100).toLocaleString()}`}
+          value={
+            loading
+              ? '...'
+              : `₹${((stats?.totalGmv || 0) / 100).toLocaleString()}`
+          }
           icon={TrendingUp}
           color="text-amber-500"
           bg="bg-amber-500/10"
         />
       </div>
-      
+
       {/* Placeholder for future charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         <Card className="bg-neutral-900 border-neutral-800">
@@ -91,7 +98,19 @@ export default function SuperAdminDashboard() {
   );
 }
 
-function StatCard({ title, value, icon: Icon, color, bg }: { title: string; value: string | number; icon: React.ElementType; color: string; bg: string }) {
+function StatCard({
+  title,
+  value,
+  icon: Icon,
+  color,
+  bg,
+}: {
+  title: string;
+  value: string | number;
+  icon: React.ElementType;
+  color: string;
+  bg: string;
+}) {
   return (
     <Card className="bg-neutral-900/50 border-neutral-800">
       <CardContent className="p-6 flex items-center gap-4">

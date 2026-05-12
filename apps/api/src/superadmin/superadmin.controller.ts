@@ -1,12 +1,13 @@
 import { Controller, Get, Patch, Param, Body, Post } from '@nestjs/common';
 import { SuperAdminService } from './superadmin.service';
+import { SuperAdminLoginDto } from './superadmin.dto';
 
 @Controller('super-admin')
 export class SuperAdminController {
   constructor(private readonly superAdminService: SuperAdminService) {}
 
   @Post('auth/login')
-  login(@Body() body: { email: string; passwordString: string }) {
+  login(@Body() body: SuperAdminLoginDto) {
     return this.superAdminService.login(body.email, body.passwordString);
   }
 
