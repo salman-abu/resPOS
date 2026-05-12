@@ -24,6 +24,7 @@ export interface KdsTicket {
   created_at: string;
   items: KdsItem[];
   recalled?: boolean;
+  priority?: boolean;
 }
 
 export type ConnectionStatus =
