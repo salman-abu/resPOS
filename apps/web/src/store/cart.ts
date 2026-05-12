@@ -30,7 +30,7 @@ const TAX_RATES: Record<string, number> = {
 export function calcCartTotals(items: CartItem[]) {
   const subtotal = items.reduce(
     (sum, i) => sum + (i.unit_price + i.addons_total) * i.quantity,
-    0
+    0,
   );
 
   // Per-item tax breakdown
@@ -47,7 +47,8 @@ export function calcCartTotals(items: CartItem[]) {
 
   const service_charge = 0; // configurable per tenant
   const discount = 0;
-  const total = subtotal + Math.round(cgst) + Math.round(sgst) + service_charge - discount;
+  const total =
+    subtotal + Math.round(cgst) + Math.round(sgst) + service_charge - discount;
 
   return {
     subtotal,
@@ -68,7 +69,12 @@ interface CartActions {
   setTable: (id: string, number: string) => void;
   clearTable: () => void;
   setPaxCount: (count: number) => void;
-  addItem: (item: MenuItem, variant?: Variant, addons?: CartAddon[], quantity?: number) => void;
+  addItem: (
+    item: MenuItem,
+    variant?: Variant,
+    addons?: CartAddon[],
+    quantity?: number,
+  ) => void;
   updateQuantity: (cartLineId: string, delta: number) => void;
   removeItem: (cartLineId: string) => void;
   updateNotes: (cartLineId: string, notes: string) => void;
@@ -118,7 +124,7 @@ export const useCartStore = create<CartStore>()(
               items: state.items.map((i) =>
                 i.cartLineId === cartLineId
                   ? { ...i, quantity: i.quantity + quantity }
-                  : i
+                  : i,
               ),
             };
           }
@@ -149,7 +155,7 @@ export const useCartStore = create<CartStore>()(
             .map((i) =>
               i.cartLineId === cartLineId
                 ? { ...i, quantity: i.quantity + delta }
-                : i
+                : i,
             )
             .filter((i) => i.quantity > 0);
           return { items };
@@ -165,7 +171,7 @@ export const useCartStore = create<CartStore>()(
       updateNotes: (cartLineId, notes) => {
         set((state) => ({
           items: state.items.map((i) =>
-            i.cartLineId === cartLineId ? { ...i, notes } : i
+            i.cartLineId === cartLineId ? { ...i, notes } : i,
           ),
         }));
       },
@@ -173,7 +179,7 @@ export const useCartStore = create<CartStore>()(
       updateCourse: (cartLineId, course_number) => {
         set((state) => ({
           items: state.items.map((i) =>
-            i.cartLineId === cartLineId ? { ...i, course_number } : i
+            i.cartLineId === cartLineId ? { ...i, course_number } : i,
           ),
         }));
       },
@@ -193,6 +199,6 @@ export const useCartStore = create<CartStore>()(
         items: state.items,
         active_order_id: state.active_order_id,
       }),
-    }
-  )
+    },
+  ),
 );

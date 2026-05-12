@@ -10,11 +10,30 @@ interface ItemCardProps {
   inCartQty?: number;
 }
 
-const ITEM_TYPE_BADGE: Record<string, { label: string; color: string; dot: string }> = {
-  VEG:     { label: 'V',  color: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
-  NON_VEG: { label: 'NV', color: 'bg-red-50 text-red-700 border-red-200',             dot: 'bg-red-500'     },
-  EGG:     { label: 'E',  color: 'bg-amber-50 text-amber-700 border-amber-200',       dot: 'bg-amber-500'   },
-  VEGAN:   { label: 'VG', color: 'bg-teal-50 text-teal-700 border-teal-200',          dot: 'bg-teal-500'    },
+const ITEM_TYPE_BADGE: Record<
+  string,
+  { label: string; color: string; dot: string }
+> = {
+  VEG: {
+    label: 'V',
+    color: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    dot: 'bg-emerald-500',
+  },
+  NON_VEG: {
+    label: 'NV',
+    color: 'bg-red-50 text-red-700 border-red-200',
+    dot: 'bg-red-500',
+  },
+  EGG: {
+    label: 'E',
+    color: 'bg-amber-50 text-amber-700 border-amber-200',
+    dot: 'bg-amber-500',
+  },
+  VEGAN: {
+    label: 'VG',
+    color: 'bg-teal-50 text-teal-700 border-teal-200',
+    dot: 'bg-teal-500',
+  },
 };
 
 function formatPrice(paise: number): string {
@@ -27,11 +46,11 @@ export function ItemCard({ item, onAdd, inCartQty = 0 }: ItemCardProps) {
   return (
     <div
       className={cn(
-        "group relative flex flex-col bg-white border rounded-2xl overflow-hidden cursor-pointer",
-        "transition-all duration-200 hover:-translate-y-0.5",
+        'group relative flex flex-col bg-white border rounded-2xl overflow-hidden cursor-pointer',
+        'transition-all duration-200 hover:-translate-y-0.5',
         inCartQty > 0
-          ? "border-brand-400 shadow-glow-blue"
-          : "border-border shadow-card hover:shadow-card-hover hover:border-border-strong"
+          ? 'border-brand-400 shadow-glow-blue'
+          : 'border-border shadow-card hover:shadow-card-hover hover:border-border-strong',
       )}
       onClick={() => onAdd(item)}
     >
@@ -44,7 +63,9 @@ export function ItemCard({ item, onAdd, inCartQty = 0 }: ItemCardProps) {
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-4xl">🍽️</div>
+          <div className="w-full h-full flex items-center justify-center text-4xl">
+            🍽️
+          </div>
         )}
 
         {/* Cart qty badge */}
@@ -55,10 +76,12 @@ export function ItemCard({ item, onAdd, inCartQty = 0 }: ItemCardProps) {
         )}
 
         {/* Veg/NonVeg indicator */}
-        <span className={cn(
-          "absolute top-2 left-2 text-[10px] font-bold px-1.5 py-0.5 rounded border",
-          badge.color
-        )}>
+        <span
+          className={cn(
+            'absolute top-2 left-2 text-[10px] font-bold px-1.5 py-0.5 rounded border',
+            badge.color,
+          )}
+        >
           {badge.label}
         </span>
       </div>
@@ -69,18 +92,25 @@ export function ItemCard({ item, onAdd, inCartQty = 0 }: ItemCardProps) {
           {item.name}
         </p>
         {item.description && (
-          <p className="text-content-muted text-xs line-clamp-1">{item.description}</p>
+          <p className="text-content-muted text-xs line-clamp-1">
+            {item.description}
+          </p>
         )}
         <div className="mt-auto pt-2 flex items-center justify-between">
-          <span className="text-brand-700 font-bold text-sm">{formatPrice(item.base_price)}</span>
+          <span className="text-brand-700 font-bold text-sm">
+            {formatPrice(item.base_price)}
+          </span>
           <button
             className={cn(
-              "h-7 w-7 rounded-full flex items-center justify-center transition-all duration-150 press",
+              'h-7 w-7 rounded-full flex items-center justify-center transition-all duration-150 press',
               inCartQty > 0
-                ? "bg-brand-600 text-white shadow-sm"
-                : "bg-surface-3 text-content-secondary group-hover:bg-brand-600 group-hover:text-white group-hover:shadow-sm"
+                ? 'bg-brand-600 text-white shadow-sm'
+                : 'bg-surface-3 text-content-secondary group-hover:bg-brand-600 group-hover:text-white group-hover:shadow-sm',
             )}
-            onClick={(e) => { e.stopPropagation(); onAdd(item); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onAdd(item);
+            }}
           >
             <Plus className="h-4 w-4" />
           </button>

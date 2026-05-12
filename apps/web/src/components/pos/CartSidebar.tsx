@@ -3,7 +3,15 @@
 import { cn } from '@/lib/utils';
 import { useCartStore, calcCartTotals } from '@/store/cart';
 import type { CartItem } from '@respos/types';
-import { Minus, Plus, Trash2, ChefHat, ReceiptText, ShoppingCart, StickyNote } from 'lucide-react';
+import {
+  Minus,
+  Plus,
+  Trash2,
+  ChefHat,
+  ReceiptText,
+  ShoppingCart,
+  StickyNote,
+} from 'lucide-react';
 import { useState } from 'react';
 
 interface CartSidebarProps {
@@ -18,13 +26,18 @@ function formatPrice(paise: number): string {
 
 function ItemTypeDot({ type }: { type: string }) {
   const colors: Record<string, string> = {
-    VEG:     'bg-emerald-500',
+    VEG: 'bg-emerald-500',
     NON_VEG: 'bg-red-500',
-    EGG:     'bg-amber-400',
-    VEGAN:   'bg-teal-500',
+    EGG: 'bg-amber-400',
+    VEGAN: 'bg-teal-500',
   };
   return (
-    <span className={cn('inline-block h-2 w-2 rounded-sm flex-shrink-0 mt-1.5', colors[type] ?? 'bg-slate-400')} />
+    <span
+      className={cn(
+        'inline-block h-2 w-2 rounded-sm flex-shrink-0 mt-1.5',
+        colors[type] ?? 'bg-slate-400',
+      )}
+    />
   );
 }
 
@@ -39,15 +52,25 @@ function CartLineItem({ item }: { item: CartItem }) {
       <div className="flex items-start gap-2">
         <ItemTypeDot type={item.item_type} />
         <div className="flex-1 min-w-0">
-          <p className="text-content-primary text-sm font-medium leading-tight truncate">{item.name}</p>
-          {item.variant_name && <p className="text-content-muted text-xs">{item.variant_name}</p>}
+          <p className="text-content-primary text-sm font-medium leading-tight truncate">
+            {item.name}
+          </p>
+          {item.variant_name && (
+            <p className="text-content-muted text-xs">{item.variant_name}</p>
+          )}
           {item.addons.length > 0 && (
-            <p className="text-content-muted text-xs">{item.addons.map((a) => a.name).join(', ')}</p>
+            <p className="text-content-muted text-xs">
+              {item.addons.map((a) => a.name).join(', ')}
+            </p>
           )}
         </div>
         <div className="flex-shrink-0 text-right">
-          <p className="text-brand-700 text-sm font-bold">{formatPrice(lineTotal)}</p>
-          <p className="text-content-muted text-xs">{formatPrice(item.unit_price + item.addons_total)} ea</p>
+          <p className="text-brand-700 text-sm font-bold">
+            {formatPrice(lineTotal)}
+          </p>
+          <p className="text-content-muted text-xs">
+            {formatPrice(item.unit_price + item.addons_total)} ea
+          </p>
         </div>
       </div>
 
@@ -60,7 +83,9 @@ function CartLineItem({ item }: { item: CartItem }) {
           >
             <Minus className="h-3 w-3" />
           </button>
-          <span className="w-7 text-center text-content-primary text-sm font-semibold">{item.quantity}</span>
+          <span className="w-7 text-center text-content-primary text-sm font-semibold">
+            {item.quantity}
+          </span>
           <button
             onClick={() => updateQuantity(item.cartLineId, +1)}
             className="h-6 w-6 rounded-lg bg-surface-3 hover:bg-surface-4 text-content-secondary flex items-center justify-center transition-colors border border-border"
@@ -111,7 +136,6 @@ export function CartSidebar({ onFireKOT, onBill, disabled }: CartSidebarProps) {
 
   return (
     <aside className="flex flex-col h-full bg-surface-2 border-l border-border">
-
       {/* Header */}
       <div className="px-4 py-3.5 border-b border-border bg-white flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -125,7 +149,9 @@ export function CartSidebar({ onFireKOT, onBill, disabled }: CartSidebarProps) {
         </div>
         <div className="text-right">
           <p className="text-xs text-content-muted">
-            {order_type === 'DINE_IN' ? `Table ${table_number ?? '—'}` : order_type}
+            {order_type === 'DINE_IN'
+              ? `Table ${table_number ?? '—'}`
+              : order_type}
           </p>
           {order_type === 'DINE_IN' && (
             <p className="text-xs text-content-disabled">{pax_count} pax</p>
@@ -140,11 +166,15 @@ export function CartSidebar({ onFireKOT, onBill, disabled }: CartSidebarProps) {
             <div className="h-16 w-16 rounded-2xl bg-surface-3 border border-border flex items-center justify-center">
               <ShoppingCart className="h-8 w-8 text-content-disabled" />
             </div>
-            <p className="text-content-secondary text-sm font-medium">Cart is empty</p>
+            <p className="text-content-secondary text-sm font-medium">
+              Cart is empty
+            </p>
             <p className="text-content-muted text-xs">Tap any item to add it</p>
           </div>
         ) : (
-          items.map((item) => <CartLineItem key={item.cartLineId} item={item} />)
+          items.map((item) => (
+            <CartLineItem key={item.cartLineId} item={item} />
+          ))
         )}
       </div>
 
@@ -156,10 +186,12 @@ export function CartSidebar({ onFireKOT, onBill, disabled }: CartSidebarProps) {
             <span className="font-medium">{formatPrice(totals.subtotal)}</span>
           </div>
           <div className="flex justify-between text-content-muted text-xs">
-            <span>CGST</span><span>{formatPrice(totals.cgst)}</span>
+            <span>CGST</span>
+            <span>{formatPrice(totals.cgst)}</span>
           </div>
           <div className="flex justify-between text-content-muted text-xs">
-            <span>SGST</span><span>{formatPrice(totals.sgst)}</span>
+            <span>SGST</span>
+            <span>{formatPrice(totals.sgst)}</span>
           </div>
           <div className="flex justify-between text-content-primary font-bold text-base pt-2 border-t border-border">
             <span>Total</span>
@@ -176,7 +208,7 @@ export function CartSidebar({ onFireKOT, onBill, disabled }: CartSidebarProps) {
           className={cn(
             'flex items-center justify-center gap-1.5 rounded-xl py-3 text-sm font-semibold transition-all border',
             'bg-amber-50 hover:bg-amber-100 text-amber-700 border-amber-200 hover:border-amber-300',
-            'disabled:opacity-40 disabled:cursor-not-allowed'
+            'disabled:opacity-40 disabled:cursor-not-allowed',
           )}
         >
           <ChefHat className="h-4 w-4" /> Fire KOT
@@ -187,7 +219,7 @@ export function CartSidebar({ onFireKOT, onBill, disabled }: CartSidebarProps) {
           className={cn(
             'flex items-center justify-center gap-1.5 rounded-xl py-3 text-sm font-semibold transition-all',
             'bg-brand-600 hover:bg-brand-700 text-white shadow-sm hover:shadow-md',
-            'disabled:opacity-40 disabled:cursor-not-allowed'
+            'disabled:opacity-40 disabled:cursor-not-allowed',
           )}
         >
           <ReceiptText className="h-4 w-4" /> Bill

@@ -1,4 +1,4 @@
-import { DashboardSidebar } from "@/components/ui/DashboardSidebar";
+import { DashboardSidebar } from '@/components/ui/DashboardSidebar';
 
 export default function DashboardLayout({
   children,
@@ -7,10 +7,12 @@ export default function DashboardLayout({
 }) {
   return (
     <div className="flex h-screen bg-background overflow-hidden">
-      <DashboardSidebar tenantName="Spice Garden" userName="Salman" userRole="OWNER" />
-      <main className="flex-1 overflow-y-auto scrollbar-thin">
-        {children}
-      </main>
+      <DashboardSidebar
+        tenantName="Spice Garden"
+        userName="Salman"
+        userRole="OWNER"
+      />
+      <main className="flex-1 overflow-y-auto scrollbar-thin">{children}</main>
     </div>
   );
 }

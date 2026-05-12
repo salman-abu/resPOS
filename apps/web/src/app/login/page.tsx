@@ -2,15 +2,22 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Zap, Mail, KeyRound, ArrowRight, Eye, EyeOff, AlertCircle } from 'lucide-react';
-
+import {
+  Zap,
+  Mail,
+  KeyRound,
+  ArrowRight,
+  Eye,
+  EyeOff,
+  AlertCircle,
+} from 'lucide-react';
 
 export default function LoginPage() {
-  const [email, setEmail]     = useState('');
-  const [pin, setPin]         = useState('');
+  const [email, setEmail] = useState('');
+  const [pin, setPin] = useState('');
   const [showPin, setShowPin] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState('');
+  const [error, setError] = useState('');
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -29,8 +36,13 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       {/* Subtle dot pattern background */}
-      <div className="absolute inset-0 pointer-events-none"
-        style={{ backgroundImage: "radial-gradient(circle at 1px 1px, #E2E8F0 1px, transparent 0)", backgroundSize: "28px 28px" }}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage:
+            'radial-gradient(circle at 1px 1px, #E2E8F0 1px, transparent 0)',
+          backgroundSize: '28px 28px',
+        }}
       />
 
       {/* Gradient blobs — light & subtle */}
@@ -38,23 +50,28 @@ export default function LoginPage() {
       <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-violet-100 rounded-full blur-3xl opacity-40 pointer-events-none" />
 
       <div className="relative w-full max-w-sm animate-scale-in">
-
         {/* Card */}
         <div className="bg-white rounded-3xl border border-border shadow-elevated p-8">
-
           {/* Brand */}
           <div className="flex flex-col items-center mb-8">
             <div className="h-14 w-14 rounded-2xl bg-brand-600 flex items-center justify-center shadow-lg mb-4">
               <Zap className="h-7 w-7 text-white" />
             </div>
-            <h1 className="text-2xl font-black text-content-primary tracking-tight">resPOS</h1>
-            <p className="text-content-muted text-sm mt-1">Owner & Manager Portal</p>
+            <h1 className="text-2xl font-black text-content-primary tracking-tight">
+              resPOS
+            </h1>
+            <p className="text-content-muted text-sm mt-1">
+              Owner & Manager Portal
+            </p>
           </div>
 
           {/* Form */}
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-1.5">
-              <label htmlFor="email" className="text-content-secondary text-sm font-semibold">
+              <label
+                htmlFor="email"
+                className="text-content-secondary text-sm font-semibold"
+              >
                 Email address
               </label>
               <div className="relative">
@@ -72,7 +89,10 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="pin" className="text-content-secondary text-sm font-semibold">
+              <label
+                htmlFor="pin"
+                className="text-content-secondary text-sm font-semibold"
+              >
                 Secure PIN
               </label>
               <div className="relative">
@@ -81,7 +101,9 @@ export default function LoginPage() {
                   id="pin"
                   type={showPin ? 'text' : 'password'}
                   value={pin}
-                  onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  onChange={(e) =>
+                    setPin(e.target.value.replace(/\D/g, '').slice(0, 6))
+                  }
                   placeholder="••••••"
                   maxLength={6}
                   required
@@ -92,7 +114,11 @@ export default function LoginPage() {
                   onClick={() => setShowPin((v) => !v)}
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 text-content-muted hover:text-content-secondary transition-colors"
                 >
-                  {showPin ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showPin ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
                 </button>
               </div>
             </div>
@@ -115,7 +141,9 @@ export default function LoginPage() {
                   Authenticating…
                 </>
               ) : (
-                <>Sign In <ArrowRight className="h-4 w-4" /></>
+                <>
+                  Sign In <ArrowRight className="h-4 w-4" />
+                </>
               )}
             </button>
           </form>
@@ -135,14 +163,20 @@ export default function LoginPage() {
 
           <p className="mt-5 text-center text-xs text-content-muted">
             New restaurant?{' '}
-            <a href="/onboarding" className="text-brand-600 hover:text-brand-700 font-semibold">
+            <a
+              href="/onboarding"
+              className="text-brand-600 hover:text-brand-700 font-semibold"
+            >
               Set up your account →
             </a>
           </p>
         </div>
 
         <p className="text-center text-xs text-content-muted mt-4">
-          Demo — any email + PIN <code className="font-mono font-bold text-brand-600 bg-brand-50 px-1.5 py-0.5 rounded">1234</code>
+          Demo — any email + PIN{' '}
+          <code className="font-mono font-bold text-brand-600 bg-brand-50 px-1.5 py-0.5 rounded">
+            1234
+          </code>
         </p>
       </div>
     </div>

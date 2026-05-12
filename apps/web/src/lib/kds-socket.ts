@@ -9,14 +9,14 @@ export interface KdsItem {
   variant?: string;
   quantity: number;
   notes?: string;
-  status: string;        // PENDING | SENT_TO_KDS | READY | SERVED
+  status: string; // PENDING | SENT_TO_KDS | READY | SERVED
 }
 
 export interface KdsTicket {
   id: string;
   kot_number: string;
   station: string;
-  status: string;        // PRINTED | PREPARING | READY
+  status: string; // PRINTED | PREPARING | READY
   order_id: string;
   order_type: string;
   table_number?: string;
@@ -26,11 +26,15 @@ export interface KdsTicket {
   recalled?: boolean;
 }
 
-export type ConnectionStatus = 'connecting' | 'connected' | 'disconnected' | 'error';
+export type ConnectionStatus =
+  | 'connecting'
+  | 'connected'
+  | 'disconnected'
+  | 'error';
 
 interface UseKdsSocketOptions {
   tenantId: string;
-  station: string;       // 'ALL' | 'HOT_KITCHEN' | 'COLD_KITCHEN' | 'BAR' | 'BAKERY'
+  station: string; // 'ALL' | 'HOT_KITCHEN' | 'COLD_KITCHEN' | 'BAR' | 'BAKERY'
   token?: string;
   onNewKot?: (kot: KdsTicket) => void;
   onKotBumped?: (kotId: string) => void;
@@ -38,9 +42,10 @@ interface UseKdsSocketOptions {
   onKotStatus?: (kotId: string, status: string) => void;
 }
 
-const API_URL = (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_URL)
-  ? process.env.NEXT_PUBLIC_API_URL
-  : 'http://localhost:3001';
+const API_URL =
+  typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_URL
+    ? process.env.NEXT_PUBLIC_API_URL
+    : 'http://localhost:3001';
 
 export function useKdsSocket({
   tenantId,
@@ -90,13 +95,27 @@ export function useKdsSocket({
       onKotBumped?.(kot_id);
     });
 
-    socket.on('kot:item_done', ({ kot_id, item_id, done }: { kot_id: string; item_id: string; done: boolean }) => {
-      onItemDone?.(kot_id, item_id, done);
-    });
+    socket.on(
+      'kot:item_done',
+      ({
+        kot_id,
+        item_id,
+        done,
+      }: {
+        kot_id: string;
+        item_id: string;
+        done: boolean;
+      }) => {
+        onItemDone?.(kot_id, item_id, done);
+      },
+    );
 
-    socket.on('kot:status', ({ kot_id, status: s }: { kot_id: string; status: string }) => {
-      onKotStatus?.(kot_id, s);
-    });
+    socket.on(
+      'kot:status',
+      ({ kot_id, status: s }: { kot_id: string; status: string }) => {
+        onKotStatus?.(kot_id, s);
+      },
+    );
 
     return () => {
       socket.disconnect();

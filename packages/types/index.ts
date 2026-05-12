@@ -81,7 +81,12 @@ export interface CartState {
 
 // ─── Table Types ─────────────────────────────────────────────────────────────
 
-export type TableStatus = 'AVAILABLE' | 'OCCUPIED' | 'BILLED' | 'RESERVED' | 'DIRTY';
+export type TableStatus =
+  | 'AVAILABLE'
+  | 'OCCUPIED'
+  | 'BILLED'
+  | 'RESERVED'
+  | 'DIRTY';
 
 export interface TableRow {
   id: string;
@@ -95,9 +100,23 @@ export interface TableRow {
 
 // ─── Order / KOT Types ───────────────────────────────────────────────────────
 
-export type OrderStatus = 'DRAFT' | 'PLACED' | 'PREPARING' | 'READY' | 'SERVED' | 'BILLED' | 'SETTLED' | 'VOID';
+export type OrderStatus =
+  | 'DRAFT'
+  | 'PLACED'
+  | 'PREPARING'
+  | 'READY'
+  | 'SERVED'
+  | 'BILLED'
+  | 'SETTLED'
+  | 'VOID';
 export type KotStatus = 'PRINTED' | 'PREPARING' | 'READY' | 'CANCELLED';
-export type OrderItemStatus = 'PENDING' | 'SENT_TO_KDS' | 'PREPARING' | 'READY' | 'SERVED' | 'VOID';
+export type OrderItemStatus =
+  | 'PENDING'
+  | 'SENT_TO_KDS'
+  | 'PREPARING'
+  | 'READY'
+  | 'SERVED'
+  | 'VOID';
 
 export interface KotItem {
   item_id: string;
@@ -118,7 +137,12 @@ export interface KotPayload {
 
 // ─── Invoice / Payment Types ──────────────────────────────────────────────────
 
-export type PaymentMethod = 'CASH' | 'CARD' | 'UPI' | 'WALLET' | 'COMPLIMENTARY';
+export type PaymentMethod =
+  | 'CASH'
+  | 'CARD'
+  | 'UPI'
+  | 'WALLET'
+  | 'COMPLIMENTARY';
 export type DiscountType = 'PERCENT' | 'FLAT';
 
 export interface InvoiceSummary {
@@ -134,7 +158,13 @@ export interface InvoiceSummary {
 
 // ─── Auth Types ──────────────────────────────────────────────────────────────
 
-export type Role = 'OWNER' | 'MANAGER' | 'CASHIER' | 'WAITER' | 'KITCHEN' | 'CAPTAIN';
+export type Role =
+  | 'OWNER'
+  | 'MANAGER'
+  | 'CASHIER'
+  | 'WAITER'
+  | 'KITCHEN'
+  | 'CAPTAIN';
 
 export interface AuthUser {
   id: string;

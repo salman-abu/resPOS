@@ -21,7 +21,12 @@ const CATEGORY_ACTIVE: string[] = [
   'bg-fuchsia-600 text-white border-fuchsia-600',
 ];
 
-export function CategoryTabs({ categories, selectedId, onSelect, loading }: CategoryTabsProps) {
+export function CategoryTabs({
+  categories,
+  selectedId,
+  onSelect,
+  loading,
+}: CategoryTabsProps) {
   if (loading) {
     return (
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
@@ -41,7 +46,7 @@ export function CategoryTabs({ categories, selectedId, onSelect, loading }: Cate
           'flex-shrink-0 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 border whitespace-nowrap',
           selectedId === null
             ? 'bg-slate-700 text-white border-slate-700 shadow-sm'
-            : 'bg-white text-content-secondary border-border hover:bg-surface-3 hover:text-content-primary hover:border-border-strong'
+            : 'bg-white text-content-secondary border-border hover:bg-surface-3 hover:text-content-primary hover:border-border-strong',
         )}
       >
         <UtensilsCrossed className="inline-block h-3.5 w-3.5 mr-1.5 -mt-0.5" />
@@ -59,7 +64,7 @@ export function CategoryTabs({ categories, selectedId, onSelect, loading }: Cate
               'flex-shrink-0 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 border whitespace-nowrap shadow-sm',
               isActive
                 ? activeClass
-                : 'bg-white text-content-secondary border-border hover:bg-surface-3 hover:text-content-primary hover:border-border-strong'
+                : 'bg-white text-content-secondary border-border hover:bg-surface-3 hover:text-content-primary hover:border-border-strong',
             )}
           >
             {cat.name}
