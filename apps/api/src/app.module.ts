@@ -10,6 +10,7 @@ import { KdsModule } from './kds/kds.module';
 import { AggregatorsModule } from './aggregators/aggregators.module';
 import { InventoryModule } from './inventory/inventory.module';
 import { TenantMiddleware } from './tenant/tenant.middleware';
+import { SuperAdminModule } from './superadmin/superadmin.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { TenantMiddleware } from './tenant/tenant.middleware';
     KdsModule,
     AggregatorsModule,
     InventoryModule,
+    SuperAdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],

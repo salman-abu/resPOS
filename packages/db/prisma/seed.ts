@@ -446,11 +446,26 @@ async function main() {
   }
   console.log(`✅ ${items.length} menu items seeded`);
 
+  // ── Super Admin ────────────────────────────────────────────────────────────
+  const adminPasswordHash = await bcrypt.hash('admin123', 10);
+  await prisma.superAdmin.upsert({
+    where: { email: 'admin@respos.com' },
+    update: {},
+    create: {
+      email: 'admin@respos.com',
+      name: 'Super Admin',
+      password: adminPasswordHash,
+      level: 3,
+    },
+  });
+  console.log('✅ Super Admin seeded (admin@respos.com)');
+
   console.log('\n🎉 Seed complete!');
   console.log(`\n📋 Login credentials:`);
   console.log(`   Owner: owner@spicegarden.com | PIN: 1234`);
   console.log(`   All staff PIN: 1234`);
   console.log(`   Tenant slug: spice-garden`);
+  console.log(`   Super Admin: admin@respos.com | Password: admin123`);
 }
 
 main()

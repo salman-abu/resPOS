@@ -509,3 +509,14 @@ model HsnCode {
   description String?
   tax_rate    Int
 }
+
+model SuperAdmin {
+  id         String   @id @default(uuid())
+  email      String   @unique
+  name       String
+  password   String   // Hashed password
+  level      Int      @default(1) // 1=Support, 2=Billing, 3=God Mode
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}

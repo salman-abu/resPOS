@@ -19,6 +19,7 @@ const kds_module_1 = require("./kds/kds.module");
 const aggregators_module_1 = require("./aggregators/aggregators.module");
 const inventory_module_1 = require("./inventory/inventory.module");
 const tenant_middleware_1 = require("./tenant/tenant.middleware");
+const superadmin_module_1 = require("./superadmin/superadmin.module");
 let AppModule = class AppModule {
     configure(consumer) {
         consumer.apply(tenant_middleware_1.TenantMiddleware).forRoutes('*');
@@ -36,6 +37,7 @@ exports.AppModule = AppModule = __decorate([
             kds_module_1.KdsModule,
             aggregators_module_1.AggregatorsModule,
             inventory_module_1.InventoryModule,
+            superadmin_module_1.SuperAdminModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],
