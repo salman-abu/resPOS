@@ -3,7 +3,15 @@
 import { useState, useEffect } from 'react';
 import { Avatar } from '@/components/ui/Avatar';
 import { useRouter } from 'next/navigation';
-import { Delete, Zap, ShieldCheck, ChevronRight, ChevronLeft, MonitorSmartphone, Loader2 } from 'lucide-react';
+import {
+  Delete,
+  Zap,
+  ShieldCheck,
+  ChevronRight,
+  ChevronLeft,
+  MonitorSmartphone,
+  Loader2,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const ROLE_REDIRECT: Record<string, string> = {
@@ -18,14 +26,20 @@ const ROLE_REDIRECT: Record<string, string> = {
 const KEYPAD = ['1', '2', '3', '4', '5', '6', '7', '8', '9'] as const;
 
 export default function PinPadPage() {
-  const [staffList, setStaffList] = useState<{ id: string; name: string; role: string }[]>([]);
+  const [staffList, setStaffList] = useState<
+    { id: string; name: string; role: string }[]
+  >([]);
   const [tenantName, setTenantName] = useState('Restaurant');
   const [isPaired, setIsPaired] = useState<boolean>(true);
   const [loadingInitial, setLoadingInitial] = useState(true);
   const [pairCode, setPairCode] = useState('');
   const [pairError, setPairError] = useState('');
-  
-  const [selected, setSelected] = useState<{ id: string; name: string; role: string } | null>(null);
+
+  const [selected, setSelected] = useState<{
+    id: string;
+    name: string;
+    role: string;
+  } | null>(null);
   const [pin, setPin] = useState('');
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -61,14 +75,19 @@ export default function PinPadPage() {
     try {
       setLoadingInitial(true);
       setPairError('');
-      
+
       const cleanTenantId = tenantId.trim();
       if (cleanTenantId.length !== 36) {
-        throw new Error(`Invalid Tenant ID format. It should be 36 characters (you have ${cleanTenantId.length}). Did you miss a character?`);
+        throw new Error(
+          `Invalid Tenant ID format. It should be 36 characters (you have ${cleanTenantId.length}). Did you miss a character?`,
+        );
       }
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
-      const res = await fetch(`${apiUrl}/auth/terminal-info?tenantId=${cleanTenantId}`);
+      const apiUrl =
+        process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+      const res = await fetch(
+        `${apiUrl}/auth/terminal-info?tenantId=${cleanTenantId}`,
+      );
       if (!res.ok) {
         throw new Error('Invalid Tenant ID or Server Error');
       }
@@ -130,7 +149,9 @@ export default function PinPadPage() {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
         <Loader2 className="h-8 w-8 text-brand-600 animate-spin mb-4" />
-        <p className="text-content-muted font-medium">Initializing Terminal...</p>
+        <p className="text-content-muted font-medium">
+          Initializing Terminal...
+        </p>
       </div>
     );
   }
@@ -138,7 +159,7 @@ export default function PinPadPage() {
   if (!isPaired) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 relative">
-        <button 
+        <button
           onClick={() => router.push('/')}
           className="absolute top-8 left-8 flex items-center gap-2 text-content-muted hover:text-content-primary font-medium transition-colors"
         >
@@ -149,14 +170,17 @@ export default function PinPadPage() {
           <div className="mx-auto bg-blue-50 w-16 h-16 rounded-full flex items-center justify-center mb-6">
             <MonitorSmartphone className="h-8 w-8 text-brand-600" />
           </div>
-          <h2 className="text-2xl font-bold text-content-primary mb-2">Terminal Not Paired</h2>
+          <h2 className="text-2xl font-bold text-content-primary mb-2">
+            Terminal Not Paired
+          </h2>
           <p className="text-content-muted text-sm mb-8 leading-relaxed">
-            This device has not been linked to a restaurant. Please enter your Tenant ID to pair this terminal.
+            This device has not been linked to a restaurant. Please enter your
+            Tenant ID to pair this terminal.
           </p>
           <form onSubmit={handlePair} className="flex flex-col gap-3">
-            <input 
-              type="text" 
-              placeholder="Tenant ID (Paste from DB)" 
+            <input
+              type="text"
+              placeholder="Tenant ID (Paste from DB)"
               value={pairCode}
               onChange={(e) => {
                 setPairCode(e.target.value);
@@ -165,13 +189,16 @@ export default function PinPadPage() {
               className="input-field w-full font-mono text-center"
               required
             />
-            {pairError && <p className="text-danger text-sm font-medium">{pairError}</p>}
+            {pairError && (
+              <p className="text-danger text-sm font-medium">{pairError}</p>
+            )}
             <button type="submit" className="btn-primary w-full py-3">
               Pair Device
             </button>
           </form>
           <p className="mt-6 text-xs text-content-disabled">
-            In production, you would generate a 6-digit pin from the Owner Dashboard.
+            In production, you would generate a 6-digit pin from the Owner
+            Dashboard.
           </p>
         </div>
       </div>
@@ -202,9 +229,7 @@ export default function PinPadPage() {
               <p className="text-content-primary font-black text-xl tracking-tight">
                 resPOS
               </p>
-              <p className="text-content-muted text-xs">
-                {tenantName}
-              </p>
+              <p className="text-content-muted text-xs">{tenantName}</p>
             </div>
           </div>
 

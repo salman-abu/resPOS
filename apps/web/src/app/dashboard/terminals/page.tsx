@@ -21,8 +21,12 @@ export default function TerminalsPage() {
   return (
     <div className="p-8 max-w-5xl mx-auto animate-fade-in">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-content-primary">Terminals & Devices</h1>
-        <p className="text-content-muted">Manage the POS terminals connected to your restaurant.</p>
+        <h1 className="text-2xl font-bold text-content-primary">
+          Terminals & Devices
+        </h1>
+        <p className="text-content-muted">
+          Manage the POS terminals connected to your restaurant.
+        </p>
       </div>
 
       <div className="grid md:grid-cols-2 gap-8">
@@ -32,18 +36,24 @@ export default function TerminalsPage() {
           </div>
           <h2 className="text-xl font-bold mb-2">Pair a New Terminal</h2>
           <p className="text-content-muted text-sm mb-6 leading-relaxed">
-            To set up a new iPad or tablet as a POS terminal, open the landing page on that device, click Launch POS, and enter your exact Tenant ID below:
+            To set up a new iPad or tablet as a POS terminal, open the landing
+            page on that device, click Launch POS, and enter your exact Tenant
+            ID below:
           </p>
 
           <div className="flex items-center gap-2 bg-surface-2 border border-border p-3 rounded-xl mb-6">
             <code className="text-sm font-mono flex-1 text-content-secondary truncate text-center">
               {tenantId}
             </code>
-            <button 
+            <button
               onClick={handleCopy}
               className="p-2 hover:bg-surface-3 rounded-lg transition-colors text-content-muted hover:text-content-primary"
             >
-              {copied ? <CheckCircle2 className="w-5 h-5 text-emerald-500" /> : <Copy className="w-5 h-5" />}
+              {copied ? (
+                <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+              ) : (
+                <Copy className="w-5 h-5" />
+              )}
             </button>
           </div>
         </div>
@@ -54,10 +64,11 @@ export default function TerminalsPage() {
           </div>
           <h2 className="text-xl font-bold mb-2">Quick Pair This Device</h2>
           <p className="text-content-muted text-sm mb-6 leading-relaxed flex-1">
-            Want to use this current computer as the POS Terminal right now? Click the button below to instantly pair it and launch the PIN Pad.
+            Want to use this current computer as the POS Terminal right now?
+            Click the button below to instantly pair it and launch the PIN Pad.
           </p>
 
-          <button 
+          <button
             onClick={pairCurrentDevice}
             className="btn-primary w-full py-4 text-base font-semibold"
           >

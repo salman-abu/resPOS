@@ -1,4 +1,11 @@
-import { IsEmail, IsString, MinLength, IsOptional, IsEnum, IsDateString } from 'class-validator';
+import {
+  IsEmail,
+  IsString,
+  MinLength,
+  IsOptional,
+  IsEnum,
+  IsDateString,
+} from 'class-validator';
 import { SubscriptionPlan, SubscriptionStatus } from '@prisma/client';
 
 export class SuperAdminLoginDto {

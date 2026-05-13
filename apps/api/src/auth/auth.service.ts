@@ -12,13 +12,14 @@ export class AuthService {
 
   async getTerminalInfo(tenantId: string) {
     const tenant = await this.prisma.tenant.findUnique({
-      where: { id: tenantId, is_active: true }
+      where: { id: tenantId, is_active: true },
     });
-    if (!tenant) throw new UnauthorizedException('Invalid or suspended terminal');
+    if (!tenant)
+      throw new UnauthorizedException('Invalid or suspended terminal');
 
     const staff = await this.prisma.user.findMany({
       where: { tenant_id: tenantId, is_active: true },
-      select: { id: true, name: true, role: true }
+      select: { id: true, name: true, role: true },
     });
 
     return {

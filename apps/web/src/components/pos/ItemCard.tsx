@@ -43,9 +43,10 @@ function formatPrice(paise: number): string {
 function getFallbackImage(name: string) {
   const n = name.toLowerCase();
   if (n.includes('biryani') || n.includes('rice')) return '/food/biryani.png';
-  if (n.includes('naan') || n.includes('roti') || n.includes('bread')) return '/food/naan.png';
+  if (n.includes('naan') || n.includes('roti') || n.includes('bread'))
+    return '/food/naan.png';
   // Default to a rich curry image for paneer, chicken, chai, jamun etc.
-  return '/food/curry.png'; 
+  return '/food/curry.png';
 }
 
 export function ItemCard({ item, onAdd, inCartQty = 0 }: ItemCardProps) {
