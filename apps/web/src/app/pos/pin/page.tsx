@@ -3,17 +3,8 @@
 import { useState, useEffect } from 'react';
 import { Avatar } from '@/components/ui/Avatar';
 import { useRouter } from 'next/navigation';
-import { Delete, Zap, ShieldCheck, ChevronRight } from 'lucide-react';
+import { Delete, Zap, ShieldCheck, ChevronRight, ChevronLeft, MonitorSmartphone, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-const MOCK_STAFF = [
-  { id: '1', name: 'Priya Sharma', role: 'CASHIER' },
-  { id: '2', name: 'Rohan Verma', role: 'WAITER' },
-  { id: '3', name: 'Deepa Singh', role: 'MANAGER' },
-  { id: '4', name: 'Amit Kumar', role: 'KITCHEN' },
-  { id: '5', name: 'Sara Khan', role: 'WAITER' },
-  { id: '6', name: 'Jay Patel', role: 'CAPTAIN' },
-];
 
 const ROLE_REDIRECT: Record<string, string> = {
   OWNER: '/dashboard',
@@ -27,7 +18,14 @@ const ROLE_REDIRECT: Record<string, string> = {
 const KEYPAD = ['1', '2', '3', '4', '5', '6', '7', '8', '9'] as const;
 
 export default function PinPadPage() {
-  const [selected, setSelected] = useState<(typeof MOCK_STAFF)[0] | null>(null);
+  const [staffList, setStaffList] = useState<{ id: string; name: string; role: string }[]>([]);
+  const [tenantName, setTenantName] = useState('Restaurant');
+  const [isPaired, setIsPaired] = useState<boolean>(true);
+  const [loadingInitial, setLoadingInitial] = useState(true);
+  const [pairCode, setPairCode] = useState('');
+  const [pairError, setPairError] = useState('');
+  
+  const [selected, setSelected] = useState<{ id: string; name: string; role: string } | null>(null);
   const [pin, setPin] = useState('');
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -46,8 +44,62 @@ export default function PinPadPage() {
       );
     tick();
     const id = setInterval(tick, 30000);
+
+    // Initial pair check
+    const tenantId = localStorage.getItem('device_tenant_id');
+    if (tenantId) {
+      fetchTerminalInfo(tenantId);
+    } else {
+      setIsPaired(false);
+      setLoadingInitial(false);
+    }
+
     return () => clearInterval(id);
   }, []);
+
+  const fetchTerminalInfo = async (tenantId: string) => {
+    try {
+      setLoadingInitial(true);
+      setPairError('');
+      
+      const cleanTenantId = tenantId.trim();
+      if (cleanTenantId.length !== 36) {
+        throw new Error(`Invalid Tenant ID format. It should be 36 characters (you have ${cleanTenantId.length}). Did you miss a character?`);
+      }
+
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+      const res = await fetch(`${apiUrl}/auth/terminal-info?tenantId=${cleanTenantId}`);
+      if (!res.ok) {
+        throw new Error('Invalid Tenant ID or Server Error');
+      }
+      const data = await res.json();
+      if (data && data.staff) {
+        setStaffList(data.staff);
+        setTenantName(data.tenantName);
+        setIsPaired(true);
+      } else {
+        throw new Error('Tenant not found or inactive');
+      }
+    } catch (err: unknown) {
+      console.error(err);
+      if (err instanceof Error) {
+        setPairError(err.message);
+      } else {
+        setPairError('Failed to pair terminal');
+      }
+      setIsPaired(false);
+      localStorage.removeItem('device_tenant_id');
+    } finally {
+      setLoadingInitial(false);
+    }
+  };
+
+  const handlePair = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pairCode) return;
+    localStorage.setItem('device_tenant_id', pairCode);
+    fetchTerminalInfo(pairCode);
+  };
 
   const handleKey = (digit: string) => {
     if (pin.length >= 4) return;
@@ -72,6 +124,59 @@ export default function PinPadPage() {
       setTimeout(() => setShake(false), 500);
     }
   };
+
+  // ── Loading & Pairing ───────────────────────────────────────────────────
+  if (loadingInitial) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
+        <Loader2 className="h-8 w-8 text-brand-600 animate-spin mb-4" />
+        <p className="text-content-muted font-medium">Initializing Terminal...</p>
+      </div>
+    );
+  }
+
+  if (!isPaired) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 relative">
+        <button 
+          onClick={() => router.push('/')}
+          className="absolute top-8 left-8 flex items-center gap-2 text-content-muted hover:text-content-primary font-medium transition-colors"
+        >
+          <ChevronLeft className="w-5 h-5" /> Back to Home
+        </button>
+
+        <div className="w-full max-w-sm bg-white rounded-3xl border border-border shadow-elevated p-8 text-center">
+          <div className="mx-auto bg-blue-50 w-16 h-16 rounded-full flex items-center justify-center mb-6">
+            <MonitorSmartphone className="h-8 w-8 text-brand-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-content-primary mb-2">Terminal Not Paired</h2>
+          <p className="text-content-muted text-sm mb-8 leading-relaxed">
+            This device has not been linked to a restaurant. Please enter your Tenant ID to pair this terminal.
+          </p>
+          <form onSubmit={handlePair} className="flex flex-col gap-3">
+            <input 
+              type="text" 
+              placeholder="Tenant ID (Paste from DB)" 
+              value={pairCode}
+              onChange={(e) => {
+                setPairCode(e.target.value);
+                setPairError('');
+              }}
+              className="input-field w-full font-mono text-center"
+              required
+            />
+            {pairError && <p className="text-danger text-sm font-medium">{pairError}</p>}
+            <button type="submit" className="btn-primary w-full py-3">
+              Pair Device
+            </button>
+          </form>
+          <p className="mt-6 text-xs text-content-disabled">
+            In production, you would generate a 6-digit pin from the Owner Dashboard.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // ── Staff Selection ───────────────────────────────────────────────────────
   if (!selected) {
@@ -98,7 +203,7 @@ export default function PinPadPage() {
                 resPOS
               </p>
               <p className="text-content-muted text-xs">
-                Spice Garden Restaurant
+                {tenantName}
               </p>
             </div>
           </div>
@@ -111,7 +216,12 @@ export default function PinPadPage() {
 
         {/* Staff Grid */}
         <div className="relative grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 max-w-5xl w-full animate-fade-in">
-          {MOCK_STAFF.map((staff) => (
+          {staffList.length === 0 && (
+            <div className="col-span-full text-center text-content-muted py-8">
+              No staff members found for this terminal.
+            </div>
+          )}
+          {staffList.map((staff) => (
             <button
               key={staff.id}
               onClick={() => setSelected(staff)}
@@ -127,8 +237,8 @@ export default function PinPadPage() {
                 <p className="text-content-primary font-semibold text-sm">
                   {staff.name.split(' ')[0]}
                 </p>
-                <p className="text-content-muted text-xs">
-                  {staff.name.split(' ')[1]}
+                <p className="text-content-muted text-[10px] font-bold tracking-widest uppercase mt-0.5">
+                  {staff.role}
                 </p>
               </div>
               <ChevronRight className="h-4 w-4 text-content-disabled group-hover:text-brand-500 transition-colors" />

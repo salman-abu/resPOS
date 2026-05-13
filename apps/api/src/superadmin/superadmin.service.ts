@@ -79,6 +79,13 @@ export class SuperAdminService {
     });
   }
 
+  async updateTenantSubscription(id: string, data: any) {
+    return this.prisma.tenant.update({
+      where: { id },
+      data,
+    });
+  }
+
   async impersonateTenant(tenantId: string) {
     const tenant = await this.prisma.tenant.findUnique({
       where: { id: tenantId },

@@ -26,26 +26,47 @@ export declare class SuperAdminService {
         };
     } & {
         id: string;
-        name: string;
-        is_active: boolean;
         slug: string;
+        name: string;
         gstin: string | null;
         state_code: string | null;
         address: string | null;
         subscription_plan: import("@prisma/client").$Enums.SubscriptionPlan;
+        subscription_status: import("@prisma/client").$Enums.SubscriptionStatus;
+        subscription_start_at: Date | null;
+        subscription_ends_at: Date | null;
         settings: import("@prisma/client/runtime/library").JsonValue | null;
+        is_active: boolean;
         created_at: Date;
     })[]>;
     toggleTenantStatus(id: string, is_active: boolean): Promise<{
         id: string;
-        name: string;
-        is_active: boolean;
         slug: string;
+        name: string;
         gstin: string | null;
         state_code: string | null;
         address: string | null;
         subscription_plan: import("@prisma/client").$Enums.SubscriptionPlan;
+        subscription_status: import("@prisma/client").$Enums.SubscriptionStatus;
+        subscription_start_at: Date | null;
+        subscription_ends_at: Date | null;
         settings: import("@prisma/client/runtime/library").JsonValue | null;
+        is_active: boolean;
+        created_at: Date;
+    }>;
+    updateTenantSubscription(id: string, data: any): Promise<{
+        id: string;
+        slug: string;
+        name: string;
+        gstin: string | null;
+        state_code: string | null;
+        address: string | null;
+        subscription_plan: import("@prisma/client").$Enums.SubscriptionPlan;
+        subscription_status: import("@prisma/client").$Enums.SubscriptionStatus;
+        subscription_start_at: Date | null;
+        subscription_ends_at: Date | null;
+        settings: import("@prisma/client/runtime/library").JsonValue | null;
+        is_active: boolean;
         created_at: Date;
     }>;
     impersonateTenant(tenantId: string): Promise<{

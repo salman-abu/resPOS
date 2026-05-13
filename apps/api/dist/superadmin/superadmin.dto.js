@@ -9,8 +9,9 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SuperAdminLoginDto = void 0;
+exports.UpdateSubscriptionDto = exports.SuperAdminLoginDto = void 0;
 const class_validator_1 = require("class-validator");
+const client_1 = require("@prisma/client");
 class SuperAdminLoginDto {
     email;
     passwordString;
@@ -25,4 +26,31 @@ __decorate([
     (0, class_validator_1.MinLength)(6),
     __metadata("design:type", String)
 ], SuperAdminLoginDto.prototype, "passwordString", void 0);
+class UpdateSubscriptionDto {
+    subscription_plan;
+    subscription_status;
+    subscription_start_at;
+    subscription_ends_at;
+}
+exports.UpdateSubscriptionDto = UpdateSubscriptionDto;
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(client_1.SubscriptionPlan),
+    __metadata("design:type", String)
+], UpdateSubscriptionDto.prototype, "subscription_plan", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(client_1.SubscriptionStatus),
+    __metadata("design:type", String)
+], UpdateSubscriptionDto.prototype, "subscription_status", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsDateString)(),
+    __metadata("design:type", String)
+], UpdateSubscriptionDto.prototype, "subscription_start_at", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsDateString)(),
+    __metadata("design:type", String)
+], UpdateSubscriptionDto.prototype, "subscription_ends_at", void 0);
 //# sourceMappingURL=superadmin.dto.js.map

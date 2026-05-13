@@ -40,8 +40,17 @@ function formatPrice(paise: number): string {
   return `₹${(paise / 100).toFixed(0)}`;
 }
 
+function getFallbackImage(name: string) {
+  const n = name.toLowerCase();
+  if (n.includes('biryani') || n.includes('rice')) return '/food/biryani.png';
+  if (n.includes('naan') || n.includes('roti') || n.includes('bread')) return '/food/naan.png';
+  // Default to a rich curry image for paneer, chicken, chai, jamun etc.
+  return '/food/curry.png'; 
+}
+
 export function ItemCard({ item, onAdd, inCartQty = 0 }: ItemCardProps) {
   const badge = ITEM_TYPE_BADGE[item.item_type] ?? ITEM_TYPE_BADGE.VEG;
+  const imageUrl = item.image_url || getFallbackImage(item.name);
 
   return (
     <div
@@ -56,17 +65,11 @@ export function ItemCard({ item, onAdd, inCartQty = 0 }: ItemCardProps) {
     >
       {/* Image */}
       <div className="relative h-28 bg-surface-3 overflow-hidden">
-        {item.image_url ? (
-          <img
-            src={item.image_url}
-            alt={item.name}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-4xl">
-            🍽️
-          </div>
-        )}
+        <img
+          src={imageUrl}
+          alt={item.name}
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+        />
 
         {/* Cart qty badge */}
         {inCartQty > 0 && (

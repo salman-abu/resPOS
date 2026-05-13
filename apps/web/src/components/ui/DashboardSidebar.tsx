@@ -2,7 +2,7 @@
 
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -18,6 +18,7 @@ import {
   ChefHat,
   FileBarChart2,
   TableProperties,
+  MonitorSmartphone,
 } from 'lucide-react';
 
 interface NavItem {
@@ -97,6 +98,12 @@ const NAV: NavItem[] = [
     section: 'operations',
   },
   {
+    label: 'Terminals',
+    href: '/dashboard/terminals',
+    icon: <MonitorSmartphone className="h-4 w-4" />,
+    section: 'system',
+  },
+  {
     label: 'Settings',
     href: '/dashboard/settings',
     icon: <Settings className="h-4 w-4" />,
@@ -113,15 +120,20 @@ const SECTIONS: Record<string, string> = {
 interface Props {
   tenantName?: string;
   userName?: string;
-  userRole?: string;
 }
 
 export function DashboardSidebar({
   tenantName = 'My Restaurant',
   userName = 'Owner',
-  userRole = 'OWNER',
 }: Props) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleLogout = () => {
+    localStorage.removeItem('access_token');
+    // We intentionally do NOT remove device_tenant_id so the POS terminal stays paired
+    router.push('/login');
+  };
 
   const grouped = NAV.reduce<Record<string, NavItem[]>>((acc, item) => {
     if (!acc[item.section]) acc[item.section] = [];
@@ -202,15 +214,18 @@ export function DashboardSidebar({
 
       {/* User */}
       <div className="p-3 border-t border-border">
-        <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-surface-3 transition-colors cursor-pointer group">
+        <div 
+          onClick={handleLogout}
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-surface-3 hover:bg-danger/5 transition-colors cursor-pointer group"
+        >
           <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center flex-shrink-0 text-xs font-bold text-white">
             {userName.charAt(0)}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-content-primary text-sm font-semibold truncate">
+            <p className="text-content-primary text-sm font-semibold truncate group-hover:text-danger transition-colors">
               {userName}
             </p>
-            <p className="text-content-muted text-xs">{userRole}</p>
+            <p className="text-content-muted text-[10px] uppercase font-bold tracking-wider group-hover:text-danger/70 transition-colors">Logout</p>
           </div>
           <LogOut className="h-4 w-4 text-content-muted group-hover:text-danger transition-colors flex-shrink-0" />
         </div>

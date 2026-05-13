@@ -27,4 +27,14 @@ export declare class AuthController {
             tenant_id: string;
         };
     }>;
+    getTerminalInfo(tenantId: string): Promise<{
+        tenantName: string;
+        staff: {
+            id: string;
+            name: string;
+            role: import("@prisma/client").$Enums.Role;
+        }[];
+    } | {
+        error: string;
+    }>;
 }

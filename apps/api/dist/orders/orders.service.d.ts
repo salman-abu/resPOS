@@ -39,8 +39,8 @@ export declare class OrdersService {
     } & {
         status: $Enums.OrderStatus;
         id: string;
-        tenant_id: string;
         created_at: Date;
+        tenant_id: string;
         order_type: $Enums.OrderType;
         table_id: string | null;
         pax_count: number | null;
@@ -169,8 +169,8 @@ export declare class OrdersService {
     } & {
         status: $Enums.OrderStatus;
         id: string;
-        tenant_id: string;
         created_at: Date;
+        tenant_id: string;
         order_type: $Enums.OrderType;
         table_id: string | null;
         pax_count: number | null;
@@ -195,8 +195,8 @@ export declare class OrdersService {
     } & {
         status: $Enums.OrderStatus;
         id: string;
-        tenant_id: string;
         created_at: Date;
+        tenant_id: string;
         order_type: $Enums.OrderType;
         table_id: string | null;
         pax_count: number | null;

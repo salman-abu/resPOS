@@ -26,8 +26,8 @@ export declare class MenuService {
         }[];
     } & {
         id: string;
-        tenant_id: string;
         name: string;
+        tenant_id: string;
         sort_order: number;
         category_id: string;
         description: string | null;
@@ -41,8 +41,8 @@ export declare class MenuService {
     })[]>;
     toggleAvailability(tenantId: string, itemId: string, is_available: boolean): Promise<{
         id: string;
-        tenant_id: string;
         name: string;
+        tenant_id: string;
         sort_order: number;
         category_id: string;
         description: string | null;

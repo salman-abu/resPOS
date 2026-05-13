@@ -36,6 +36,9 @@ let SuperAdminController = class SuperAdminController {
     impersonateTenant(id) {
         return this.superAdminService.impersonateTenant(id);
     }
+    updateTenantSubscription(id, body) {
+        return this.superAdminService.updateTenantSubscription(id, body);
+    }
 };
 exports.SuperAdminController = SuperAdminController;
 __decorate([
@@ -72,6 +75,14 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], SuperAdminController.prototype, "impersonateTenant", null);
+__decorate([
+    (0, common_1.Patch)('tenants/:id/subscription'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, superadmin_dto_1.UpdateSubscriptionDto]),
+    __metadata("design:returntype", void 0)
+], SuperAdminController.prototype, "updateTenantSubscription", null);
 exports.SuperAdminController = SuperAdminController = __decorate([
     (0, common_1.Controller)('super-admin'),
     __metadata("design:paramtypes", [superadmin_service_1.SuperAdminService])

@@ -1,6 +1,6 @@
 import { Controller, Get, Patch, Param, Body, Post } from '@nestjs/common';
 import { SuperAdminService } from './superadmin.service';
-import { SuperAdminLoginDto } from './superadmin.dto';
+import { SuperAdminLoginDto, UpdateSubscriptionDto } from './superadmin.dto';
 
 @Controller('super-admin')
 export class SuperAdminController {
@@ -32,5 +32,13 @@ export class SuperAdminController {
   @Post('tenants/:id/impersonate')
   impersonateTenant(@Param('id') id: string) {
     return this.superAdminService.impersonateTenant(id);
+  }
+
+  @Patch('tenants/:id/subscription')
+  updateTenantSubscription(
+    @Param('id') id: string,
+    @Body() body: UpdateSubscriptionDto,
+  ) {
+    return this.superAdminService.updateTenantSubscription(id, body);
   }
 }

@@ -10,11 +10,21 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async validatePin(tenantId: string, pin: string) {
-    // Basic pin auth for staff (assuming we match by tenant ID and find matching pin)
-    // In a real scenario, you might pass username/userId + pin
-    // For this example, let's say they provide userId and pin
-    return null;
+  async getTerminalInfo(tenantId: string) {
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId, is_active: true }
+    });
+    if (!tenant) throw new UnauthorizedException('Invalid or suspended terminal');
+
+    const staff = await this.prisma.user.findMany({
+      where: { tenant_id: tenantId, is_active: true },
+      select: { id: true, name: true, role: true }
+    });
+
+    return {
+      tenantName: tenant.name,
+      staff,
+    };
   }
 
   async loginWithPin(tenantId: string, userId: string, pin: string) {

@@ -4,7 +4,14 @@ export declare class AuthService {
     private prisma;
     private jwtService;
     constructor(prisma: PrismaService, jwtService: JwtService);
-    validatePin(tenantId: string, pin: string): Promise<null>;
+    getTerminalInfo(tenantId: string): Promise<{
+        tenantName: string;
+        staff: {
+            id: string;
+            name: string;
+            role: import("@prisma/client").$Enums.Role;
+        }[];
+    }>;
     loginWithPin(tenantId: string, userId: string, pin: string): Promise<{
         access_token: string;
         user: {

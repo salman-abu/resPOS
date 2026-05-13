@@ -1,4 +1,4 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, Get, Query } from '@nestjs/common';
 import { AuthService } from './auth.service';
 
 @Controller('auth')
@@ -15,5 +15,11 @@ export class AuthController {
   @Post('owner/login')
   async loginOwner(@Body() body: { email: string; pin: string }) {
     return this.authService.loginOwner(body.email, body.pin);
+  }
+
+  @Get('terminal-info')
+  async getTerminalInfo(@Query('tenantId') tenantId: string) {
+    if (!tenantId) return { error: 'Missing tenantId' };
+    return this.authService.getTerminalInfo(tenantId);
   }
 }

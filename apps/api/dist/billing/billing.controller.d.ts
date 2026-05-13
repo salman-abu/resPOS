@@ -73,8 +73,8 @@ export declare class BillingController {
         } & {
             status: import("@prisma/client").$Enums.OrderStatus;
             id: string;
-            tenant_id: string;
             created_at: Date;
+            tenant_id: string;
             order_type: import("@prisma/client").$Enums.OrderType;
             table_id: string | null;
             pax_count: number | null;
@@ -194,7 +194,7 @@ export declare class BillingController {
         })[];
     } & {
         id: string;
-        tenant_id: string;
         name: string;
+        tenant_id: string;
     })[]>;
 }

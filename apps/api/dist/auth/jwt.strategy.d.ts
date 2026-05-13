@@ -13,25 +13,28 @@ export declare class JwtStrategy extends JwtStrategy_base {
         user: {
             tenant: {
                 id: string;
-                name: string;
-                is_active: boolean;
                 slug: string;
+                name: string;
                 gstin: string | null;
                 state_code: string | null;
                 address: string | null;
                 subscription_plan: import("@prisma/client").$Enums.SubscriptionPlan;
+                subscription_status: import("@prisma/client").$Enums.SubscriptionStatus;
+                subscription_start_at: Date | null;
+                subscription_ends_at: Date | null;
                 settings: import("@prisma/client/runtime/library").JsonValue | null;
+                is_active: boolean;
                 created_at: Date;
             };
         } & {
             id: string;
-            tenant_id: string;
             name: string;
+            is_active: boolean;
+            tenant_id: string;
             mobile: string;
             email: string | null;
             role: import("@prisma/client").$Enums.Role;
             pin_hash: string;
-            is_active: boolean;
         };
     }>;
 }

@@ -10,7 +10,6 @@ export default function DashboardLayout({
       <DashboardSidebar
         tenantName="Spice Garden"
         userName="Salman"
-        userRole="OWNER"
       />
       <main className="flex-1 overflow-y-auto scrollbar-thin">{children}</main>
     </div>

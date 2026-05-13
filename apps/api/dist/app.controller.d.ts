@@ -6,4 +6,8 @@ export declare class AppController {
         status: string;
         database: string;
     }>;
+    getHealth(): {
+        status: string;
+        timestamp: string;
+    };
 }

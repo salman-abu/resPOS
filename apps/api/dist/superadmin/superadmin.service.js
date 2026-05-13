@@ -109,6 +109,12 @@ let SuperAdminService = class SuperAdminService {
             data: { is_active },
         });
     }
+    async updateTenantSubscription(id, data) {
+        return this.prisma.tenant.update({
+            where: { id },
+            data,
+        });
+    }
     async impersonateTenant(tenantId) {
         const tenant = await this.prisma.tenant.findUnique({
             where: { id: tenantId },
