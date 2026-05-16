@@ -9,11 +9,21 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: process.env.JWT_SECRET || 'super-secret-key-change-me',
+      secretOrKey: process.env.JWT_SECRET || (() => { throw new Error('JWT_SECRET environment variable is required'); })(),
     });
   }
 
   async validate(payload: any) {
+    // Super admin tokens bypass user table lookup
+    if (payload.is_super_admin) {
+      return {
+        sub: payload.sub,
+        email: payload.email,
+        is_super_admin: true,
+        level: payload.level,
+      };
+    }
+
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
       include: { tenant: true },
@@ -29,7 +39,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
 
     return {
-      userId: payload.sub,
+      sub: payload.sub,
       tenantId: payload.tenantId,
       role: payload.role,
       user,
