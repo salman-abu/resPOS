@@ -3,7 +3,7 @@ import { GenerateInvoiceDto, SettleInvoiceDto, OpenShiftDto, CloseShiftDto } fro
 export declare class BillingController {
     private readonly billingService;
     constructor(billingService: BillingService);
-    generateInvoice(req: any, dto: GenerateInvoiceDto): Promise<{
+    generate(req: any, dto: GenerateInvoiceDto): Promise<{
         invoice: {
             payments: {
                 status: import("@prisma/client").$Enums.PaymentStatus;
@@ -17,6 +17,9 @@ export declare class BillingController {
             }[];
         } & {
             id: string;
+            created_at: Date;
+            tenant_id: string;
+            total: number;
             order_id: string;
             printed_at: Date | null;
             invoice_number: string;
@@ -28,7 +31,7 @@ export declare class BillingController {
             discount: number;
             discount_type: import("@prisma/client").$Enums.DiscountType | null;
             discount_approved_by: string | null;
-            total: number;
+            updated_at: Date;
         };
         order: {
             id: string;
@@ -45,6 +48,12 @@ export declare class BillingController {
             }[];
         };
     }>;
+    split(req: any, dto: {
+        order_id: string;
+        splits: {
+            itemIds: string[];
+        }[];
+    }): Promise<any[]>;
     getInvoice(req: any, id: string): Promise<{
         order: {
             table: {
@@ -67,8 +76,11 @@ export declare class BillingController {
                 unit_price: number;
                 notes: string | null;
                 course_number: number;
+                fire_status: import("@prisma/client").$Enums.FireStatus;
+                seat_number: number | null;
                 order_id: string;
                 kot_id: string | null;
+                invoice_id: string | null;
             })[];
         } & {
             status: import("@prisma/client").$Enums.OrderStatus;
@@ -78,9 +90,20 @@ export declare class BillingController {
             order_type: import("@prisma/client").$Enums.OrderType;
             table_id: string | null;
             pax_count: number | null;
+            customer_id: string | null;
+            order_name: string | null;
+            brand_id: string | null;
+            source: string | null;
             aggregator_source: import("@prisma/client").$Enums.AggregatorSource | null;
             aggregator_order_id: string | null;
             external_ref: string | null;
+            is_tab_open: boolean;
+            tab_name: string | null;
+            queue_token_number: number | null;
+            customer_phone: string | null;
+            delivery_address: string | null;
+            estimated_time: Date | null;
+            tracking_status: import("@prisma/client").$Enums.OnlineTrackingStatus | null;
             settled_at: Date | null;
             outlet_id: string;
             waiter_id: string | null;
@@ -98,6 +121,9 @@ export declare class BillingController {
         }[];
     } & {
         id: string;
+        created_at: Date;
+        tenant_id: string;
+        total: number;
         order_id: string;
         printed_at: Date | null;
         invoice_number: string;
@@ -109,7 +135,7 @@ export declare class BillingController {
         discount: number;
         discount_type: import("@prisma/client").$Enums.DiscountType | null;
         discount_approved_by: string | null;
-        total: number;
+        updated_at: Date;
     }>;
     settleInvoice(req: any, id: string, dto: SettleInvoiceDto): Promise<{
         success: boolean;
@@ -158,6 +184,7 @@ export declare class BillingController {
             total_orders: number;
             void_orders: number;
             payment_summary: Record<string, number>;
+            source_summary: Record<string, number>;
             cash_expected: number;
             cash_variance: number;
         };
@@ -194,7 +221,7 @@ export declare class BillingController {
         })[];
     } & {
         id: string;
-        name: string;
         tenant_id: string;
+        name: string;
     })[]>;
 }

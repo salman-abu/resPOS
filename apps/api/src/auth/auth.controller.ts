@@ -1,4 +1,12 @@
-import { Controller, Post, Body, Get, Query, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  Query,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
@@ -16,39 +24,6 @@ export class AuthController {
   @Post('owner/login')
   async loginOwner(@Body() body: { email: string; pin: string }) {
     return this.authService.loginOwner(body.email, body.pin);
-  }
-
-  // ─── WebAuthn / Passkey (Phase 4.1) ──────────────────────────────────────────
-
-  @UseGuards(JwtAuthGuard)
-  @Get('passkey/register-options')
-  async registerOptions(@Req() req: any) {
-    return this.authService.generateRegistrationOptions(req.user.sub);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Post('passkey/verify-registration')
-  async verifyRegistration(@Req() req: any, @Body() body: any) {
-    return this.authService.verifyRegistration(req.user.sub, body);
-  }
-
-  @Post('passkey/login-options')
-  async loginOptions(@Body() body: { tenantId: string; userId: string }) {
-    return this.authService.generateAuthenticationOptions(
-      body.tenantId,
-      body.userId,
-    );
-  }
-
-  @Post('passkey/login-verify')
-  async loginVerify(
-    @Body() body: { tenantId: string; userId: string; response: any },
-  ) {
-    return this.authService.verifyAuthentication(
-      body.tenantId,
-      body.userId,
-      body.response,
-    );
   }
 
   @UseGuards(JwtAuthGuard)

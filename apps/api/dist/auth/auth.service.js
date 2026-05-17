@@ -41,18 +41,33 @@ var __importStar = (this && this.__importStar) || (function () {
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthService = void 0;
 const common_1 = require("@nestjs/common");
 const jwt_1 = require("@nestjs/jwt");
 const prisma_service_1 = require("../prisma/prisma.service");
+const audit_service_1 = require("../audit/audit.service");
 const bcrypt = __importStar(require("bcrypt"));
+const ioredis_1 = __importDefault(require("ioredis"));
+const ioredis_mock_1 = __importDefault(require("ioredis-mock"));
 let AuthService = class AuthService {
     prisma;
     jwtService;
-    constructor(prisma, jwtService) {
+    auditService;
+    redis;
+    constructor(prisma, jwtService, auditService) {
         this.prisma = prisma;
         this.jwtService = jwtService;
+        this.auditService = auditService;
+        if (process.env.MOCK_REDIS === 'true') {
+            this.redis = new ioredis_mock_1.default();
+        }
+        else {
+            this.redis = new ioredis_1.default(process.env.REDIS_URL || 'redis://localhost:6379');
+        }
     }
     async getTerminalInfo(tenantId) {
         const tenant = await this.prisma.tenant.findUnique({
@@ -113,11 +128,99 @@ let AuthService = class AuthService {
             },
         };
     }
+    async verifyManagerPin(tenantId, managerId, pin) {
+        const user = await this.prisma.user.findFirst({
+            where: { id: managerId, tenant_id: tenantId, is_active: true },
+        });
+        if (!user) {
+            await this.auditService
+                .log({
+                tenantId,
+                action: 'SCREEN_UNLOCKED',
+                entityType: 'USER',
+                entityId: managerId,
+                performedBy: managerId,
+                reason: 'Manager not found during PIN verification',
+            })
+                .catch(() => { });
+            throw new common_1.UnauthorizedException('Manager not found');
+        }
+        if (user.role !== 'MANAGER' && user.role !== 'OWNER') {
+            await this.auditService
+                .log({
+                tenantId,
+                action: 'SCREEN_UNLOCKED',
+                entityType: 'USER',
+                entityId: managerId,
+                performedBy: managerId,
+                reason: `Unauthorized role ${user.role} attempted PIN verification`,
+            })
+                .catch(() => { });
+            throw new common_1.UnauthorizedException('Only MANAGER or OWNER can authorize');
+        }
+        const isPinValid = await bcrypt.compare(pin, user.pin_hash);
+        if (!isPinValid) {
+            await this.auditService
+                .log({
+                tenantId,
+                action: 'SCREEN_UNLOCKED',
+                entityType: 'USER',
+                entityId: managerId,
+                performedBy: managerId,
+                reason: 'Invalid manager PIN',
+            })
+                .catch(() => { });
+            throw new common_1.UnauthorizedException('Invalid manager PIN');
+        }
+        const jti = crypto.randomUUID();
+        const payload = {
+            sub: user.id,
+            tenantId: user.tenant_id,
+            role: user.role,
+            purpose: 'manager_pin_auth',
+            jti,
+        };
+        const token = this.jwtService.sign(payload, { expiresIn: '2m' });
+        await this.redis.setex(`manager_auth:${jti}`, 120, 'true');
+        await this.auditService
+            .log({
+            tenantId,
+            action: 'SCREEN_UNLOCKED',
+            entityType: 'USER',
+            entityId: managerId,
+            performedBy: managerId,
+            reason: 'Manager PIN verified successfully',
+            newValue: { role: user.role, expires_in: 120 },
+        })
+            .catch(() => { });
+        return {
+            authorization_token: token,
+            manager_name: user.name,
+            expires_in: 120,
+        };
+    }
+    async validateManagerAuthToken(token) {
+        try {
+            const payload = this.jwtService.verify(token);
+            if (payload.purpose !== 'manager_pin_auth')
+                return false;
+            const key = `manager_auth:${payload.jti}`;
+            const exists = await this.redis.get(key);
+            if (!exists)
+                return false;
+            await this.redis.del(key);
+            return true;
+        }
+        catch {
+            return false;
+        }
+    }
 };
 exports.AuthService = AuthService;
 exports.AuthService = AuthService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        jwt_1.JwtService])
+        jwt_1.JwtService,
+        audit_service_1.AuditService])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map

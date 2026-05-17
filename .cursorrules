@@ -1,0 +1,52 @@
+# resPOS (NextGen Restaurant POS) - AI Agent Rules & Guidelines
+
+Welcome, AI Agent! You are working on **resPOS**, a production-grade, multi-tenant B2B Restaurant Point of Sale system. Please adhere to these guidelines to maintain a clean, stable, and highly performant codebase.
+
+---
+
+## 1. System & Architecture Overview
+
+This project is a monorepo structured via **PNPM Workspaces**:
+- **`apps/web`**: Next.js 14 (App Router) PWA frontend. Uses Zustand (state), Dexie.js (offline IndexedDB), and Tailwind CSS (styling).
+- **`apps/api`**: NestJS backend API with Prisma ORM and WebSockets (`socket.io`).
+- **`packages/db`**: Prisma schema and PostgreSQL database setup.
+- **`packages/types`**: Shared TypeScript interfaces/types between frontend and backend.
+- **`packages/utils`**: Shared helper functions.
+
+---
+
+## 2. Coding Guidelines & Standards
+
+### 2.1 General Rules
+- **TypeScript Only**: Avoid `any`. Define strict types/interfaces. Reuse types from `packages/types` whenever possible.
+- **Strict Linting**: Ensure there are no ESLint errors or Prettier formatting issues. Fix all warnings where possible.
+- **Atomic Commits**: Keep changes scoped and highly cohesive. Do not cross-mix feature boundaries in a single edit block.
+
+### 2.2 Frontend-Specific (`apps/web`)
+- **State Management**:
+  - Use **Zustand** for active client state (e.g., cart, active table, shift status).
+  - Use **Dexie.js** for IndexedDB menu caching and local offline drafting.
+  - Follow the **Offline-First Sync Pattern** (check `src/hooks/useSync.ts` for drafts syncing flow).
+- **UI/UX & Styling Guidelines**:
+  - **No Hardcoded Dark Theme Styles**: Do not use ad-hoc Tailwind styling like `bg-[#121212]`. Always use semantic CSS variables and tokens (e.g., `bg-background`, `text-foreground`, `border-border`).
+  - **Jakob's Law (70/30 Split)**: Keep the POS layout familiar with a 70% main grid (menus/tables) and a 30% sticky sidebar (cart/checkout).
+  - **"Fat-Finger" touch targets**: All interactive buttons, inputs, and checkboxes must have a minimum size of **44px x 44px** (i.e. `h-11`, `w-11` or minimum padding `p-3`) to support physical POS terminal cashiers.
+  - **Thermal Printing**: Keep receipt components modular and styled for printing using system CSS (Courier/Monospace, paper-width constraints).
+- **Imports**: Use absolute paths starting with `@/` mapped to the `src` directory (e.g., `import X from '@/components/ui/X'`).
+
+### 2.3 Backend-Specific (`apps/api`)
+- **NestJS Design Rules**:
+  - Keep controllers thin. Put business logic in service classes.
+  - Inject dependency services using NestJS DI container.
+- **Database & Prisma**:
+  - Use NestJS `PrismaService` for database queries.
+  - Use atomic database operations (`$transaction`) for recipe deductions and financial balance updates to prevent race conditions.
+  - Enforce tenant isolation strictly in controllers/services using the parsed request `tenantId`.
+
+---
+
+## 3. Workflow for Editing
+1. **Analyze Dependencies First**: When creating components, check if Shadcn UI components or existing common components are already installed in `apps/web/src/components/ui/`. Do not duplicate.
+2. **Verify Types**: Before editing NestJS services or Prisma schemas, run database generation commands (`pnpm -F db prisma generate`). Ensure `packages/types` is updated if data payloads change.
+3. **Verify Compliance**: Review the `APP_MANIFEST.md` and `RES_POS_FINAL_MANIFEST.md` files at the root of the workspace for comprehensive feature details.
+4. **Test & Build**: Run `pnpm -r run build` to verify that there are zero TypeScript compilation errors or build-time issues.

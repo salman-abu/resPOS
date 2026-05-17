@@ -460,12 +460,33 @@ async function main() {
   });
   console.log('✅ Super Admin seeded (admin@respos.com)');
 
+  // ── OnlineMenu (Storefront) ──────────────────────────────────────────────
+  await prisma.onlineMenu.upsert({
+    where: { slug: 'spice-garden' },
+    update: {},
+    create: {
+      tenant_id: tenant.id,
+      outlet_id: outlet.id,
+      slug: 'spice-garden',
+      restaurant_name: 'Spice Garden',
+      description: 'Authentic Indian flavours — Order online, pay on delivery',
+      is_published: true,
+      theme: { primaryColor: '#10B981', accentColor: '#F97316' },
+      delivery_zones: [
+        { label: 'Within 3 km', fee: 2900, minOrder: 25000 },
+        { label: '3-7 km', fee: 4900, minOrder: 35000 },
+      ],
+    },
+  });
+  console.log('✅ OnlineMenu seeded (slug: spice-garden)');
+
   console.log('\n🎉 Seed complete!');
   console.log(`\n📋 Login credentials:`);
   console.log(`   Owner: owner@spicegarden.com | PIN: 1234`);
   console.log(`   All staff PIN: 1234`);
   console.log(`   Tenant slug: spice-garden`);
   console.log(`   Super Admin: admin@respos.com | Password: admin123`);
+  console.log(`\n🛍️  Storefront: http://localhost:3000/order/spice-garden`);
 }
 
 main()

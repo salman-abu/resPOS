@@ -16,6 +16,8 @@ exports.SuperAdminController = void 0;
 const common_1 = require("@nestjs/common");
 const superadmin_service_1 = require("./superadmin.service");
 const superadmin_dto_1 = require("./superadmin.dto");
+const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
+const super_admin_guard_1 = require("../auth/guards/super-admin.guard");
 let SuperAdminController = class SuperAdminController {
     superAdminService;
     constructor(superAdminService) {
@@ -85,6 +87,7 @@ __decorate([
 ], SuperAdminController.prototype, "updateTenantSubscription", null);
 exports.SuperAdminController = SuperAdminController = __decorate([
     (0, common_1.Controller)('super-admin'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, super_admin_guard_1.SuperAdminGuard),
     __metadata("design:paramtypes", [superadmin_service_1.SuperAdminService])
 ], SuperAdminController);
 //# sourceMappingURL=superadmin.controller.js.map

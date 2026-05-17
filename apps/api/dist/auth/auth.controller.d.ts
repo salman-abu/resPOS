@@ -37,4 +37,13 @@ export declare class AuthController {
     } | {
         error: string;
     }>;
+    verifyManagerPin(body: {
+        tenantId: string;
+        managerId: string;
+        pin: string;
+    }): Promise<{
+        authorization_token: string;
+        manager_name: string;
+        expires_in: number;
+    }>;
 }

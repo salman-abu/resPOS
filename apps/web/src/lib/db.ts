@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import type { Category, MenuItem } from '@respos/types';
+import type { Category, MenuItem, OrderEvent } from '@respos/types';
 
 // ─── Offline Draft Order ──────────────────────────────────────────────────────
 
@@ -15,22 +15,65 @@ export interface DraftOrder {
   is_synced: boolean;
 }
 
+// ─── Event Sourcing ─────────────────────────────────────────────────────────────
+
+export interface LocalOrderEvent extends OrderEvent {
+  is_synced: boolean; // extra Dexie field
+}
+
+export interface LocalOrder {
+  id: string;
+  tenant_id: string;
+  table_id?: string;
+  order_type: string;
+  status: string;
+  items: string; // JSON CartItem[]
+  pax_count: number;
+  updated_at: number;
+  is_draft: boolean;
+}
+
+export interface TableStatusCache {
+  id: string; // table_id
+  tenant_id: string;
+  table_number: string;
+  status: string;
+  current_order_id?: string;
+  updated_at: number;
+}
+
+export interface SyncMetadata {
+  id?: number;
+  entity_type: 'orders' | 'menu' | 'tables' | 'events';
+  last_sync_at: number; // epoch ms
+}
+
 // ─── Database Definition ──────────────────────────────────────────────────────
 
 export class RestaurantPOSDatabase extends Dexie {
   categories!: Table<Category, string>;
   menu_items!: Table<MenuItem, string>;
   draft_orders!: Table<DraftOrder, number>;
+  order_events!: Table<LocalOrderEvent, string>;
+  orders!: Table<LocalOrder, string>;
+  table_status_cache!: Table<TableStatusCache, string>;
+  sync_metadata!: Table<SyncMetadata, number>;
 
   constructor() {
     super('RestaurantPOS');
 
     this.version(1).stores({
-      // Primary key is 'id' for categories and menu_items
       categories: 'id, tenant_id, is_active, sort_order',
       menu_items:
         'id, category_id, tenant_id, is_available, station_route, sort_order',
       draft_orders: '++id, order_id, table_id, is_synced, created_at',
+    });
+
+    this.version(2).stores({
+      order_events: 'id, order_id, event_type, is_synced, client_timestamp',
+      orders: 'id, tenant_id, table_id, status, updated_at',
+      table_status_cache: 'id, tenant_id, status, updated_at',
+      sync_metadata: '++id, entity_type, last_sync_at',
     });
   }
 }
@@ -40,7 +83,7 @@ export const db = new RestaurantPOSDatabase();
 // ─── Menu Cache Helpers ───────────────────────────────────────────────────────
 
 const CACHE_KEY = 'menu_cache_ts';
-const CACHE_TTL_MS = 1000 * 60 * 10; // 10 minutes
+const CACHE_TTL_MS = 1000 * 60 * 2; // 2 minutes
 
 export function isMenuCacheStale(): boolean {
   const ts = localStorage.getItem(CACHE_KEY);
@@ -88,6 +131,102 @@ export async function markDraftSynced(
   order_id: string,
 ): Promise<void> {
   await db.draft_orders.update(id, { is_synced: true, order_id });
+}
+
+export async function updateItemAvailability(
+  itemId: string,
+  isAvailable: boolean,
+): Promise<void> {
+  await db.menu_items.update(itemId, { is_available: isAvailable });
+}
+
+// ─── Order Events (Event Sourcing) ────────────────────────────────────────────
+
+export async function queueOrderEvent(
+  event: Omit<LocalOrderEvent, 'is_synced'>,
+): Promise<void> {
+  await db.order_events.put({ ...event, is_synced: false });
+}
+
+export async function getUnsyncedEvents(): Promise<LocalOrderEvent[]> {
+  return db.order_events
+    .where('is_synced')
+    .equals(0)
+    .sortBy('client_timestamp');
+}
+
+export async function getUnsyncedEventCount(): Promise<number> {
+  return db.order_events.where('is_synced').equals(0).count();
+}
+
+export async function markEventsSynced(eventIds: string[]): Promise<void> {
+  await db.order_events.bulkUpdate(
+    eventIds.map((id) => ({ key: id, changes: { is_synced: true } })),
+  );
+}
+
+export async function clearSyncedEvents(): Promise<void> {
+  await db.order_events.where('is_synced').equals(1).delete();
+}
+
+// ─── Local Orders (Canonical State) ───────────────────────────────────────────
+
+export async function upsertLocalOrder(order: LocalOrder): Promise<void> {
+  await db.orders.put(order);
+}
+
+export async function getLocalOrder(
+  orderId: string,
+): Promise<LocalOrder | undefined> {
+  return db.orders.get(orderId);
+}
+
+export async function getLocalOrdersByTable(
+  tableId: string,
+): Promise<LocalOrder[]> {
+  return db.orders.where('table_id').equals(tableId).toArray();
+}
+
+// ─── Table Status Cache ────────────────────────────────────────────────────────
+
+export async function upsertTableStatus(
+  status: TableStatusCache,
+): Promise<void> {
+  await db.table_status_cache.put(status);
+}
+
+export async function getCachedTableStatus(
+  tableId: string,
+): Promise<TableStatusCache | undefined> {
+  return db.table_status_cache.get(tableId);
+}
+
+// ─── Sync Metadata ──────────────────────────────────────────────────────────────
+
+export async function getLastSync(entityType: string): Promise<number> {
+  const meta = await db.sync_metadata
+    .where('entity_type')
+    .equals(entityType)
+    .first();
+  return meta?.last_sync_at ?? 0;
+}
+
+export async function setLastSync(
+  entityType: string,
+  timestamp: number,
+): Promise<void> {
+  const existing = await db.sync_metadata
+    .where('entity_type')
+    .equals(entityType)
+    .first();
+  if (existing?.id) {
+    await db.sync_metadata.update(existing.id, { last_sync_at: timestamp });
+  } else {
+    await db.sync_metadata.add({
+      entity_type: entityType as any,
+      last_sync_at: timestamp,
+    });
+  }
 }
 
 // ─── Demo Seed Data (used when API is offline) ────────────────────────────────

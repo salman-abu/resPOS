@@ -11,12 +11,14 @@ const common_1 = require("@nestjs/common");
 const billing_controller_1 = require("./billing.controller");
 const billing_service_1 = require("./billing.service");
 const prisma_module_1 = require("../prisma/prisma.module");
+const floor_plan_module_1 = require("../floor-plan/floor-plan.module");
+const loyalty_module_1 = require("../loyalty/loyalty.module");
 let BillingModule = class BillingModule {
 };
 exports.BillingModule = BillingModule;
 exports.BillingModule = BillingModule = __decorate([
     (0, common_1.Module)({
-        imports: [prisma_module_1.PrismaModule],
+        imports: [prisma_module_1.PrismaModule, floor_plan_module_1.FloorPlanModule, loyalty_module_1.LoyaltyModule],
         controllers: [billing_controller_1.BillingController],
         providers: [billing_service_1.BillingService],
         exports: [billing_service_1.BillingService],

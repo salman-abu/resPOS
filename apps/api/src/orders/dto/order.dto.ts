@@ -13,16 +13,31 @@ import { Type } from 'class-transformer';
 
 // ─── Order DTOs ───────────────────────────────────────────────────────────────
 
+export class CreateOrderItemAddonDto {
+  @IsString()
+  id: string;
+
+  @IsString()
+  name: string;
+
+  @IsInt()
+  price: number;
+
+  @IsOptional()
+  @IsString()
+  modifier_id?: string;
+}
+
 export class CreateOrderItemDto {
-  @IsUUID()
+  @IsString()
   item_id: string;
 
   @IsOptional()
-  @IsUUID()
+  @IsString()
   variant_id?: string;
 
-  @IsInt()
-  @Min(1)
+  @IsNumber()
+  @Min(0.1)
   quantity: number;
 
   @IsInt()
@@ -32,9 +47,25 @@ export class CreateOrderItemDto {
   @IsString()
   notes?: string;
 
+  @IsOptional()
   @IsInt()
   @Min(1)
   course_number: number = 1;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateOrderItemAddonDto)
+  addons?: CreateOrderItemAddonDto[];
+
+  @IsOptional()
+  @IsEnum(['HELD', 'FIRED'])
+  fire_status?: 'HELD' | 'FIRED';
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  seat_number?: number;
 }
 
 export class CreateOrderDto {
@@ -42,12 +73,28 @@ export class CreateOrderDto {
   order_type: 'DINE_IN' | 'TAKEAWAY' | 'DELIVERY' | 'AGGREGATOR';
 
   @IsOptional()
-  @IsUUID()
+  @IsString()
   table_id?: string;
 
   @IsOptional()
   @IsInt()
   pax_count?: number;
+
+  @IsOptional()
+  @IsString()
+  customer_id?: string;
+
+  @IsOptional()
+  @IsString()
+  order_name?: string;
+
+  @IsOptional()
+  @IsString()
+  brand_id?: string;
+
+  @IsOptional()
+  @IsString()
+  source?: string;
 
   @IsArray()
   @ValidateNested({ each: true })

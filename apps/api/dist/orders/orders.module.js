@@ -13,13 +13,14 @@ const orders_controller_1 = require("./orders.controller");
 const prisma_module_1 = require("../prisma/prisma.module");
 const kds_module_1 = require("../kds/kds.module");
 const inventory_module_1 = require("../inventory/inventory.module");
+const floor_plan_module_1 = require("../floor-plan/floor-plan.module");
 let OrdersModule = class OrdersModule {
 };
 exports.OrdersModule = OrdersModule;
 exports.OrdersModule = OrdersModule = __decorate([
     (0, common_1.Module)({
-        imports: [prisma_module_1.PrismaModule, kds_module_1.KdsModule, inventory_module_1.InventoryModule],
-        controllers: [orders_controller_1.OrdersController],
+        imports: [prisma_module_1.PrismaModule, kds_module_1.KdsModule, inventory_module_1.InventoryModule, floor_plan_module_1.FloorPlanModule],
+        controllers: [orders_controller_1.OrdersController, orders_controller_1.VoidJobController],
         providers: [orders_service_1.OrdersService],
         exports: [orders_service_1.OrdersService],
     })

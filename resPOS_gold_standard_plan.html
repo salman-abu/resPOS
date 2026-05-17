@@ -1,0 +1,417 @@
+
+<h2 class="sr-only">resPOS Gold Standard: Implementation Plan from 10+ Restaurant Owner Perspectives</h2>
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font-sans); }
+  .tabs { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 1.5rem; }
+  .tab { padding: 6px 14px; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-secondary); font-size: 13px; cursor: pointer; background: transparent; color: var(--color-text-secondary); transition: all .15s; }
+  .tab.active { background: var(--color-text-primary); color: var(--color-background-primary); border-color: transparent; }
+  .tab:hover:not(.active) { background: var(--color-background-secondary); }
+  .section { display: none; }
+  .section.active { display: block; }
+  .owner-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+  .owner-card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 14px; cursor: pointer; transition: border-color .15s; }
+  .owner-card:hover { border-color: var(--color-border-primary); }
+  .owner-card.selected { border: 1.5px solid var(--color-border-info); }
+  .owner-emoji { font-size: 24px; margin-bottom: 8px; }
+  .owner-type { font-size: 13px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 4px; }
+  .owner-tag { font-size: 11px; color: var(--color-text-info); background: var(--color-background-info); padding: 2px 8px; border-radius: 20px; display: inline-block; margin-bottom: 8px; }
+  .pain-list { list-style: none; }
+  .pain-list li { font-size: 12px; color: var(--color-text-secondary); padding: 3px 0; border-bottom: 0.5px solid var(--color-border-tertiary); display: flex; gap: 6px; align-items: flex-start; }
+  .pain-list li:last-child { border-bottom: none; }
+  .pain-list li::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--color-text-danger); margin-top: 5px; flex-shrink: 0; }
+  .detail-panel { background: var(--color-background-secondary); border-radius: var(--border-radius-lg); padding: 1.25rem; margin-top: 1rem; display: none; }
+  .detail-panel.visible { display: block; }
+  .detail-title { font-size: 15px; font-weight: 500; margin-bottom: 12px; color: var(--color-text-primary); }
+  .fix-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .fix-item { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 10px 12px; }
+  .fix-label { font-size: 11px; color: var(--color-text-success); font-weight: 500; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .04em; }
+  .fix-text { font-size: 13px; color: var(--color-text-primary); }
+  .ux-law-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  .law-card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; }
+  .law-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .law-badge { font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 20px; }
+  .law-name { font-size: 14px; font-weight: 500; color: var(--color-text-primary); }
+  .law-desc { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 10px; font-style: italic; }
+  .impl-list { display: flex; flex-direction: column; gap: 6px; }
+  .impl-item { font-size: 13px; color: var(--color-text-primary); padding: 6px 10px; background: var(--color-background-secondary); border-radius: var(--border-radius-md); display: flex; gap: 8px; align-items: flex-start; }
+  .impl-item i { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+  .phase-list { display: flex; flex-direction: column; gap: 16px; }
+  .phase { display: grid; grid-template-columns: 120px 1fr; gap: 16px; align-items: start; }
+  .phase-meta { text-align: right; }
+  .phase-num { font-size: 11px; font-weight: 500; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: .05em; }
+  .phase-time { font-size: 22px; font-weight: 500; color: var(--color-text-primary); line-height: 1.1; }
+  .phase-label { font-size: 11px; color: var(--color-text-secondary); }
+  .phase-body { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; }
+  .phase-title { font-size: 14px; font-weight: 500; margin-bottom: 8px; }
+  .phase-items { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { font-size: 12px; padding: 4px 10px; border-radius: 20px; border: 0.5px solid var(--color-border-secondary); color: var(--color-text-secondary); }
+  .chip.high { border-color: var(--color-border-danger); color: var(--color-text-danger); background: var(--color-background-danger); }
+  .chip.med { border-color: var(--color-border-warning); color: var(--color-text-warning); background: var(--color-background-warning); }
+  .chip.low { border-color: var(--color-border-success); color: var(--color-text-success); background: var(--color-background-success); }
+  .metric-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
+  .metric { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 12px; }
+  .metric-val { font-size: 22px; font-weight: 500; color: var(--color-text-primary); }
+  .metric-lbl { font-size: 12px; color: var(--color-text-secondary); margin-top: 2px; }
+  .divider { border: none; border-top: 0.5px solid var(--color-border-tertiary); margin: 1.25rem 0; }
+  .section-title { font-size: 13px; font-weight: 500; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 12px; }
+</style>
+
+<div style="padding: 1rem 0;">
+  <div class="metric-row">
+    <div class="metric"><div class="metric-val">12</div><div class="metric-lbl">restaurant types covered</div></div>
+    <div class="metric"><div class="metric-val">6</div><div class="metric-lbl">UX laws applied</div></div>
+    <div class="metric"><div class="metric-val">4</div><div class="metric-lbl">build phases</div></div>
+    <div class="metric"><div class="metric-val">32+</div><div class="metric-lbl">specific improvements</div></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showSection('owners')">Owner perspectives</button>
+    <button class="tab" onclick="showSection('uxlaws')">UX law mapping</button>
+    <button class="tab" onclick="showSection('roadmap')">Implementation roadmap</button>
+  </div>
+
+  <!-- OWNERS SECTION -->
+  <div class="section active" id="owners">
+    <p style="font-size:13px; color:var(--color-text-secondary); margin-bottom:1rem;">Click any restaurant type to see their specific pain points and recommended fixes.</p>
+    <div class="owner-grid" id="ownerGrid"></div>
+    <div class="detail-panel" id="detailPanel">
+      <div class="detail-title" id="detailTitle"></div>
+      <div class="fix-grid" id="fixGrid"></div>
+    </div>
+  </div>
+
+  <!-- UX LAWS SECTION -->
+  <div class="section" id="uxlaws">
+    <div class="ux-law-grid" id="lawGrid"></div>
+  </div>
+
+  <!-- ROADMAP SECTION -->
+  <div class="section" id="roadmap">
+    <p style="font-size:13px; color:var(--color-text-secondary); margin-bottom:1.25rem;">Priority-ranked implementation — highest UX impact first, validated by real operator pain points.</p>
+    <div class="phase-list" id="phaseList"></div>
+  </div>
+</div>
+
+<script>
+const owners = [
+  {
+    emoji:"🍔", type:"QSR / Fast food", tag:"Speed-critical",
+    pains:["Long queues frustrate customers","Staff make billing errors under pressure","No easy way to handle combos/offers","Customizations slow down order entry"],
+    fixes:[
+      {lbl:"Quick fix", txt:"One-tap combo builder with visual modifiers"},
+      {lbl:"Quick fix", txt:"Large, minimal order confirmation screen"},
+      {lbl:"Design win", txt:"Hotkey grid for top 12 items (Fitts's law)"},
+      {lbl:"Design win", txt:"Auto-suggest upsell chips on cart ('Add fries?')"}
+    ]
+  },
+  {
+    emoji:"🕯️", type:"Fine dining", tag:"Presentation-critical",
+    pains:["Guests notice staff using clunky screens","Slow printing delays course timing","No way to note allergies/preferences per guest","Split bills with partial wines cause confusion"],
+    fixes:[
+      {lbl:"Quick fix", txt:"Dark mode, dimmed UI for ambient lighting"},
+      {lbl:"Quick fix", txt:"Per-seat ordering & allergy flag on every line"},
+      {lbl:"Design win", txt:"Course sequencing: fire courses with delay timer"},
+      {lbl:"Design win", txt:"Elegant split-bill by guest, not just by item"}
+    ]
+  },
+  {
+    emoji:"🍛", type:"Casual / Family dining", tag:"Volume-critical",
+    pains:["Table status confusion during busy lunch","Wrong table gets food often","Modifications get lost in kitchen noise","Training new staff takes 2–3 days"],
+    fixes:[
+      {lbl:"Quick fix", txt:"Color-coded floor plan with last-order timer"},
+      {lbl:"Quick fix", txt:"KOT auto-prints table + seat number large"},
+      {lbl:"Design win", txt:"Staff onboarding mode: guided 5-minute walkthrough"},
+      {lbl:"Design win", txt:"One-tap 're-fire' for missed items"}
+    ]
+  },
+  {
+    emoji:"📦", type:"Cloud kitchen", tag:"Multi-brand-critical",
+    pains:["Zomato & Swiggy orders show up separately","No single view of all active orders","Packaging station doesn't know order status","Revenue across brands hard to compare"],
+    fixes:[
+      {lbl:"Quick fix", txt:"Unified order stream with brand color coding"},
+      {lbl:"Quick fix", txt:"Packaging station KDS role (separate from kitchen)"},
+      {lbl:"Design win", txt:"Side-by-side brand analytics on one screen"},
+      {lbl:"Design win", txt:"Auto-reject aggregator order if ingredient out-of-stock"}
+    ]
+  },
+  {
+    emoji:"🍵", type:"Café / Bakery", tag:"Loyalty-critical",
+    pains:["Regulars expect staff to 'remember' their order","Loyalty points system confuses cashiers","Bakery items run out but POS still shows them","Slow morning queues cost revenue"],
+    fixes:[
+      {lbl:"Quick fix", txt:"Customer card shows 'usual order' on phone lookup"},
+      {lbl:"Quick fix", txt:"Low-stock badge auto-hides items at 0 quantity"},
+      {lbl:"Design win", txt:"'Loyalty' tab always visible, not buried in settings"},
+      {lbl:"Design win", txt:"Express checkout: scan QR, auto-apply loyalty, pay"}
+    ]
+  },
+  {
+    emoji:"🍺", type:"Bar / Nightclub", tag:"Tab-critical",
+    pains:["Open tabs get confused between bartenders","Last call billing is chaotic","Staff can't verify age for orders easily","Heavy items on menu cause scroll fatigue"],
+    fixes:[
+      {lbl:"Quick fix", txt:"Named tab system with photo or colour ID"},
+      {lbl:"Quick fix", txt:"'Close all tabs' one-tap end-of-night mode"},
+      {lbl:"Design win", txt:"Drink-only menu as default; food behind one tap"},
+      {lbl:"Design win", txt:"Shift handover: transfer open tabs to next staff"}
+    ]
+  },
+  {
+    emoji:"🍽️", type:"Buffet restaurant", tag:"Billing-critical",
+    pains:["Counting guests in/out is error-prone","A la carte add-ons get lost","Children vs adult pricing causes disputes","Peak hour billing creates bottlenecks"],
+    fixes:[
+      {lbl:"Quick fix", txt:"Cover count input with adult/child split at check-in"},
+      {lbl:"Quick fix", txt:"Add-on items appended to cover-based bill cleanly"},
+      {lbl:"Design win", txt:"Pre-pay QR code at table entry kiosk"},
+      {lbl:"Design win", txt:"Real-time occupancy counter for owner dashboard"}
+    ]
+  },
+  {
+    emoji:"🚛", type:"Food truck", tag:"Mobile-critical",
+    pains:["No stable internet outdoors","Single operator handles orders & payments alone","Menu is small but items run out fast","End-of-day reconciliation is manual"],
+    fixes:[
+      {lbl:"Quick fix", txt:"Offline mode: full POS without any internet"},
+      {lbl:"Quick fix", txt:"86-item button: one tap to 'sold out' any item"},
+      {lbl:"Design win", txt:"Single-screen mode: cart + menu on one view"},
+      {lbl:"Design win", txt:"Auto-close shift & print summary at tap"}
+    ]
+  },
+  {
+    emoji:"🪔", type:"Dhaba / Local eatery", tag:"Simplicity-critical",
+    pains:["Owner/staff is not tech-literate","Hindi/regional language support missing","Cash is primary; digital is secondary","Receipts are often handwritten still"],
+    fixes:[
+      {lbl:"Quick fix", txt:"Regional language menu display & KOT printing"},
+      {lbl:"Quick fix", txt:"Icon-only mode: photos instead of text for menu"},
+      {lbl:"Design win", txt:"Calculator-style cash tendering (familiar UI)"},
+      {lbl:"Design win", txt:"Voice input for order entry (Hindi/Tamil/Kannada)"}
+    ]
+  },
+  {
+    emoji:"🌿", type:"Darshini / Self-service", tag:"Throughput-critical",
+    pains:["High volume means speed is everything","Token system needs to integrate with KDS","No way to handle partial self-service","Cashier and server are different people"],
+    fixes:[
+      {lbl:"Quick fix", txt:"Token number auto-printed on every KOT"},
+      {lbl:"Quick fix", txt:"KDS 'READY' triggers token display board update"},
+      {lbl:"Design win", txt:"Pre-order kiosk mode for self-serve counter"},
+      {lbl:"Design win", txt:"Role split: cashier fires order, server marks served"}
+    ]
+  },
+  {
+    emoji:"🎉", type:"Banquet / Events", tag:"Pre-booking-critical",
+    pains:["Advance bookings and deposits aren't tracked","Large party bills span multiple tables","No way to handle set menus per booking","Staff assigned to events don't know the order"],
+    fixes:[
+      {lbl:"Quick fix", txt:"Booking module with deposit tracking & balance due"},
+      {lbl:"Quick fix", txt:"Merge tables into one bill in a single tap"},
+      {lbl:"Design win", txt:"Event set-menu: fire all courses on schedule"},
+      {lbl:"Design win", txt:"Event briefing screen for staff with guest notes"}
+    ]
+  },
+  {
+    emoji:"🏢", type:"Multi-outlet chain", tag:"Oversight-critical",
+    pains:["Owner can't see all outlets at once","No way to push menu changes to all branches","Inconsistent pricing between outlets","Staff performance varies, hard to track"],
+    fixes:[
+      {lbl:"Quick fix", txt:"Central dashboard: all outlets, live GMV & covers"},
+      {lbl:"Quick fix", txt:"Menu sync: push changes to selected branches"},
+      {lbl:"Design win", txt:"Per-outlet benchmarking vs chain average"},
+      {lbl:"Design win", txt:"Item velocity heatmap across branches"}
+    ]
+  }
+];
+
+const laws = [
+  {
+    name:"Doherty threshold", badge:"< 400ms", badgeColor:"var(--color-background-success)", badgeText:"var(--color-text-success)",
+    desc:"Productivity soars when neither human nor computer waits on the other.",
+    items:[
+      {icon:"ti-database", txt:"Menu cached in IndexedDB; every tap responds in < 80ms regardless of network"},
+      {icon:"ti-zap", txt:"Optimistic KDS updates: item struck through instantly, server confirms silently"},
+      {icon:"ti-printer", txt:"Thermal bill renders in React, prints in < 300ms — no driver round-trip"},
+      {icon:"ti-layout-grid", txt:"Floor plan loads from local cache; real-time patches via WebSocket deltas only"}
+    ]
+  },
+  {
+    name:"Fitts's law", badge:"Big targets", badgeColor:"var(--color-background-warning)", badgeText:"var(--color-text-warning)",
+    desc:"Time to reach a target is a function of distance and target size.",
+    items:[
+      {icon:"ti-coin", txt:"'Pay' button spans full bottom width (360px+), never a small inline button"},
+      {icon:"ti-check", txt:"KDS 'Bump' button: minimum 80×80px, bottom-right corner on every KOT card"},
+      {icon:"ti-keypad", txt:"PIN pad digits: 72px minimum — cashiers punch by feel, not sight"},
+      {icon:"ti-fire-hydrant", txt:"'Fire order' CTA pinned bottom-center; never reachable only by scrolling"}
+    ]
+  },
+  {
+    name:"Hick's law", badge:"Fewer choices", badgeColor:"var(--color-background-info)", badgeText:"var(--color-text-info)",
+    desc:"Decision time grows logarithmically with the number of choices.",
+    items:[
+      {icon:"ti-category", txt:"Menu collapsed to category tiles first; items only appear after category tap"},
+      {icon:"ti-credit-card", txt:"Payment: show UPI/Cash as default tiles; 'More options' reveals Card/Split"},
+      {icon:"ti-adjustments", txt:"Staff role UI hides non-relevant screens — kitchen sees only KDS, cashier sees only POS"},
+      {icon:"ti-search", txt:"Smart search with instant filter: type 3 letters to jump to any menu item"}
+    ]
+  },
+  {
+    name:"Jakob's law", badge:"Use conventions", badgeColor:"var(--color-background-secondary)", badgeText:"var(--color-text-secondary)",
+    desc:"Users prefer your app to work like every other app they know.",
+    items:[
+      {icon:"ti-layout-sidebar", txt:"70/30 split: menu grid left, cart/ticket right — mirrors every known POS"},
+      {icon:"ti-circle", txt:"Table colors: green = available, red = occupied, amber = billed, grey = dirty — universal"},
+      {icon:"ti-receipt", txt:"KOT format mirrors physical paper receipt — station, table, items, modifiers, time"},
+      {icon:"ti-calculator", txt:"Cash tendering uses calculator-style input — familiar to every cashier in India"}
+    ]
+  },
+  {
+    name:"Miller's law", badge:"7 ± 2 chunks", badgeColor:"var(--color-background-danger)", badgeText:"var(--color-text-danger)",
+    desc:"Working memory holds only ~7 items at once.",
+    items:[
+      {icon:"ti-list", txt:"KOT card: max 7 items visible before virtual scroll — never an overwhelming wall"},
+      {icon:"ti-highlight", txt:"Modifiers visually chunked with bold color — chef scans, not reads"},
+      {icon:"ti-chart-bar", txt:"Z-Report shows 4 numbers prominently: Expected / Actual / Variance / Float"},
+      {icon:"ti-layers", txt:"Dashboard max 6 KPI tiles on overview; drill-down reveals detail on demand"}
+    ]
+  },
+  {
+    name:"Zeigarnik effect", badge:"Close loops", badgeColor:"var(--color-background-info)", badgeText:"var(--color-text-info)",
+    desc:"People remember incomplete tasks better than completed ones.",
+    items:[
+      {icon:"ti-circle-check", txt:"Bumped KOTs disappear from KDS entirely — completed items create zero visual noise"},
+      {icon:"ti-bell", txt:"Pending bill notifications persist in header until settled — open loop stays visible"},
+      {icon:"ti-clock", txt:"'Order aging' timer on KOT cards turns amber → red — shows urgency without interruption"},
+      {icon:"ti-arrow-right", txt:"Shift close blocked until all open tabs are settled — forces loop closure"}
+    ]
+  }
+];
+
+const phases = [
+  {
+    num:"Phase 1", time:"Wk 1–3", label:"Foundation",
+    title:"Core UX hardening — make the basics bulletproof",
+    items:[
+      {t:"Fitts: Full-width Pay + Bump buttons", p:"high"},
+      {t:"Hick: Category-first menu navigation", p:"high"},
+      {t:"Jakob: Standard 70/30 POS layout", p:"high"},
+      {t:"Regional language support (Hindi/Tamil)", p:"high"},
+      {t:"Icon-only menu display option", p:"high"},
+      {t:"Offline mode: full order capability with no internet", p:"high"}
+    ]
+  },
+  {
+    num:"Phase 2", time:"Wk 4–6", label:"Speed & Clarity",
+    title:"Speed & feedback — hit the Doherty threshold everywhere",
+    items:[
+      {t:"Doherty: Sub-100ms menu interactions via IndexedDB", p:"med"},
+      {t:"Optimistic KDS bump animations", p:"med"},
+      {t:"Miller: KOT max-7 items + modifier highlight", p:"med"},
+      {t:"Order aging timers (amber/red states)", p:"med"},
+      {t:"86-item one-tap sold-out button", p:"med"},
+      {t:"Floor plan real-time color states via WebSocket", p:"med"}
+    ]
+  },
+  {
+    num:"Phase 3", time:"Wk 7–10", label:"Operator Personas",
+    title:"Role-specific interfaces — one system, many faces",
+    items:[
+      {t:"Cloud kitchen: unified order stream + brand tags", p:"med"},
+      {t:"Bar: named tabs with shift handover", p:"med"},
+      {t:"Buffet: cover count with adult/child split", p:"low"},
+      {t:"Banquet: booking + deposit + event briefing screen", p:"low"},
+      {t:"Darshini: token system + KDS token board sync", p:"low"},
+      {t:"Per-role UI: cashier/kitchen/owner sees different nav", p:"med"}
+    ]
+  },
+  {
+    num:"Phase 4", time:"Wk 11–14", label:"Intelligence",
+    title:"Intelligence layer — proactive, not reactive",
+    items:[
+      {t:"Auto-hide sold-out items across all terminals", p:"low"},
+      {t:"Customer 'usual order' on phone lookup", p:"low"},
+      {t:"Central multi-outlet dashboard with live GMV", p:"low"},
+      {t:"Menu sync: push changes to all branches at once", p:"low"},
+      {t:"Item velocity heatmap by hour + day", p:"low"},
+      {t:"Staff onboarding: guided 5-minute interactive tour", p:"low"}
+    ]
+  }
+];
+
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+function selectOwner(idx) {
+  document.querySelectorAll('.owner-card').forEach((c,i) => {
+    c.classList.toggle('selected', i === idx);
+  });
+  const o = owners[idx];
+  const panel = document.getElementById('detailPanel');
+  const title = document.getElementById('detailTitle');
+  const fixGrid = document.getElementById('fixGrid');
+  title.textContent = o.emoji + ' ' + o.type + ' — specific improvements';
+  fixGrid.innerHTML = o.fixes.map(f => `
+    <div class="fix-item">
+      <div class="fix-label">${f.lbl}</div>
+      <div class="fix-text">${f.txt}</div>
+    </div>
+  `).join('');
+  panel.classList.add('visible');
+}
+
+function renderOwners() {
+  const grid = document.getElementById('ownerGrid');
+  grid.innerHTML = owners.map((o, i) => `
+    <div class="owner-card" onclick="selectOwner(${i})">
+      <div class="owner-emoji">${o.emoji}</div>
+      <div class="owner-type">${o.type}</div>
+      <div class="owner-tag">${o.tag}</div>
+      <ul class="pain-list">
+        ${o.pains.map(p => `<li>${p}</li>`).join('')}
+      </ul>
+    </div>
+  `).join('');
+}
+
+function renderLaws() {
+  const grid = document.getElementById('lawGrid');
+  grid.innerHTML = laws.map(l => `
+    <div class="law-card">
+      <div class="law-header">
+        <span class="law-badge" style="background:${l.badgeColor}; color:${l.badgeText}">${l.badge}</span>
+        <span class="law-name">${l.name}</span>
+      </div>
+      <div class="law-desc">"${l.desc}"</div>
+      <div class="impl-list">
+        ${l.items.map(it => `
+          <div class="impl-item">
+            <i class="ti ${it.icon}" aria-hidden="true"></i>
+            <span>${it.txt}</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderRoadmap() {
+  const list = document.getElementById('phaseList');
+  list.innerHTML = phases.map(p => `
+    <div class="phase">
+      <div class="phase-meta">
+        <div class="phase-num">${p.num}</div>
+        <div class="phase-time">${p.time}</div>
+        <div class="phase-label">${p.label}</div>
+      </div>
+      <div class="phase-body">
+        <div class="phase-title">${p.title}</div>
+        <div class="phase-items">
+          ${p.items.map(it => `<span class="chip ${it.p}">${it.t}</span>`).join('')}
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+renderOwners();
+renderLaws();
+renderRoadmap();
+</script>

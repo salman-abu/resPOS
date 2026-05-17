@@ -32,58 +32,58 @@ const INSIGHT_META: Record<
   hot: {
     emoji: '🔥',
     label: 'Trending',
-    border: 'before:bg-orange-500',
-    bg: 'bg-orange-50  border-orange-100',
-    badge: 'bg-orange-100 text-orange-700',
+    border: 'before:bg-warning-default',
+    bg: 'bg-warning-light border-warning-light',
+    badge: 'bg-warning-light text-warning-default',
   },
   cold: {
     emoji: '📉',
     label: 'Slow Item',
-    border: 'before:bg-slate-400',
-    bg: 'bg-slate-50   border-slate-100',
-    badge: 'bg-slate-100  text-slate-600',
+    border: 'before:bg-content-muted',
+    bg: 'bg-surface-sunken border-border-subtle',
+    badge: 'bg-surface-sunken text-content-muted',
   },
   revenue: {
     emoji: '💰',
     label: 'Opportunity',
-    border: 'before:bg-emerald-500',
-    bg: 'bg-emerald-50 border-emerald-100',
-    badge: 'bg-emerald-100 text-emerald-700',
+    border: 'before:bg-success-default',
+    bg: 'bg-success-light border-success-light',
+    badge: 'bg-success-light text-success-default',
   },
   warning: {
     emoji: '⚠️',
     label: 'Alert',
-    border: 'before:bg-amber-500',
-    bg: 'bg-amber-50   border-amber-100',
-    badge: 'bg-amber-100  text-amber-700',
+    border: 'before:bg-warning-default',
+    bg: 'bg-warning-light border-warning-light',
+    badge: 'bg-warning-light text-warning-default',
   },
   time: {
     emoji: '⏰',
     label: 'Time Insight',
-    border: 'before:bg-blue-500',
-    bg: 'bg-blue-50    border-blue-100',
-    badge: 'bg-blue-100   text-blue-700',
+    border: 'before:bg-brand-default',
+    bg: 'bg-brand-light border-brand-light',
+    badge: 'bg-brand-light text-brand-default',
   },
   staff: {
     emoji: '👥',
     label: 'Staff',
-    border: 'before:bg-violet-500',
-    bg: 'bg-violet-50  border-violet-100',
-    badge: 'bg-violet-100 text-violet-700',
+    border: 'before:bg-info-default',
+    bg: 'bg-info-light border-info-light',
+    badge: 'bg-info-light text-info-default',
   },
   win: {
     emoji: '🌟',
     label: 'Win!',
-    border: 'before:bg-yellow-500',
-    bg: 'bg-yellow-50  border-yellow-100',
-    badge: 'bg-yellow-100 text-yellow-700',
+    border: 'before:bg-warning-default',
+    bg: 'bg-warning-light border-warning-light',
+    badge: 'bg-warning-light text-warning-default',
   },
   tip: {
     emoji: '💡',
     label: 'Growth Tip',
-    border: 'before:bg-cyan-500',
-    bg: 'bg-cyan-50    border-cyan-100',
-    badge: 'bg-cyan-100   text-cyan-700',
+    border: 'before:bg-brand-default',
+    bg: 'bg-brand-light border-brand-light',
+    badge: 'bg-brand-light text-brand-default',
   },
 };
 
@@ -144,7 +144,7 @@ export function InsightCard({
 
 export function InsightCardSkeleton() {
   return (
-    <div className="rounded-xl border border-border bg-white py-4 px-4 space-y-2 animate-pulse">
+    <div className="rounded-xl border border-border bg-surface-card py-4 px-4 space-y-2 animate-pulse">
       <div className="flex gap-3">
         <div className="h-6 w-6 skeleton rounded-lg" />
         <div className="flex-1 space-y-2">

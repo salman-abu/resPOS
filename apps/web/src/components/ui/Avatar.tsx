@@ -10,14 +10,14 @@ interface AvatarProps {
 
 // Deterministic color from name
 const AVATAR_COLORS = [
-  'bg-violet-600',
-  'bg-orange-500',
-  'bg-blue-600',
-  'bg-emerald-600',
-  'bg-rose-600',
-  'bg-amber-600',
-  'bg-cyan-600',
-  'bg-indigo-600',
+  'bg-brand-default',
+  'bg-success-default',
+  'bg-warning-default',
+  'bg-danger-default',
+  'bg-info-default',
+  'bg-brand-strong',
+  'bg-brand-500',
+  'bg-brand-400',
 ];
 
 function colorFromName(name: string): string {
@@ -72,7 +72,7 @@ export function Avatar({
       {showOnline && (
         <div
           className={cn(
-            'absolute -bottom-0.5 -right-0.5 rounded-full bg-emerald-500 border-white',
+            'absolute -bottom-0.5 -right-0.5 rounded-full bg-success-default border-surface-card',
             DOT_CLS[size],
           )}
         />

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Building2, Server, TrendingUp, Users } from 'lucide-react';
+import { API_BASE } from '@/lib/api';
 
 export default function SuperAdminDashboard() {
   const [stats, setStats] = useState<Record<string, number> | null>(null);
@@ -11,8 +12,7 @@ export default function SuperAdminDashboard() {
   useEffect(() => {
     async function fetchStats() {
       try {
-        const apiUrl =
-          process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+        const apiUrl = API_BASE;
         const token = localStorage.getItem('super_admin_token');
         const res = await fetch(`${apiUrl}/super-admin/stats`, {
           headers: {

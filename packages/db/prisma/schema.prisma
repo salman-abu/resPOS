@@ -65,6 +65,7 @@ enum OrderType {
   TAKEAWAY
   DELIVERY
   AGGREGATOR
+  ONLINE
 }
 
 enum OrderStatus {
@@ -101,6 +102,11 @@ enum KotStatus {
   CANCELLED
 }
 
+enum FireStatus {
+  HELD
+  FIRED
+}
+
 enum DiscountType {
   PERCENT
   FLAT
@@ -134,6 +140,12 @@ enum AuditAction {
   SHIFT_CLOSE
   ITEM_86
   PRICE_CHANGE
+  CASH_DRAWER_OPEN
+  TABLE_TRANSFER
+  SCREEN_LOCKED
+  SCREEN_UNLOCKED
+  PAYMENT_SETTLED
+  INVOICE_SPLIT
 }
 
 enum IngredientUnit {
@@ -150,6 +162,35 @@ enum POStatus {
   SENT
   RECEIVED
   CANCELLED
+}
+
+enum LoyaltyTier {
+  BRONZE
+  SILVER
+  GOLD
+  PLATINUM
+}
+
+enum LoyaltyTxType {
+  EARN
+  REDEEM
+  EXPIRE
+}
+
+
+enum OnlineTrackingStatus {
+  PLACED
+  ACCEPTED
+  PREPARING
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+}
+
+enum StaffScheduleStatus {
+  SCHEDULED
+  PRESENT
+  ABSENT
 }
 
 model Tenant {
@@ -183,6 +224,36 @@ model Tenant {
   purchase_orders  PurchaseOrder[]
   customers        Customer[]
   aggregator_menus AggregatorMenu[]
+  loyalty_txs      LoyaltyTransaction[]
+  loyalty_config   LoyaltyConfig?
+  online_menus     OnlineMenu[]
+  composite_items  CompositeItem[]
+  bookings         Booking[]
+  invoices         Invoice[]
+}
+
+enum BookingStatus {
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+model Booking {
+  id             String        @id @default(uuid())
+  tenant_id      String
+  tenant         Tenant        @relation(fields: [tenant_id], references: [id])
+  customer_id    String?
+  customer       Customer?     @relation(fields: [customer_id], references: [id])
+  event_name     String
+  event_date     DateTime
+  guest_count    Int
+  deposit_amount Int           @default(0)
+  notes          String?       // Event briefing screen content
+  status         BookingStatus @default(CONFIRMED)
+  order_id       String?       @unique
+  order          Order?        @relation(fields: [order_id], references: [id])
+  created_at     DateTime      @default(now())
+  updated_at     DateTime      @updatedAt
 }
 
 model User {
@@ -196,10 +267,12 @@ model User {
   pin_hash  String
   is_active Boolean @default(true)
 
-  waiter_orders  Order[] @relation("waiter_orders")
-  captain_orders Order[] @relation("captain_orders")
-  kots_fired     KOT[]   @relation("kot_fired_by")
-  shifts         Shift[] @relation("shift_cashier")
+  waiter_orders  Order[]         @relation("waiter_orders")
+  captain_orders Order[]         @relation("captain_orders")
+  kots_fired     KOT[]           @relation("kot_fired_by")
+  shifts         Shift[]         @relation("shift_cashier")
+  schedules      StaffSchedule[]
+  attendances    Attendance[]
 }
 
 model Outlet {
@@ -207,6 +280,7 @@ model Outlet {
   tenant_id          String
   tenant             Tenant   @relation(fields: [tenant_id], references: [id])
   name               String
+  outlet_code        String?
   address            String?
   state_code         String?
   is_central_kitchen Boolean  @default(false)
@@ -217,6 +291,9 @@ model Outlet {
   orders          Order[]
   shifts          Shift[]
   purchase_orders PurchaseOrder[]
+  schedules       StaffSchedule[]
+  attendances     Attendance[]
+  online_menus    OnlineMenu[]
 }
 
 model Category {
@@ -249,11 +326,12 @@ model Item {
   station_route StationRoute
   sort_order    Int          @default(0)
 
-  variants    Variant[]
-  addons      Addon[]
-  combo_meals ComboMealItem[]
-  order_items OrderItem[]
-  recipes     Recipe[]
+  variants        Variant[]
+  addons          Addon[]
+  modifier_groups ModifierGroup[]
+  combo_meals     ComboMealItem[]
+  order_items     OrderItem[]
+  recipes         Recipe[]
 }
 
 model Variant {
@@ -313,6 +391,9 @@ model Table {
   current_order_id String?
 
   orders Order[]
+
+  @@index([tenant_id, status], map: "idx_table_tenant_status")
+  @@index([zone_id], map: "idx_table_zone")
 }
 
 model Order {
@@ -333,12 +414,34 @@ model Order {
   aggregator_order_id String?
   external_ref        String?
   pax_count           Int?
-  created_at          DateTime          @default(now())
-  settled_at          DateTime?
+  is_tab_open         Boolean           @default(false)
+  tab_name            String?
+  customer_id         String?
+  customer            Customer?         @relation(fields: [customer_id], references: [id])
+  queue_token_number  Int?
+  order_name          String?
+  brand_id            String?
+  source              String? // For Cloud Kitchen unified streams
+
+  // Online Order specific fields
+  customer_phone   String?
+  delivery_address String?
+  estimated_time   DateTime?
+  tracking_status  OnlineTrackingStatus?
+
+  created_at DateTime  @default(now())
+  settled_at DateTime?
 
   order_items OrderItem[]
   kots        KOT[]
   invoices    Invoice[]
+  loyalty_txs LoyaltyTransaction[]
+  booking     Booking?
+
+  @@index([tenant_id, status], map: "idx_order_tenant_status")
+  @@index([tenant_id, table_id, status], map: "idx_order_tenant_table_status")
+  @@index([tenant_id, created_at], map: "idx_order_tenant_created")
+  @@index([outlet_id, status], map: "idx_order_outlet_status")
 }
 
 model OrderItem {
@@ -349,13 +452,63 @@ model OrderItem {
   item          Item            @relation(fields: [item_id], references: [id])
   variant_id    String?
   variant       Variant?        @relation(fields: [variant_id], references: [id])
-  quantity      Int
+  quantity      Float
   unit_price    Int
   notes         String?
   course_number Int             @default(1)
   status        OrderItemStatus @default(PENDING)
   kot_id        String?
   kot           KOT?            @relation(fields: [kot_id], references: [id])
+  fire_status   FireStatus      @default(FIRED)
+  seat_number   Int?
+  invoice_id    String?
+  invoice       Invoice?        @relation(fields: [invoice_id], references: [id])
+
+  addons OrderItemAddon[]
+
+  @@index([order_id, status], map: "idx_order_item_order_status")
+  @@index([invoice_id], map: "idx_order_item_invoice")
+}
+
+model OrderItemAddon {
+  id            String    @id @default(uuid())
+  order_item_id String
+  order_item    OrderItem @relation(fields: [order_item_id], references: [id])
+  addon_id      String
+  name          String
+  price         Int
+  modifier_id   String?
+}
+
+model ModifierGroup {
+  id          String     @id @default(uuid())
+  item_id     String
+  item        Item       @relation(fields: [item_id], references: [id])
+  name        String
+  is_required Boolean    @default(false)
+  min_select  Int        @default(0)
+  max_select  Int        @default(1)
+  sort_order  Int        @default(0)
+  modifiers   Modifier[]
+}
+
+model Modifier {
+  id               String        @id @default(uuid())
+  group_id         String
+  group            ModifierGroup @relation(fields: [group_id], references: [id])
+  name             String
+  price_adjustment Int           @default(0)
+  is_available     Boolean       @default(true)
+  sort_order       Int           @default(0)
+}
+
+model CompositeItem {
+  id         String @id @default(uuid())
+  tenant_id  String
+  tenant     Tenant @relation(fields: [tenant_id], references: [id])
+  name       String
+  base_price Int
+  components Json
 }
 
 model KOT {
@@ -372,10 +525,14 @@ model KOT {
   fired_by    User         @relation("kot_fired_by", fields: [fired_by_id], references: [id])
 
   items OrderItem[]
+
+  @@index([tenant_id, station, status], map: "idx_kot_tenant_station_status")
 }
 
 model Invoice {
   id                   String        @id @default(uuid())
+  tenant_id            String
+  tenant               Tenant        @relation(fields: [tenant_id], references: [id])
   order_id             String
   order                Order         @relation(fields: [order_id], references: [id])
   invoice_number       String        @unique
@@ -390,7 +547,13 @@ model Invoice {
   total                Int
   printed_at           DateTime?
 
-  payments Payment[]
+  payments    Payment[]
+  order_items OrderItem[]
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([tenant_id, order_id], map: "idx_invoice_tenant_order")
 }
 
 model Payment {
@@ -420,6 +583,10 @@ model Shift {
   opened_at     DateTime    @default(now())
   closed_at     DateTime?
   z_report_data Json?
+
+  attendances Attendance[]
+
+  @@index([tenant_id, status], map: "idx_shift_tenant_status")
 }
 
 model AuditLog {
@@ -436,6 +603,8 @@ model AuditLog {
   new_value     Json?
   ip_address    String?
   created_at    DateTime    @default(now())
+
+  @@index([tenant_id, action, created_at], map: "idx_audit_tenant_action_date")
 }
 
 model Ingredient {
@@ -473,32 +642,39 @@ model Vendor {
 }
 
 model PurchaseOrder {
-  id         String   @id @default(uuid())
+  id         String    @id @default(uuid())
   tenant_id  String
-  tenant     Tenant   @relation(fields: [tenant_id], references: [id])
+  tenant     Tenant    @relation(fields: [tenant_id], references: [id])
   vendor_id  String
-  vendor     Vendor   @relation(fields: [vendor_id], references: [id])
+  vendor     Vendor    @relation(fields: [vendor_id], references: [id])
   outlet_id  String
-  outlet     Outlet   @relation(fields: [outlet_id], references: [id])
-  status     POStatus @default(DRAFT)
+  outlet     Outlet    @relation(fields: [outlet_id], references: [id])
+  status     POStatus  @default(DRAFT)
   total      Int
   items      Json
   created_by String
-  created_at DateTime @default(now())
+  is_paid    Boolean   @default(false)
+  due_date   DateTime?
+  created_at DateTime  @default(now())
 }
 
 model Customer {
-  id             String    @id @default(uuid())
+  id             String      @id @default(uuid())
   tenant_id      String
-  tenant         Tenant    @relation(fields: [tenant_id], references: [id])
+  tenant         Tenant      @relation(fields: [tenant_id], references: [id])
   name           String
   mobile         String
   email          String?
-  total_visits   Int       @default(0)
-  total_spent    Int       @default(0)
-  loyalty_points Int       @default(0)
+  total_visits   Int         @default(0)
+  total_spent    Int         @default(0)
+  loyalty_points Int         @default(0)
+  tier           LoyaltyTier @default(BRONZE)
   birthday       DateTime?
   last_visit_at  DateTime?
+
+  loyalty_txs LoyaltyTransaction[]
+  orders      Order[]
+  bookings    Booking[]
 }
 
 model AggregatorMenu {
@@ -530,3 +706,79 @@ model SuperAdmin {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 }
+
+model LoyaltyTransaction {
+  id          String        @id @default(uuid())
+  tenant_id   String
+  tenant      Tenant        @relation(fields: [tenant_id], references: [id])
+  customer_id String
+  customer    Customer      @relation(fields: [customer_id], references: [id])
+  order_id    String?
+  order       Order?        @relation(fields: [order_id], references: [id])
+  type        LoyaltyTxType
+  points      Int
+  created_at  DateTime      @default(now())
+}
+
+model LoyaltyConfig {
+  id               String   @id @default(uuid())
+  tenant_id        String   @unique
+  tenant           Tenant   @relation(fields: [tenant_id], references: [id])
+  points_per_rupee Float    @default(0)
+  rupees_per_point Float    @default(0)
+  redeem_threshold Int      @default(0)
+  tier_thresholds  Json     @default("{}")
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+}
+
+
+model StaffSchedule {
+  id         String              @id @default(uuid())
+  user_id    String
+  user       User                @relation(fields: [user_id], references: [id])
+  outlet_id  String
+  outlet     Outlet              @relation(fields: [outlet_id], references: [id])
+  date       DateTime            @db.Date
+  start_time String // Format: HH:mm
+  end_time   String // Format: HH:mm
+  role       Role
+  status     StaffScheduleStatus @default(SCHEDULED)
+  created_at DateTime            @default(now())
+  updated_at DateTime            @updatedAt
+}
+
+model Attendance {
+  id        String    @id @default(uuid())
+  user_id   String
+  user      User      @relation(fields: [user_id], references: [id])
+  outlet_id String
+  outlet    Outlet    @relation(fields: [outlet_id], references: [id])
+  clock_in  DateTime  @default(now())
+  clock_out DateTime?
+  shift_id  String?
+  shift     Shift?    @relation(fields: [shift_id], references: [id])
+}
+
+model OnlineMenu {
+  id              String   @id @default(uuid())
+  tenant_id       String
+  tenant          Tenant   @relation(fields: [tenant_id], references: [id])
+  outlet_id       String
+  outlet          Outlet   @relation(fields: [outlet_id], references: [id])
+  slug            String   @unique
+  restaurant_name String?
+  logo_url        String?
+  banner_url      String?
+  description     String?
+  is_published    Boolean  @default(false)
+  theme           Json?    // e.g., { primaryColor, accentColor }
+  delivery_zones  Json?    // Array of { label, fee, minOrder }
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+}
+
+// ─── Performance Indexes ──────────────────────────────────────────────────────
+
+// Order lookups by tenant + status (active orders, billing, dashboards)
+// (These are placed directly on the Order model below)

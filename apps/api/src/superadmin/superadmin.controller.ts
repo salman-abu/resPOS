@@ -1,4 +1,12 @@
-import { Controller, Get, Patch, Param, Body, Post, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Param,
+  Body,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { SuperAdminService } from './superadmin.service';
 import { SuperAdminLoginDto, UpdateSubscriptionDto } from './superadmin.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';

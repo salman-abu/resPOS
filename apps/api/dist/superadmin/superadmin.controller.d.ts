@@ -25,8 +25,9 @@ export declare class SuperAdminController {
         };
     } & {
         id: string;
-        slug: string;
+        created_at: Date;
         name: string;
+        slug: string;
         gstin: string | null;
         state_code: string | null;
         address: string | null;
@@ -36,12 +37,12 @@ export declare class SuperAdminController {
         subscription_ends_at: Date | null;
         settings: import("@prisma/client/runtime/library").JsonValue | null;
         is_active: boolean;
-        created_at: Date;
     })[]>;
     toggleTenantStatus(id: string, is_active: boolean): Promise<{
         id: string;
-        slug: string;
+        created_at: Date;
         name: string;
+        slug: string;
         gstin: string | null;
         state_code: string | null;
         address: string | null;
@@ -51,7 +52,6 @@ export declare class SuperAdminController {
         subscription_ends_at: Date | null;
         settings: import("@prisma/client/runtime/library").JsonValue | null;
         is_active: boolean;
-        created_at: Date;
     }>;
     impersonateTenant(id: string): Promise<{
         access_token: string;
@@ -59,8 +59,9 @@ export declare class SuperAdminController {
     }>;
     updateTenantSubscription(id: string, body: UpdateSubscriptionDto): Promise<{
         id: string;
-        slug: string;
+        created_at: Date;
         name: string;
+        slug: string;
         gstin: string | null;
         state_code: string | null;
         address: string | null;
@@ -70,6 +71,5 @@ export declare class SuperAdminController {
         subscription_ends_at: Date | null;
         settings: import("@prisma/client/runtime/library").JsonValue | null;
         is_active: boolean;
-        created_at: Date;
     }>;
 }

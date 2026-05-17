@@ -13,6 +13,8 @@ export declare class RecordPaymentDto {
 }
 export declare class SettleInvoiceDto {
     payments: RecordPaymentDto[];
+    customer_id?: string;
+    redeem_points?: number;
 }
 export declare class OpenShiftDto {
     opening_float: number;

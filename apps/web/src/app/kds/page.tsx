@@ -21,6 +21,8 @@ import {
   Loader2,
 } from 'lucide-react';
 import { useKdsSocket, KdsTicket } from '@/lib/kds-socket';
+import { API_BASE } from '@/lib/api';
+import { getAuthToken } from '@respos/utils';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -58,10 +60,10 @@ const STATION_CFG: Record<
   BAR: {
     label: 'Bar',
     icon: <Wine className="h-4 w-4" />,
-    bg: 'bg-violet-950/60',
-    border: 'border-violet-800',
-    accent: 'text-violet-400',
-    header: 'bg-violet-900/70',
+    bg: 'bg-fuchsia-950/60',
+    border: 'border-fuchsia-800',
+    accent: 'text-fuchsia-400',
+    header: 'bg-fuchsia-900/70',
   },
   BAKERY: {
     label: 'Bakery',
@@ -75,22 +77,21 @@ const STATION_CFG: Record<
 
 // ─── Demo data ────────────────────────────────────────────────────────────────
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+const API_URL = API_BASE;
 
 function getAuthHeader(): Record<string, string> {
   if (typeof window === 'undefined') return {};
-  const token = localStorage.getItem('rpos_token'); // Ensure this matches your auth storage
+  const token = getAuthToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
 function getTenantId(): string {
-  // Decode JWT or get from local storage. For now, defaulting or extracting.
   if (typeof window === 'undefined') return '';
-  const token = localStorage.getItem('rpos_token');
+  const token = getAuthToken();
   if (!token) return '';
   try {
     const payload = JSON.parse(atob(token.split('.')[1]));
-    return payload.tenantId || ''; // Adjust based on your JWT payload structure
+    return payload.tenantId || '';
   } catch {
     return '';
   }
@@ -109,15 +110,15 @@ function fmtElapsed(secs: number): string {
 }
 
 function urgencyClass(secs: number): string {
-  if (secs < 600) return 'text-emerald-400';
+  if (secs < 600) return 'text-lime-400';
   if (secs < 1200) return 'text-amber-400';
-  return 'text-red-400';
+  return 'text-rose-400';
 }
 
-function urgencyBg(secs: number): string {
+function urgencyBorder(secs: number): string {
   if (secs < 600) return '';
-  if (secs < 1200) return 'ring-1 ring-amber-500/40';
-  return 'ring-2 ring-red-500/60 shadow-red-900/40 shadow-lg';
+  if (secs < 1200) return 'border-2 border-amber-500/40';
+  return 'border-2 border-rose-500/60';
 }
 
 // ─── Ticket Card ──────────────────────────────────────────────────────────────
@@ -145,11 +146,11 @@ function TicketCard({
   return (
     <div
       className={cn(
-        'flex flex-col rounded-2xl border overflow-hidden transition-all duration-300',
+        'flex flex-col border-2 overflow-hidden transition-all duration-300',
         'kds-card-enter',
         cfg.bg,
         cfg.border,
-        urgencyBg(secs),
+        urgencyBorder(secs),
       )}
     >
       {/* Card Header */}
@@ -161,31 +162,34 @@ function TicketCard({
       >
         <div className="flex items-center gap-2">
           {ticket.priority && (
-            <AlertTriangle className="h-3.5 w-3.5 text-red-400 animate-pulse" />
+            <AlertTriangle className="h-3.5 w-3.5 text-rose-400 animate-pulse" />
           )}
           <span className={cn('font-black text-base', cfg.accent)}>
             {ticket.order_type === 'DINE_IN'
               ? `T-${ticket.table_number || '?'}`
               : ticket.order_type.slice(0, 2)}
           </span>
-          <span className="text-slate-400 text-xs font-mono">
+          <span className="text-slate-400 text-xs font-mono tracking-tight">
             {ticket.order_id}
           </span>
         </div>
         <div className="flex items-center gap-2">
           <span
-            className={cn('text-xs font-bold font-mono', urgencyClass(secs))}
+            className={cn(
+              'text-xs font-black font-mono tracking-tight',
+              urgencyClass(secs),
+            )}
           >
-            ⏱ {fmtElapsed(secs)}
+            {fmtElapsed(secs)}
           </span>
           <span
             className={cn(
-              'text-[10px] font-bold px-2 py-0.5 rounded-full',
+              'text-[10px] font-black px-2 py-0.5 uppercase tracking-wider',
               ticket.status === 'PREPARING'
-                ? 'bg-amber-500/20 text-amber-400'
+                ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
                 : ticket.status === 'READY'
-                  ? 'bg-emerald-500/20 text-emerald-400'
-                  : 'bg-slate-700 text-slate-400',
+                  ? 'bg-lime-500/20 text-lime-400 border border-lime-500/30'
+                  : 'bg-slate-700 text-slate-400 border border-slate-600',
             )}
           >
             {ticket.status === 'PREPARING'
@@ -197,8 +201,8 @@ function TicketCard({
         </div>
       </div>
 
-      {/* Items */}
-      <div className="flex-1 px-3.5 py-3 space-y-2.5">
+      {/* Items (Miller's Law: max-7 items visible, scrollable) */}
+      <div className="flex-1 px-3.5 py-3 space-y-2.5 max-h-[350px] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700">
         {ticket.items.map((item) => {
           const isDone = item.status === 'READY' || item.status === 'SERVED';
           return (
@@ -206,21 +210,21 @@ function TicketCard({
               key={item.id}
               onClick={() => onToggleItem(ticket.id, item.id, isDone)}
               className={cn(
-                'w-full flex items-start gap-3 rounded-xl px-3 py-2.5 text-left transition-all duration-200 press',
+                'w-full flex items-start gap-3 px-3 py-2.5 text-left transition-all duration-75 active:scale-[0.98]',
                 isDone
                   ? 'bg-slate-800/60 opacity-50'
-                  : 'bg-slate-800/80 hover:bg-slate-700/80',
+                  : 'bg-slate-800/80 active:bg-slate-700/80',
               )}
             >
               <div
                 className={cn(
-                  'h-5 w-5 rounded-md border-2 flex-shrink-0 mt-0.5 flex items-center justify-center transition-colors',
-                  isDone
-                    ? 'bg-emerald-500 border-emerald-500'
-                    : 'border-slate-500',
+                  'h-5 w-5 border-2 flex-shrink-0 mt-0.5 flex items-center justify-center transition-colors',
+                  isDone ? 'bg-lime-500 border-lime-500' : 'border-slate-500',
                 )}
               >
-                {isDone && <CheckCircle2 className="h-3.5 w-3.5 text-white" />}
+                {isDone && (
+                  <CheckCircle2 className="h-3.5 w-3.5 text-slate-900" />
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
@@ -234,24 +238,35 @@ function TicketCard({
                   </span>
                   <span
                     className={cn(
-                      'text-xs font-black px-1.5 py-0.5 rounded-md flex-shrink-0',
+                      'text-xs font-black px-1.5 py-0.5 flex-shrink-0 border-2',
                       isDone
-                        ? 'bg-slate-700 text-slate-500'
-                        : 'bg-slate-600 text-slate-200',
+                        ? 'bg-slate-700 text-slate-500 border-slate-600'
+                        : 'bg-slate-600 text-slate-200 border-slate-500',
                     )}
                   >
                     ×{item.quantity}
                   </span>
+                  {item.seat_number && (
+                    <span className="text-[10px] font-black px-1.5 py-0.5 bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 ml-auto uppercase tracking-wider">
+                      S{item.seat_number}
+                    </span>
+                  )}
                 </div>
-                {item.variant && (
-                  <p className="text-slate-400 text-xs mt-0.5">
-                    {item.variant}
-                  </p>
-                )}
-                {item.notes && (
-                  <p className="text-amber-400 text-xs mt-0.5 flex items-center gap-1">
-                    <span>📝</span> {item.notes}
-                  </p>
+
+                {/* Modifier Highlights */}
+                {(item.variant || item.notes) && (
+                  <div className="flex flex-wrap gap-1.5 mt-1.5">
+                    {item.variant && (
+                      <span className="inline-block px-1.5 py-0.5 bg-cyan-500/10 text-cyan-300 text-[10px] font-bold uppercase tracking-wider border border-cyan-500/30">
+                        {item.variant}
+                      </span>
+                    )}
+                    {item.notes && (
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-amber-500/10 text-amber-300 text-[10px] font-bold uppercase tracking-wider border border-amber-500/30">
+                        <span>N</span> {item.notes}
+                      </span>
+                    )}
+                  </div>
                 )}
               </div>
             </button>
@@ -263,18 +278,18 @@ function TicketCard({
       {ticket.items.length > 1 && (
         <div className="px-3.5 pb-2">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-slate-500 text-[10px]">
+            <span className="text-slate-500 text-[10px] font-black uppercase tracking-wider">
               {doneCount}/{ticket.items.length} items
             </span>
-            <span className="text-slate-500 text-[10px]">
+            <span className="text-slate-500 text-[10px] font-black font-mono tracking-tight">
               {Math.round((doneCount / ticket.items.length) * 100)}%
             </span>
           </div>
-          <div className="h-1 bg-slate-800 rounded-full overflow-hidden">
+          <div className="h-1 bg-slate-800 overflow-hidden">
             <div
               className={cn(
-                'h-full rounded-full transition-all duration-500',
-                allDone ? 'bg-emerald-500' : 'bg-amber-500',
+                'h-full transition-all duration-500',
+                allDone ? 'bg-lime-500' : 'bg-amber-500',
               )}
               style={{ width: `${(doneCount / ticket.items.length) * 100}%` }}
             />
@@ -287,10 +302,10 @@ function TicketCard({
         <button
           onClick={() => onBump(ticket.id)}
           className={cn(
-            'w-full py-2.5 rounded-xl text-sm font-black transition-all duration-200 press flex items-center justify-center gap-2',
+            'w-full py-2.5 text-sm font-black uppercase tracking-widest transition-all duration-75 flex items-center justify-center gap-2 active:scale-[0.97]',
             allDone
-              ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/40'
-              : 'bg-slate-700 hover:bg-slate-600 text-slate-200',
+              ? 'bg-lime-500 text-slate-900 border-2 border-lime-400 active:bg-lime-400'
+              : 'bg-slate-700 text-slate-200 border-2 border-slate-600 active:bg-slate-600',
           )}
         >
           <CheckCircle2 className="h-4 w-4" />
@@ -306,18 +321,19 @@ function TicketCard({
 export default function KDSPage() {
   const [tickets, setTickets] = useState<KdsTicket[]>([]);
   const [station, setStation] = useState<Station>('ALL');
-  // tick state removed — secs computed inline from Date.now() on each render
   const [muted, setMuted] = useState(false);
   const [bumped, setBumped] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   const tenantId = useMemo(() => getTenantId(), []);
-  const token =
-    typeof window !== 'undefined'
-      ? (localStorage.getItem('rpos_token') ?? undefined)
-      : undefined;
+  const token = getAuthToken() || undefined;
 
-  // No live-clock interval needed - elapsed() reads Date.now() each render
+  // Force re-render every 10 seconds to update aging timers live
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => setTick((t) => t + 1), 10000);
+    return () => clearInterval(timer);
+  }, []);
 
   const playAlert = useCallback(() => {
     if (!muted) {
@@ -337,7 +353,6 @@ export default function KDSPage() {
     onNewKot: useCallback(
       (kot: KdsTicket) => {
         setTickets((prev) => {
-          // Prevent duplicates
           if (prev.some((t) => t.id === kot.id)) return prev;
           return [kot, ...prev];
         });
@@ -386,8 +401,6 @@ export default function KDSPage() {
       );
       if (res.ok) {
         const data = await res.json();
-        // Transform backend response to match KdsTicket structure if needed
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const formattedData: KdsTicket[] = data.map((kot: any) => ({
           id: kot.id,
           kot_number: kot.kot_number,
@@ -398,7 +411,6 @@ export default function KDSPage() {
           table_number: kot.order?.table?.table_number,
           pax_count: kot.order?.pax_count,
           created_at: kot.printed_at || new Date().toISOString(),
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           items: kot.items.map((i: any) => ({
             id: i.id,
             name: i.item.name,
@@ -406,6 +418,7 @@ export default function KDSPage() {
             quantity: i.quantity,
             notes: i.notes,
             status: i.status,
+            seat_number: i.seat_number,
           })),
         }));
         setTickets(formattedData);
@@ -422,14 +435,12 @@ export default function KDSPage() {
   }, [fetchActiveKots]);
 
   const handleBump = useCallback(async (id: string) => {
-    // Optimistic UI
     setBumped((prev) => [...prev, id]);
     setTimeout(() => {
       setTickets((prev) => prev.filter((t) => t.id !== id));
       setBumped((prev) => prev.filter((b) => b !== id));
     }, 400);
 
-    // API call
     try {
       await fetch(`${API_URL}/kds/kot/${id}/bump`, {
         method: 'PATCH',
@@ -437,7 +448,6 @@ export default function KDSPage() {
       });
     } catch (e) {
       console.error('Failed to bump KOT', e);
-      // Could revert optimistic update here on error
     }
   }, []);
 
@@ -445,7 +455,6 @@ export default function KDSPage() {
     async (ticketId: string, itemId: string, currentDone: boolean) => {
       const newDoneState = !currentDone;
 
-      // Optimistic UI
       setTickets((prev) =>
         prev.map((t) => {
           if (t.id !== ticketId) return t;
@@ -464,13 +473,12 @@ export default function KDSPage() {
           let newStatus = t.status;
           if (allDone) newStatus = 'READY';
           else if (anyDone) newStatus = 'PREPARING';
-          else newStatus = 'PRINTED'; // Or whatever default is appropriate
+          else newStatus = 'PRINTED';
 
           return { ...t, items, status: newStatus };
         }),
       );
 
-      // API call
       try {
         await fetch(`${API_URL}/kds/kot/${ticketId}/item/${itemId}`, {
           method: 'PATCH',
@@ -482,7 +490,6 @@ export default function KDSPage() {
         });
       } catch (e) {
         console.error('Failed to toggle item', e);
-        // Could revert here on error
       }
     },
     [],
@@ -529,37 +536,39 @@ export default function KDSPage() {
   return (
     <div className="flex flex-col h-screen bg-slate-950 overflow-hidden">
       {/* ── Top Bar ────────────────────────────────────────────────────────── */}
-      <header className="flex-shrink-0 flex items-center gap-4 px-5 py-3 bg-slate-900 border-b border-slate-800">
+      <header className="flex-shrink-0 flex items-center gap-4 px-5 py-3 bg-slate-900 border-b-2 border-slate-800">
         {/* Brand */}
         <div className="flex items-center gap-2.5">
-          <div className="h-8 w-8 rounded-xl bg-orange-600 flex items-center justify-center">
+          <div className="h-8 w-8 bg-orange-600 flex items-center justify-center border-2 border-orange-500">
             <ChefHat className="h-4 w-4 text-white" />
           </div>
           <div className="hidden sm:block">
-            <p className="text-white font-black text-sm leading-none">
+            <p className="text-white font-black text-sm leading-none uppercase tracking-widest">
               Kitchen Display
             </p>
-            <p className="text-slate-500 text-[10px]">resPOS</p>
+            <p className="text-slate-500 text-[10px] font-mono tracking-tight">
+              resPOS
+            </p>
           </div>
           <div className="flex items-center gap-2">
             {socketStatus === 'connected' ? (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-lime-500/10 text-lime-400 border border-lime-500/30">
                 <Wifi className="h-3 w-3" />
-                <span className="text-[10px] font-bold uppercase tracking-wider hidden sm:block">
+                <span className="text-[10px] font-black uppercase tracking-wider hidden sm:block">
                   Live
                 </span>
               </div>
             ) : socketStatus === 'connecting' ? (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/30">
                 <Loader2 className="h-3 w-3 animate-spin" />
-                <span className="text-[10px] font-bold uppercase tracking-wider hidden sm:block">
+                <span className="text-[10px] font-black uppercase tracking-wider hidden sm:block">
                   Connecting
                 </span>
               </div>
             ) : (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-500/20 text-red-400 border border-red-500/30">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-rose-500/10 text-rose-400 border border-rose-500/30">
                 <WifiOff className="h-3 w-3" />
-                <span className="text-[10px] font-bold uppercase tracking-wider hidden sm:block">
+                <span className="text-[10px] font-black uppercase tracking-wider hidden sm:block">
                   Offline
                 </span>
               </div>
@@ -569,34 +578,55 @@ export default function KDSPage() {
 
         {/* Stats */}
         <div className="flex items-center gap-3 ml-2">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 border-2 border-slate-700">
             <div
               className={cn(
-                'h-2 w-2 rounded-full',
-                pending > 0 ? 'bg-orange-500 animate-pulse' : 'bg-emerald-500',
+                'h-2 w-2',
+                pending > 0 ? 'bg-orange-500 animate-pulse' : 'bg-lime-500',
               )}
             />
-            <span className="text-white font-bold text-sm">{pending}</span>
-            <span className="text-slate-400 text-xs">pending</span>
+            <span
+              className="text-white font-black text-sm font-mono"
+              style={{ fontVariantNumeric: 'tabular-nums' }}
+            >
+              {pending}
+            </span>
+            <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">
+              pending
+            </span>
           </div>
-          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700">
+          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 border-2 border-slate-700">
             <Clock className="h-3.5 w-3.5 text-slate-400" />
-            <span className={cn('font-bold text-sm', urgencyClass(avgSecs))}>
+            <span
+              className={cn(
+                'font-black text-sm font-mono tracking-tight',
+                urgencyClass(avgSecs),
+              )}
+            >
               {fmtElapsed(avgSecs)}
             </span>
-            <span className="text-slate-400 text-xs">avg wait</span>
+            <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">
+              avg wait
+            </span>
           </div>
-          <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700">
+          <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 border-2 border-slate-700">
             <AlertTriangle
               className={cn(
                 'h-3.5 w-3.5',
-                oldest > 1200 ? 'text-red-400' : 'text-slate-400',
+                oldest > 1200 ? 'text-rose-400' : 'text-slate-400',
               )}
             />
-            <span className={cn('font-bold text-sm', urgencyClass(oldest))}>
+            <span
+              className={cn(
+                'font-black text-sm font-mono tracking-tight',
+                urgencyClass(oldest),
+              )}
+            >
               {fmtElapsed(oldest)}
             </span>
-            <span className="text-slate-400 text-xs">longest</span>
+            <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">
+              longest
+            </span>
           </div>
         </div>
 
@@ -612,10 +642,10 @@ export default function KDSPage() {
                 key={key}
                 onClick={() => setStation(key)}
                 className={cn(
-                  'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200',
+                  'flex items-center gap-1.5 px-3 py-1.5 text-xs font-black uppercase tracking-wider transition-all duration-75 border-2 active:scale-[0.97]',
                   station === key
-                    ? 'bg-white text-slate-900 shadow-md'
-                    : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200',
+                    ? 'bg-slate-100 text-slate-900 border-slate-100'
+                    : 'bg-slate-800 text-slate-400 border-slate-700 active:bg-slate-700 active:text-slate-200',
                 )}
               >
                 {icon}
@@ -623,7 +653,7 @@ export default function KDSPage() {
                 {cnt > 0 && (
                   <span
                     className={cn(
-                      'h-4 min-w-[1rem] px-1 rounded-full text-[10px] font-black flex items-center justify-center',
+                      'h-4 min-w-[1rem] px-1 text-[10px] font-black flex items-center justify-center',
                       station === key
                         ? 'bg-slate-900 text-white'
                         : 'bg-slate-700 text-slate-300',
@@ -641,7 +671,7 @@ export default function KDSPage() {
         <div className="flex items-center gap-2 ml-auto">
           <button
             onClick={() => setMuted((v) => !v)}
-            className="h-8 w-8 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 hover:text-slate-200 transition-colors"
+            className="h-8 w-8 bg-slate-800 border-2 border-slate-700 flex items-center justify-center text-slate-400 active:bg-slate-700 active:text-slate-100 active:scale-[0.92] transition-all"
             title={muted ? 'Unmute alerts' : 'Mute alerts'}
           >
             {muted ? (
@@ -652,14 +682,14 @@ export default function KDSPage() {
           </button>
           <a
             href="/dashboard"
-            className="h-8 w-8 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 hover:text-slate-200 transition-colors"
+            className="h-8 w-8 bg-slate-800 border-2 border-slate-700 flex items-center justify-center text-slate-400 active:bg-slate-700 active:text-slate-100 active:scale-[0.92] transition-all"
             title="Dashboard"
           >
             <BarChart3 className="h-4 w-4" />
           </a>
           <a
             href="/pos"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700 text-xs font-semibold transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 border-2 border-slate-700 text-slate-300 active:text-white active:bg-slate-700 text-xs font-black uppercase tracking-wider active:scale-[0.92] transition-all"
           >
             POS <ArrowRight className="h-3.5 w-3.5" />
           </a>
@@ -673,12 +703,14 @@ export default function KDSPage() {
         </div>
       ) : visible.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center">
-          <div className="h-20 w-20 rounded-3xl bg-slate-800 flex items-center justify-center">
-            <CheckCircle2 className="h-10 w-10 text-emerald-500" />
+          <div className="h-20 w-20 bg-slate-800 border-2 border-slate-700 flex items-center justify-center">
+            <CheckCircle2 className="h-10 w-10 text-lime-500" />
           </div>
           <div>
-            <p className="text-white font-bold text-xl">All caught up!</p>
-            <p className="text-slate-500 text-sm mt-1">
+            <p className="text-white font-black text-xl uppercase tracking-widest">
+              All caught up!
+            </p>
+            <p className="text-slate-500 text-sm mt-1 font-bold uppercase tracking-wider">
               No pending tickets for this station
             </p>
           </div>
@@ -707,21 +739,23 @@ export default function KDSPage() {
       )}
 
       {/* ── Bottom Legend ───────────────────────────────────────────────────── */}
-      <div className="flex-shrink-0 flex items-center justify-center gap-6 px-5 py-2 bg-slate-900/80 border-t border-slate-800">
+      <div className="flex-shrink-0 flex items-center justify-center gap-6 px-5 py-2 bg-slate-900/80 border-t-2 border-slate-800">
         <div className="flex items-center gap-2 text-xs text-slate-500">
-          <div className="h-2 w-2 rounded-full bg-emerald-500" />
-          <span>&lt;10 min</span>
+          <div className="h-2 w-2 bg-lime-500" />
+          <span className="font-bold uppercase tracking-wider">&lt;10 min</span>
         </div>
         <div className="flex items-center gap-2 text-xs text-slate-500">
-          <div className="h-2 w-2 rounded-full bg-amber-500" />
-          <span>10-20 min</span>
+          <div className="h-2 w-2 bg-amber-500" />
+          <span className="font-bold uppercase tracking-wider">10-20 min</span>
         </div>
         <div className="flex items-center gap-2 text-xs text-slate-500">
-          <div className="h-2 w-2 rounded-full bg-red-500" />
-          <span>&gt;20 min ⚠️</span>
+          <div className="h-2 w-2 bg-rose-500" />
+          <span className="font-bold uppercase tracking-wider">
+            &gt;20 min ⚠️
+          </span>
         </div>
         <span className="text-slate-600 text-xs">|</span>
-        <span className="text-slate-500 text-xs">
+        <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">
           Tap item to mark done · Tap BUMP when served
         </span>
       </div>

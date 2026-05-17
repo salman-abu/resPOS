@@ -8,56 +8,51 @@ import type {
   CartAddon,
   OrderType,
 } from '@respos/types';
+import { calculateCartGST } from '@respos/utils';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function makeCartLineId(item_id: string, variant_id?: string): string {
-  return variant_id ? `${item_id}__${variant_id}` : item_id;
+function makeCartLineId(
+  item_id: string,
+  variant_id?: string,
+  addons?: CartAddon[],
+): string {
+  let id = variant_id ? `${item_id}__${variant_id}` : item_id;
+  if (addons && addons.length > 0) {
+    const addonStr = [...addons]
+      .sort((a, b) => a.id.localeCompare(b.id))
+      .map((a) => a.id)
+      .join('_');
+    id += `__${addonStr}`;
+  }
+  return id;
 }
-
-// ─── Tax Rate Map ─────────────────────────────────────────────────────────────
-
-const TAX_RATES: Record<string, number> = {
-  EXEMPT: 0,
-  GST_5: 5,
-  GST_12: 12,
-  GST_18: 18,
-  GST_28: 28,
-};
 
 // ─── Cart Derived Calculations ────────────────────────────────────────────────
 
-export function calcCartTotals(items: CartItem[]) {
+export function calcCartTotals(items: CartItem[], redeemPoints = 0, rate = 0, serviceChargeRate = 0) {
+  // Pass items to GST engine
+  const gstResult = calculateCartGST(items, { is_igst: false });
+
   const subtotal = items.reduce(
     (sum, i) => sum + (i.unit_price + i.addons_total) * i.quantity,
     0,
   );
 
-  // Per-item tax breakdown
-  let cgst = 0;
-  let sgst = 0;
-
-  items.forEach((i) => {
-    const rate = TAX_RATES[i.tax_slab] ?? 0;
-    const lineTotal = (i.unit_price + i.addons_total) * i.quantity;
-    const taxAmount = Math.round(lineTotal * (rate / 100));
-    cgst += taxAmount / 2;
-    sgst += taxAmount / 2;
-  });
-
-  const service_charge = 0; // configurable per tenant
-  const discount = 0;
-  const total =
-    subtotal + Math.round(cgst) + Math.round(sgst) + service_charge - discount;
+  const service_charge = Math.round(subtotal * (serviceChargeRate / 100)); // configurable per tenant
+  const discountFromPoints = Math.round(redeemPoints * rate * 100);
 
   return {
     subtotal,
-    cgst: Math.round(cgst),
-    sgst: Math.round(sgst),
-    igst: 0,
+    cgst: gstResult.cgst,
+    sgst: gstResult.sgst,
+    igst: gstResult.igst,
     service_charge,
-    discount,
-    total,
+    discount: discountFromPoints,
+    total: Math.max(
+      0,
+      gstResult.grand_total + service_charge - discountFromPoints,
+    ),
     item_count: items.reduce((s, i) => s + i.quantity, 0),
   };
 }
@@ -69,6 +64,7 @@ interface CartActions {
   setTable: (id: string, number: string) => void;
   clearTable: () => void;
   setPaxCount: (count: number) => void;
+  setPaxSplit: (adults: number, children: number) => void;
   addItem: (
     item: MenuItem,
     variant?: Variant,
@@ -80,7 +76,22 @@ interface CartActions {
   updateNotes: (cartLineId: string, notes: string) => void;
   updateCourse: (cartLineId: string, course: number) => void;
   clearCart: () => void;
-  setActiveOrderId: (id: string) => void;
+  clearItems: () => void; // clears items only — preserves active_order_id and table context
+  setActiveOrderId: (id: string | undefined) => void;
+  setCustomer: (
+    customer: {
+      id: string;
+      name: string;
+      mobile: string;
+      points: number;
+    } | null,
+  ) => void;
+  setRedeemPoints: (points: number) => void;
+  setRupeesPerPoint: (rate: number) => void;
+  setServiceChargeRate: (rate: number) => void;
+  hydrateCart: (orderItems: CartItem[]) => void;
+  toggleHold: (cartLineId: string) => void;
+  updateSeat: (cartLineId: string, seat?: number) => void;
 }
 
 type CartStore = CartState & CartActions;
@@ -90,10 +101,16 @@ type CartStore = CartState & CartActions;
 const initialState: CartState = {
   order_type: 'DINE_IN',
   pax_count: 1,
+  adult_pax: 1,
+  child_pax: 0,
   items: [],
   active_order_id: undefined,
   table_id: undefined,
   table_number: undefined,
+  customer: null,
+  redeem_points: 0,
+  rupees_per_point: 0,
+  service_charge_rate: 0,
 };
 
 // ─── Zustand Store ────────────────────────────────────────────────────────────
@@ -111,9 +128,18 @@ export const useCartStore = create<CartStore>()(
 
       setPaxCount: (count) => set({ pax_count: count }),
 
+      setPaxSplit: (adults, children) =>
+        set({
+          adult_pax: adults,
+          child_pax: children,
+          pax_count: adults + children,
+        }),
+
+      setServiceChargeRate: (rate) => set({ service_charge_rate: rate }),
+
       addItem: (item, variant, addons = [], quantity = 1) => {
         set((state) => {
-          const cartLineId = makeCartLineId(item.id, variant?.id);
+          const cartLineId = makeCartLineId(item.id, variant?.id, addons);
           const existing = state.items.find((i) => i.cartLineId === cartLineId);
 
           const unit_price = item.base_price + (variant?.additional_price ?? 0);
@@ -141,6 +167,7 @@ export const useCartStore = create<CartStore>()(
             unit_price,
             quantity,
             course_number: 1,
+            fire_status: 'FIRED',
             addons,
             addons_total,
           };
@@ -154,7 +181,10 @@ export const useCartStore = create<CartStore>()(
           const items = state.items
             .map((i) =>
               i.cartLineId === cartLineId
-                ? { ...i, quantity: i.quantity + delta }
+                ? {
+                    ...i,
+                    quantity: parseFloat((i.quantity + delta).toFixed(3)),
+                  }
                 : i,
             )
             .filter((i) => i.quantity > 0);
@@ -186,7 +216,39 @@ export const useCartStore = create<CartStore>()(
 
       clearCart: () => set({ ...initialState }),
 
+      clearItems: () => set((state) => ({
+        items: [],
+        redeem_points: 0,
+      })),
+
       setActiveOrderId: (id) => set({ active_order_id: id }),
+
+      setCustomer: (customer) => set({ customer, redeem_points: 0 }),
+      setRedeemPoints: (points) => set({ redeem_points: points }),
+      setRupeesPerPoint: (rate) => set({ rupees_per_point: rate }),
+
+      hydrateCart: (orderItems) => set({ items: orderItems }),
+
+      toggleHold: (cartLineId) => {
+        set((state) => ({
+          items: state.items.map((i) =>
+            i.cartLineId === cartLineId
+              ? {
+                  ...i,
+                  fire_status: i.fire_status === 'FIRED' ? 'HELD' : 'FIRED',
+                }
+              : i,
+          ),
+        }));
+      },
+
+      updateSeat: (cartLineId, seat) => {
+        set((state) => ({
+          items: state.items.map((i) =>
+            i.cartLineId === cartLineId ? { ...i, seat_number: seat } : i,
+          ),
+        }));
+      },
     }),
     {
       name: 'rpos-cart',
@@ -196,6 +258,8 @@ export const useCartStore = create<CartStore>()(
         table_id: state.table_id,
         table_number: state.table_number,
         pax_count: state.pax_count,
+        adult_pax: state.adult_pax,
+        child_pax: state.child_pax,
         items: state.items,
         active_order_id: state.active_order_id,
       }),

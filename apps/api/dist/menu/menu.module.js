@@ -11,6 +11,7 @@ const common_1 = require("@nestjs/common");
 const menu_service_1 = require("./menu.service");
 const menu_controller_1 = require("./menu.controller");
 const prisma_module_1 = require("../prisma/prisma.module");
+const menu_gateway_1 = require("./menu.gateway");
 let MenuModule = class MenuModule {
 };
 exports.MenuModule = MenuModule;
@@ -18,8 +19,8 @@ exports.MenuModule = MenuModule = __decorate([
     (0, common_1.Module)({
         imports: [prisma_module_1.PrismaModule],
         controllers: [menu_controller_1.MenuController],
-        providers: [menu_service_1.MenuService],
-        exports: [menu_service_1.MenuService],
+        providers: [menu_service_1.MenuService, menu_gateway_1.MenuGateway],
+        exports: [menu_service_1.MenuService, menu_gateway_1.MenuGateway],
     })
 ], MenuModule);
 //# sourceMappingURL=menu.module.js.map

@@ -12,12 +12,13 @@ const kds_gateway_1 = require("./kds.gateway");
 const kds_service_1 = require("./kds.service");
 const kds_controller_1 = require("./kds.controller");
 const prisma_module_1 = require("../prisma/prisma.module");
+const auth_module_1 = require("../auth/auth.module");
 let KdsModule = class KdsModule {
 };
 exports.KdsModule = KdsModule;
 exports.KdsModule = KdsModule = __decorate([
     (0, common_1.Module)({
-        imports: [prisma_module_1.PrismaModule],
+        imports: [prisma_module_1.PrismaModule, auth_module_1.AuthModule],
         providers: [kds_gateway_1.KdsGateway, kds_service_1.KdsService],
         controllers: [kds_controller_1.KdsController],
         exports: [kds_gateway_1.KdsGateway],

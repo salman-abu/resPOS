@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PlayCircle, Power, PowerOff } from 'lucide-react';
+import { API_BASE } from '@/lib/api';
 
 type TenantData = {
   id: string;
@@ -21,7 +22,7 @@ export default function SuperAdminTenants() {
 
   const fetchTenants = async () => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const apiUrl = API_BASE;
       const token = localStorage.getItem('super_admin_token');
       const res = await fetch(`${apiUrl}/super-admin/tenants`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -42,7 +43,7 @@ export default function SuperAdminTenants() {
 
   const toggleStatus = async (id: string, currentStatus: boolean) => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const apiUrl = API_BASE;
       const token = localStorage.getItem('super_admin_token');
       await fetch(`${apiUrl}/super-admin/tenants/${id}/status`, {
         method: 'PATCH',
@@ -60,7 +61,7 @@ export default function SuperAdminTenants() {
 
   const impersonate = async (id: string) => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const apiUrl = API_BASE;
       const token = localStorage.getItem('super_admin_token');
       const res = await fetch(
         `${apiUrl}/super-admin/tenants/${id}/impersonate`,

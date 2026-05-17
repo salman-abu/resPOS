@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import localFont from 'next/font/local';
 import './globals.css';
+import { NavigationProgress } from '@/components/NavigationProgress';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -52,8 +53,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${inter.variable} ${geistMono.variable} font-sans antialiased bg-background text-content-primary`}
+        className={`${inter.variable} ${geistMono.variable} font-sans antialiased bg-surface-base text-content-primary`}
       >
+        <NavigationProgress />
         {children}
       </body>
     </html>

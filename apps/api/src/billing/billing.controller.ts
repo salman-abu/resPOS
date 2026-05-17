@@ -7,6 +7,7 @@ import {
   Param,
   UseGuards,
   Req,
+  Header,
 } from '@nestjs/common';
 import { BillingService } from './billing.service';
 import {
@@ -26,8 +27,21 @@ export class BillingController {
 
   /** POST /billing/invoice — Generate GST invoice for an order */
   @Post('invoice')
-  generateInvoice(@Req() req: any, @Body() dto: GenerateInvoiceDto) {
-    return this.billingService.generateInvoice(req.tenantId, dto);
+  async generate(@Req() req: any, @Body() dto: GenerateInvoiceDto) {
+    return this.billingService.generateInvoice(req.tenantId, req.user.sub, dto);
+  }
+
+  @Post('invoice/split')
+  async split(
+    @Req() req: any,
+    @Body() dto: { order_id: string; splits: { itemIds: string[] }[] },
+  ) {
+    return this.billingService.splitInvoices(
+      req.tenantId,
+      req.user.sub,
+      dto.order_id,
+      dto.splits,
+    );
   }
 
   /** GET /billing/invoice/:id — Fetch invoice details (for reprint) */
@@ -43,7 +57,12 @@ export class BillingController {
     @Param('id') id: string,
     @Body() dto: SettleInvoiceDto,
   ) {
-    return this.billingService.settleInvoice(req.tenantId, id, dto);
+    return this.billingService.settleInvoice(
+      req.tenantId,
+      req.user.sub,
+      id,
+      dto,
+    );
   }
 
   // ─── Shift ───────────────────────────────────────────────────────────────────
@@ -62,6 +81,7 @@ export class BillingController {
 
   /** GET /billing/shift/z-report — Get latest shift Z-Report */
   @Get('shift/z-report')
+  @Header('Cache-Control', 'private, max-age=30, stale-while-revalidate=60')
   getZReport(@Req() req: any) {
     return this.billingService.getZReport(req.tenantId);
   }
@@ -70,6 +90,7 @@ export class BillingController {
 
   /** GET /billing/tables — Get all zones with table statuses */
   @Get('tables')
+  @Header('Cache-Control', 'private, max-age=10, stale-while-revalidate=30')
   getTables(@Req() req: any) {
     return this.billingService.getTables(req.tenantId);
   }

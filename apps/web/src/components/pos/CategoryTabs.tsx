@@ -11,14 +11,14 @@ interface CategoryTabsProps {
   loading?: boolean;
 }
 
-const CATEGORY_ACTIVE: string[] = [
-  'bg-violet-600 text-white border-violet-600',
-  'bg-blue-600 text-white border-blue-600',
-  'bg-emerald-600 text-white border-emerald-600',
-  'bg-orange-500 text-white border-orange-500',
-  'bg-rose-600 text-white border-rose-600',
-  'bg-indigo-600 text-white border-indigo-600',
-  'bg-fuchsia-600 text-white border-fuchsia-600',
+const NEON_PALETTE: string[] = [
+  'bg-cyan-500 text-slate-900 border-cyan-500',
+  'bg-fuchsia-500 text-slate-900 border-fuchsia-500',
+  'bg-lime-500 text-slate-900 border-lime-500',
+  'bg-amber-500 text-slate-900 border-amber-500',
+  'bg-rose-500 text-slate-900 border-rose-500',
+  'bg-violet-500 text-slate-900 border-violet-500',
+  'bg-orange-500 text-slate-900 border-orange-500',
 ];
 
 export function CategoryTabs({
@@ -31,7 +31,10 @@ export function CategoryTabs({
     return (
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
         {Array.from({ length: 7 }).map((_, i) => (
-          <div key={i} className="h-9 w-24 flex-shrink-0 rounded-xl skeleton" />
+          <div
+            key={i}
+            className="h-9 w-24 flex-shrink-0 rounded-sm bg-slate-700 animate-pulse"
+          />
         ))}
       </div>
     );
@@ -43,10 +46,10 @@ export function CategoryTabs({
       <button
         onClick={() => onSelect(null)}
         className={cn(
-          'flex-shrink-0 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 border whitespace-nowrap',
+          'flex-shrink-0 px-4 py-2 rounded-sm text-sm font-black border-2 uppercase tracking-widest whitespace-nowrap active:scale-[0.97] transition-transform duration-75',
           selectedId === null
-            ? 'bg-slate-700 text-white border-slate-700 shadow-sm'
-            : 'bg-white text-content-secondary border-border hover:bg-surface-3 hover:text-content-primary hover:border-border-strong',
+            ? 'bg-slate-100 text-slate-900 border-slate-100'
+            : 'bg-slate-800 text-slate-400 border-slate-700 active:bg-slate-700 active:text-slate-200',
         )}
       >
         <UtensilsCrossed className="inline-block h-3.5 w-3.5 mr-1.5 -mt-0.5" />
@@ -54,17 +57,17 @@ export function CategoryTabs({
       </button>
 
       {categories.map((cat, idx) => {
-        const activeClass = CATEGORY_ACTIVE[idx % CATEGORY_ACTIVE.length];
+        const activeClass = NEON_PALETTE[idx % NEON_PALETTE.length];
         const isActive = selectedId === cat.id;
         return (
           <button
             key={cat.id}
             onClick={() => onSelect(cat.id)}
             className={cn(
-              'flex-shrink-0 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 border whitespace-nowrap shadow-sm',
+              'flex-shrink-0 px-4 py-2 rounded-sm text-sm font-black border-2 uppercase tracking-widest whitespace-nowrap active:scale-[0.97] transition-transform duration-75',
               isActive
                 ? activeClass
-                : 'bg-white text-content-secondary border-border hover:bg-surface-3 hover:text-content-primary hover:border-border-strong',
+                : 'bg-slate-800 text-slate-400 border-slate-700 active:bg-slate-700 active:text-slate-200',
             )}
           >
             {cat.name}

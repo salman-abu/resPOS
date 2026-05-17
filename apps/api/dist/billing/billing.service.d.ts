@@ -1,11 +1,18 @@
 import { PrismaService } from '../prisma/prisma.service';
 import { GenerateInvoiceDto, SettleInvoiceDto, OpenShiftDto, CloseShiftDto } from './dto/billing.dto';
 import { $Enums } from '@prisma/client';
+import { FloorPlanGateway } from '../floor-plan/floor-plan.gateway';
+import { LoyaltyService } from '../loyalty/loyalty.service';
+import { AuditService } from '../audit/audit.service';
 export declare class BillingService {
     private prisma;
-    constructor(prisma: PrismaService);
+    private floorPlanGateway;
+    private loyaltyService;
+    private auditService;
+    constructor(prisma: PrismaService, floorPlanGateway: FloorPlanGateway, loyaltyService: LoyaltyService, auditService: AuditService);
     private getDefaultOutlet;
-    generateInvoice(tenantId: string, dto: GenerateInvoiceDto): Promise<{
+    private generateInvoiceNumber;
+    generateInvoice(tenantId: string, userId: string, dto: GenerateInvoiceDto): Promise<{
         invoice: {
             payments: {
                 status: $Enums.PaymentStatus;
@@ -19,6 +26,9 @@ export declare class BillingService {
             }[];
         } & {
             id: string;
+            created_at: Date;
+            tenant_id: string;
+            total: number;
             order_id: string;
             printed_at: Date | null;
             invoice_number: string;
@@ -30,7 +40,7 @@ export declare class BillingService {
             discount: number;
             discount_type: $Enums.DiscountType | null;
             discount_approved_by: string | null;
-            total: number;
+            updated_at: Date;
         };
         order: {
             id: string;
@@ -69,8 +79,11 @@ export declare class BillingService {
                 unit_price: number;
                 notes: string | null;
                 course_number: number;
+                fire_status: $Enums.FireStatus;
+                seat_number: number | null;
                 order_id: string;
                 kot_id: string | null;
+                invoice_id: string | null;
             })[];
         } & {
             status: $Enums.OrderStatus;
@@ -80,9 +93,20 @@ export declare class BillingService {
             order_type: $Enums.OrderType;
             table_id: string | null;
             pax_count: number | null;
+            customer_id: string | null;
+            order_name: string | null;
+            brand_id: string | null;
+            source: string | null;
             aggregator_source: $Enums.AggregatorSource | null;
             aggregator_order_id: string | null;
             external_ref: string | null;
+            is_tab_open: boolean;
+            tab_name: string | null;
+            queue_token_number: number | null;
+            customer_phone: string | null;
+            delivery_address: string | null;
+            estimated_time: Date | null;
+            tracking_status: $Enums.OnlineTrackingStatus | null;
             settled_at: Date | null;
             outlet_id: string;
             waiter_id: string | null;
@@ -100,6 +124,9 @@ export declare class BillingService {
         }[];
     } & {
         id: string;
+        created_at: Date;
+        tenant_id: string;
+        total: number;
         order_id: string;
         printed_at: Date | null;
         invoice_number: string;
@@ -111,9 +138,9 @@ export declare class BillingService {
         discount: number;
         discount_type: $Enums.DiscountType | null;
         discount_approved_by: string | null;
-        total: number;
+        updated_at: Date;
     }>;
-    settleInvoice(tenantId: string, invoiceId: string, dto: SettleInvoiceDto): Promise<{
+    settleInvoice(tenantId: string, userId: string, invoiceId: string, dto: SettleInvoiceDto): Promise<{
         success: boolean;
         invoice_id: string;
         total_paid: number;
@@ -160,6 +187,7 @@ export declare class BillingService {
             total_orders: number;
             void_orders: number;
             payment_summary: Record<string, number>;
+            source_summary: Record<string, number>;
             cash_expected: number;
             cash_variance: number;
         };
@@ -196,7 +224,11 @@ export declare class BillingService {
         })[];
     } & {
         id: string;
-        name: string;
         tenant_id: string;
+        name: string;
     })[]>;
+    private checkAllItemsAccounted;
+    splitInvoices(tenantId: string, userId: string, orderId: string, splits: {
+        itemIds: string[];
+    }[]): Promise<any[]>;
 }

@@ -7,14 +7,23 @@ export declare class JwtStrategy extends JwtStrategy_base {
     private prisma;
     constructor(prisma: PrismaService);
     validate(payload: any): Promise<{
-        userId: any;
+        sub: any;
+        email: any;
+        is_super_admin: boolean;
+        level: any;
+        tenantId?: undefined;
+        role?: undefined;
+        user?: undefined;
+    } | {
+        sub: any;
         tenantId: any;
         role: any;
         user: {
             tenant: {
                 id: string;
-                slug: string;
+                created_at: Date;
                 name: string;
+                slug: string;
                 gstin: string | null;
                 state_code: string | null;
                 address: string | null;
@@ -24,18 +33,20 @@ export declare class JwtStrategy extends JwtStrategy_base {
                 subscription_ends_at: Date | null;
                 settings: import("@prisma/client/runtime/library").JsonValue | null;
                 is_active: boolean;
-                created_at: Date;
             };
         } & {
             id: string;
+            tenant_id: string;
             name: string;
             is_active: boolean;
-            tenant_id: string;
             mobile: string;
             email: string | null;
             role: import("@prisma/client").$Enums.Role;
             pin_hash: string;
         };
+        email?: undefined;
+        is_super_admin?: undefined;
+        level?: undefined;
     }>;
 }
 export {};

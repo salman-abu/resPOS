@@ -74,6 +74,8 @@ __decorate([
 ], RecordPaymentDto.prototype, "transaction_id", void 0);
 class SettleInvoiceDto {
     payments;
+    customer_id;
+    redeem_points;
 }
 exports.SettleInvoiceDto = SettleInvoiceDto;
 __decorate([
@@ -82,6 +84,17 @@ __decorate([
     (0, class_transformer_1.Type)(() => RecordPaymentDto),
     __metadata("design:type", Array)
 ], SettleInvoiceDto.prototype, "payments", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], SettleInvoiceDto.prototype, "customer_id", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(0),
+    __metadata("design:type", Number)
+], SettleInvoiceDto.prototype, "redeem_points", void 0);
 class OpenShiftDto {
     opening_float;
 }

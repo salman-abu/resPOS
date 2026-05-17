@@ -17,19 +17,19 @@ interface StatCardProps {
 }
 
 const ACCENT: Record<string, string> = {
-  blue: 'border-blue-200   bg-gradient-to-br from-blue-50   to-white',
-  green: 'border-emerald-200 bg-gradient-to-br from-emerald-50 to-white',
-  amber: 'border-amber-200  bg-gradient-to-br from-amber-50  to-white',
-  violet: 'border-violet-200 bg-gradient-to-br from-violet-50 to-white',
-  rose: 'border-rose-200   bg-gradient-to-br from-rose-50   to-white',
+  blue: 'border-brand-light bg-gradient-to-br from-brand-light to-white',
+  green: 'border-success-light bg-gradient-to-br from-success-light to-white',
+  amber: 'border-warning-light bg-gradient-to-br from-warning-light to-white',
+  violet: 'border-info-light bg-gradient-to-br from-info-light to-white',
+  rose: 'border-danger-light bg-gradient-to-br from-danger-light to-white',
 };
 
 const ICON_BG: Record<string, string> = {
-  blue: 'bg-blue-100   text-blue-600',
-  green: 'bg-emerald-100 text-emerald-600',
-  amber: 'bg-amber-100  text-amber-600',
-  violet: 'bg-violet-100 text-violet-600',
-  rose: 'bg-rose-100   text-rose-600',
+  blue: 'bg-brand-light text-brand-default',
+  green: 'bg-success-light text-success-default',
+  amber: 'bg-warning-light text-warning-default',
+  violet: 'bg-info-light text-info-default',
+  rose: 'bg-danger-light text-danger-default',
 };
 
 export function StatCard({
@@ -49,7 +49,7 @@ export function StatCard({
     return (
       <div
         className={cn(
-          'rounded-2xl border bg-white p-5 space-y-3 shadow-card',
+          'rounded-2xl border bg-surface-card p-5 space-y-3 shadow-card',
           className,
         )}
       >
@@ -64,9 +64,9 @@ export function StatCard({
     trend === undefined
       ? ''
       : trend > 0
-        ? 'text-emerald-600'
+        ? 'text-success-default'
         : trend < 0
-          ? 'text-red-600'
+          ? 'text-danger-default'
           : 'text-content-muted';
   const TrendIcon =
     trend === undefined

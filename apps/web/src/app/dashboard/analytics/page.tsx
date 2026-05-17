@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { StatCard } from '@/components/ui/StatCard';
+import { getAuthToken } from '@respos/utils';
 import {
   IndianRupee,
   ShoppingBag,
@@ -16,107 +17,41 @@ import {
   Banknote,
   Smartphone,
   FileText,
+  Loader2,
 } from 'lucide-react';
 
-// ─── Types & mock data ────────────────────────────────────────────────────────
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
+
 type Range = 'today' | 'week' | 'month';
 
-const RANGE_DATA: Record<
-  Range,
-  {
-    revenue: number;
-    orders: number;
-    avg_check: number;
-    table_turn: number;
-    rev_trend: number;
-    ord_trend: number;
-    daily_rev: number[];
-    daily_ord: number[];
-    labels: string[];
-    payment: { cash: number; upi: number; card: number };
-    top: { name: string; qty: number; revenue: number; trend: number }[];
-    gst: { taxable: number; cgst: number; sgst: number; total: number };
-  }
-> = {
-  today: {
-    revenue: 124500,
-    orders: 87,
-    avg_check: 28000,
-    table_turn: 48,
-    rev_trend: 12,
-    ord_trend: 8,
-    daily_rev: [8200, 14500, 22000, 31000, 24000, 12000, 13000],
-    daily_ord: [4, 8, 13, 18, 14, 7, 8],
-    labels: ['9a', '10a', '11a', '12p', '1p', '2p', '3p'],
-    payment: { cash: 62000, upi: 42000, card: 20500 },
-    top: [
-      { name: 'Butter Chicken', qty: 34, revenue: 129200, trend: 18 },
-      { name: 'Garlic Naan', qty: 28, revenue: 14000, trend: 5 },
-      { name: 'Paneer Biryani', qty: 22, revenue: 79200, trend: 41 },
-      { name: 'Masala Chai', qty: 19, revenue: 7600, trend: -3 },
-      { name: 'Dal Makhani', qty: 14, revenue: 33600, trend: -8 },
-    ],
-    gst: { taxable: 118571, cgst: 2964, sgst: 2964, total: 124500 },
-  },
-  week: {
-    revenue: 748000,
-    orders: 521,
-    avg_check: 27200,
-    table_turn: 46,
-    rev_trend: 9,
-    ord_trend: 6,
-    daily_rev: [98000, 115000, 124500, 108000, 132000, 87000, 83500],
-    daily_ord: [68, 79, 87, 74, 92, 61, 60],
-    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-    payment: { cash: 374000, upi: 249000, card: 125000 },
-    top: [
-      { name: 'Butter Chicken', qty: 198, revenue: 752400, trend: 14 },
-      { name: 'Chicken Biryani', qty: 165, revenue: 693000, trend: 22 },
-      { name: 'Paneer Biryani', qty: 143, revenue: 514800, trend: 31 },
-      { name: 'Garlic Naan', qty: 301, revenue: 150500, trend: 3 },
-      { name: 'Dal Makhani', qty: 98, revenue: 235200, trend: -5 },
-    ],
-    gst: { taxable: 711430, cgst: 17786, sgst: 17786, total: 748000 },
-  },
-  month: {
-    revenue: 3240000,
-    orders: 2210,
-    avg_check: 26500,
-    table_turn: 47,
-    rev_trend: 15,
-    ord_trend: 11,
-    daily_rev: [
-      95000, 110000, 118000, 130000, 142000, 108000, 95000, 120000, 135000,
-      145000, 112000, 98000, 85000, 124500,
-    ],
-    daily_ord: [62, 74, 80, 88, 96, 73, 64, 81, 91, 98, 76, 66, 57, 87],
-    labels: [
-      '1',
-      '3',
-      '5',
-      '7',
-      '9',
-      '11',
-      '13',
-      '15',
-      '17',
-      '19',
-      '21',
-      '23',
-      '25',
-      '27',
-    ],
-    payment: { cash: 1620000, upi: 1080000, card: 540000 },
-    top: [
-      { name: 'Butter Chicken', qty: 842, revenue: 3199600, trend: 18 },
-      { name: 'Chicken Biryani', qty: 721, revenue: 3028200, trend: 25 },
-      { name: 'Paneer Biryani', qty: 614, revenue: 2210400, trend: 33 },
-      { name: 'Garlic Naan', qty: 1284, revenue: 642000, trend: 4 },
-      { name: 'Dal Makhani', qty: 412, revenue: 988800, trend: -2 },
-    ],
-    gst: { taxable: 3085714, cgst: 77143, sgst: 77143, total: 3240000 },
-  },
-};
+interface DashboardStats {
+  revenue_today: number;
+  revenue_yesterday: number;
+  revenue_last_week: number;
+  orders_today: number;
+  avg_check: number;
+  active_tables: number;
+  total_tables: number;
+  staff: number;
+  health: number;
+  top_sellers: { id: string; name: string; qty: number; revenue: number }[];
+}
+
+interface TrendData {
+  labels: string[];
+  revenue: number[];
+  orders: number[];
+}
+
+interface PaymentMix {
+  cash: number;
+  upi: number;
+  card: number;
+}
+
+interface TableTurnData {
+  averageTurnTimeMinutes: number;
+}
 
 function fmt(p: number) {
   const r = p / 100;
@@ -125,6 +60,20 @@ function fmt(p: number) {
     : r >= 1000
       ? `₹${(r / 1000).toFixed(1)}K`
       : `₹${r.toFixed(0)}`;
+}
+
+function authHeaders(): Record<string, string> {
+  const token = getAuthToken();
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
+
+async function fetchJSON<T>(url: string): Promise<T> {
+  const res = await fetch(url, { headers: authHeaders() });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json() as Promise<T>;
 }
 
 // ─── SVG Line Chart ──────────────────────────────────────────────────────────
@@ -301,7 +250,7 @@ function Donut({
             />
             <span className="text-content-secondary text-xs">{s.label}</span>
             <span className="text-content-primary text-xs font-bold ml-auto">
-              {Math.round((s.val / total) * 100)}%
+              {total > 0 ? Math.round((s.val / total) * 100) : 0}%
             </span>
           </div>
         ))}
@@ -311,9 +260,20 @@ function Donut({
 }
 
 // ─── Z-Report ────────────────────────────────────────────────────────────────
-function ZReport({ d }: { d: typeof RANGE_DATA.today }) {
+function ZReport({
+  stats,
+  payment,
+}: {
+  stats: DashboardStats;
+  payment: PaymentMix;
+}) {
   const now = new Date();
   const ref = `ZREP-${now.toISOString().slice(0, 10).replace(/-/g, '')}-001`;
+  const total = payment.cash + payment.upi + payment.card;
+  const gstRate = 0.05; // 2.5% CGST + 2.5% SGST
+  const taxable = total > 0 ? Math.round(total / (1 + gstRate)) : 0;
+  const cgst = total > 0 ? Math.round(taxable * 0.025) : 0;
+  const sgst = total > 0 ? Math.round(taxable * 0.025) : 0;
 
   const print = () => {
     const w = window.open('', '_blank', 'width=400,height=700');
@@ -326,17 +286,17 @@ function ZReport({ d }: { d: typeof RANGE_DATA.today }) {
     <div class="c">${now.toLocaleString('en-IN')}</div>
     <div class="ln"></div>
     <div class="row"><span>Ref</span><span class="b">${ref}</span></div>
-    <div class="row"><span>Orders</span><span>${d.orders}</span></div>
+    <div class="row"><span>Orders</span><span>${stats.orders_today}</span></div>
     <div class="ln"></div>
-    <div class="row"><span>Taxable</span><span>${fmt(d.gst.taxable)}</span></div>
-    <div class="row"><span>CGST (2.5%)</span><span>${fmt(d.gst.cgst)}</span></div>
-    <div class="row"><span>SGST (2.5%)</span><span>${fmt(d.gst.sgst)}</span></div>
+    <div class="row"><span>Taxable</span><span>${fmt(taxable)}</span></div>
+    <div class="row"><span>CGST (2.5%)</span><span>${fmt(cgst)}</span></div>
+    <div class="row"><span>SGST (2.5%)</span><span>${fmt(sgst)}</span></div>
     <div class="ln"></div>
-    <div class="row big"><span>TOTAL</span><span>${fmt(d.gst.total)}</span></div>
+    <div class="row big"><span>TOTAL</span><span>${fmt(total)}</span></div>
     <div class="ln"></div>
-    <div class="row"><span>Cash</span><span>${fmt(d.payment.cash)}</span></div>
-    <div class="row"><span>UPI</span><span>${fmt(d.payment.upi)}</span></div>
-    <div class="row"><span>Card</span><span>${fmt(d.payment.card)}</span></div>
+    <div class="row"><span>Cash</span><span>${fmt(payment.cash)}</span></div>
+    <div class="row"><span>UPI</span><span>${fmt(payment.upi)}</span></div>
+    <div class="row"><span>Card</span><span>${fmt(payment.card)}</span></div>
     <div class="ln"></div>
     <div class="c">*** END OF Z-REPORT ***</div>
     </body></html>`);
@@ -362,7 +322,7 @@ function ZReport({ d }: { d: typeof RANGE_DATA.today }) {
       </div>
       <div className="flex justify-between">
         <span className="text-content-muted">Total Orders</span>
-        <span className="font-bold text-content-primary">{d.orders}</span>
+        <span className="font-bold text-content-primary">{stats.orders_today}</span>
       </div>
       <div className="border-t border-dashed border-border-strong my-3" />
       <p className="text-content-secondary font-bold text-xs uppercase tracking-wider mb-2">
@@ -370,20 +330,20 @@ function ZReport({ d }: { d: typeof RANGE_DATA.today }) {
       </p>
       <div className="flex justify-between text-content-secondary">
         <span>Taxable Sales</span>
-        <span>{fmt(d.gst.taxable)}</span>
+        <span>{fmt(taxable)}</span>
       </div>
       <div className="flex justify-between text-content-muted text-xs">
         <span>CGST @ 2.5%</span>
-        <span>{fmt(d.gst.cgst)}</span>
+        <span>{fmt(cgst)}</span>
       </div>
       <div className="flex justify-between text-content-muted text-xs">
         <span>SGST @ 2.5%</span>
-        <span>{fmt(d.gst.sgst)}</span>
+        <span>{fmt(sgst)}</span>
       </div>
       <div className="border-t border-dashed border-border-strong my-3" />
       <div className="flex justify-between text-xl font-black text-content-primary">
         <span>TOTAL</span>
-        <span className="text-brand-700">{fmt(d.gst.total)}</span>
+        <span className="text-brand-700">{fmt(total)}</span>
       </div>
       <div className="border-t border-dashed border-border-strong my-3" />
       <p className="text-content-secondary font-bold text-xs uppercase tracking-wider mb-2">
@@ -394,21 +354,21 @@ function ZReport({ d }: { d: typeof RANGE_DATA.today }) {
           <Banknote className="h-3.5 w-3.5" />
           Cash
         </span>
-        <span className="font-bold">{fmt(d.payment.cash)}</span>
+        <span className="font-bold">{fmt(payment.cash)}</span>
       </div>
       <div className="flex justify-between text-content-secondary items-center">
         <span className="flex items-center gap-1.5">
           <Smartphone className="h-3.5 w-3.5" />
           UPI
         </span>
-        <span className="font-bold">{fmt(d.payment.upi)}</span>
+        <span className="font-bold">{fmt(payment.upi)}</span>
       </div>
       <div className="flex justify-between text-content-secondary items-center">
         <span className="flex items-center gap-1.5">
           <CreditCard className="h-3.5 w-3.5" />
           Card
         </span>
-        <span className="font-bold">{fmt(d.payment.card)}</span>
+        <span className="font-bold">{fmt(payment.card)}</span>
       </div>
       <div className="border-t border-dashed border-border-strong my-3" />
       <div className="text-center text-content-muted text-xs">
@@ -430,7 +390,74 @@ type Tab = 'overview' | 'zreport' | 'items';
 export default function AnalyticsPage() {
   const [range, setRange] = useState<Range>('today');
   const [tab, setTab] = useState<Tab>('overview');
-  const d = RANGE_DATA[range];
+  const [loading, setLoading] = useState(false);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [trend, setTrend] = useState<TrendData | null>(null);
+  const [payment, setPayment] = useState<PaymentMix>({ cash: 0, upi: 0, card: 0 });
+  const [topItems, setTopItems] = useState<DashboardStats['top_sellers']>([]);
+  const [tableTurn, setTableTurn] = useState<TableTurnData | null>(null);
+
+  const days = range === 'today' ? 1 : range === 'week' ? 7 : 30;
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+
+    async function load() {
+      try {
+        const [dashboard, trendData, payMix, turn, sellers] = await Promise.all([
+          fetchJSON<DashboardStats>(`${API_BASE}/analytics/dashboard-stats`),
+          fetchJSON<TrendData>(`${API_BASE}/analytics/revenue-trend?days=${days}`),
+          fetchJSON<PaymentMix>(`${API_BASE}/analytics/payment-mix?days=${days}`),
+          fetchJSON<TableTurnData>(`${API_BASE}/analytics/table-turn`),
+          range !== 'today'
+            ? fetchJSON<DashboardStats['top_sellers']>(
+                `${API_BASE}/analytics/top-sellers?period=${range}`,
+              )
+            : Promise.resolve([]),
+        ]);
+
+        if (cancelled) return;
+        setStats(dashboard);
+        setTrend(trendData);
+        setPayment(payMix);
+        setTableTurn(turn);
+        setTopItems(range === 'today' ? dashboard.top_sellers : sellers);
+      } catch (e) {
+        console.error('Analytics fetch failed', e);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [range, days]);
+
+  const revenue = stats?.revenue_today ?? 0;
+  const orders = stats?.orders_today ?? 0;
+  const avgCheck = stats?.avg_check ?? 0;
+  const tableTurnTime = tableTurn?.averageTurnTimeMinutes ?? 0;
+  const revTrend = stats
+    ? stats.revenue_yesterday > 0
+      ? Math.round(
+          ((stats.revenue_today - stats.revenue_yesterday) /
+            stats.revenue_yesterday) *
+            100,
+        )
+      : 0
+    : 0;
+  const ordTrend = stats
+    ? stats.revenue_last_week > 0
+      ? Math.round(
+          ((stats.revenue_today - stats.revenue_last_week) /
+            Math.max(stats.revenue_last_week, 1)) *
+            100,
+        )
+      : 0
+    : 0;
 
   const RANGES: { key: Range; label: string }[] = [
     { key: 'today', label: 'Today' },
@@ -524,39 +551,45 @@ export default function AnalyticsPage() {
           ))}
         </div>
 
+        {loading && (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-brand-600" />
+          </div>
+        )}
+
         {/* ── Overview ───────────────────────────────────────────────────── */}
-        {tab === 'overview' && (
+        {tab === 'overview' && !loading && (
           <div className="space-y-6">
             {/* KPI row */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <StatCard
                 label="Revenue"
-                value={fmt(d.revenue)}
-                trend={d.rev_trend}
+                value={fmt(revenue)}
+                trend={revTrend}
                 trendLabel="vs prev"
                 icon={<IndianRupee className="h-4 w-4" />}
                 accentColor="blue"
               />
               <StatCard
                 label="Orders"
-                value={d.orders}
-                trend={d.ord_trend}
+                value={orders}
+                trend={ordTrend}
                 trendLabel="vs prev"
                 icon={<ShoppingBag className="h-4 w-4" />}
                 accentColor="green"
               />
               <StatCard
                 label="Avg Check"
-                value={fmt(d.avg_check)}
+                value={fmt(avgCheck)}
                 icon={<TrendingUp className="h-4 w-4" />}
                 accentColor="violet"
               />
               <StatCard
                 label="Table Turn"
-                value={String(d.table_turn)}
+                value={String(tableTurnTime)}
                 suffix=" min"
                 icon={<Clock className="h-4 w-4" />}
-                accentColor={d.table_turn > 45 ? 'amber' : 'green'}
+                accentColor={tableTurnTime > 45 ? 'amber' : 'green'}
               />
             </div>
 
@@ -567,22 +600,34 @@ export default function AnalyticsPage() {
                   <IndianRupee className="h-4 w-4 text-blue-500" />
                   Revenue Trend
                 </p>
-                <LineChart
-                  data={d.daily_rev}
-                  labels={d.labels}
-                  color="#3B82F6"
-                />
+                {trend && trend.revenue.length > 0 ? (
+                  <LineChart
+                    data={trend.revenue}
+                    labels={trend.labels}
+                    color="#3B82F6"
+                  />
+                ) : (
+                  <div className="h-[140px] flex items-center justify-center text-content-muted text-sm">
+                    No data available
+                  </div>
+                )}
               </div>
               <div className="card p-5">
                 <p className="text-content-primary font-bold text-sm mb-4 flex items-center gap-2">
                   <ShoppingBag className="h-4 w-4 text-violet-500" />
                   Orders
                 </p>
-                <BarChart
-                  data={d.daily_ord}
-                  labels={d.labels}
-                  color="#8B5CF6"
-                />
+                {trend && trend.orders.length > 0 ? (
+                  <BarChart
+                    data={trend.orders}
+                    labels={trend.labels}
+                    color="#8B5CF6"
+                  />
+                ) : (
+                  <div className="h-[120px] flex items-center justify-center text-content-muted text-sm">
+                    No data available
+                  </div>
+                )}
               </div>
             </div>
 
@@ -594,25 +639,25 @@ export default function AnalyticsPage() {
               </p>
               <div className="flex flex-wrap gap-8 items-center">
                 <Donut
-                  cash={d.payment.cash}
-                  upi={d.payment.upi}
-                  card={d.payment.card}
+                  cash={payment.cash}
+                  upi={payment.upi}
+                  card={payment.card}
                 />
                 <div className="flex gap-4 flex-wrap">
                   {[
                     {
                       l: 'Cash',
-                      v: d.payment.cash,
+                      v: payment.cash,
                       c: 'bg-emerald-100 text-emerald-700',
                     },
                     {
                       l: 'UPI',
-                      v: d.payment.upi,
+                      v: payment.upi,
                       c: 'bg-violet-100 text-violet-700',
                     },
                     {
                       l: 'Card',
-                      v: d.payment.card,
+                      v: payment.card,
                       c: 'bg-blue-100 text-blue-700',
                     },
                   ].map((p) => (
@@ -634,10 +679,12 @@ export default function AnalyticsPage() {
         )}
 
         {/* ── Z-Report ───────────────────────────────────────────────────── */}
-        {tab === 'zreport' && <ZReport d={d} />}
+        {tab === 'zreport' && !loading && stats && (
+          <ZReport stats={stats} payment={payment} />
+        )}
 
         {/* ── Top Items ──────────────────────────────────────────────────── */}
-        {tab === 'items' && (
+        {tab === 'items' && !loading && (
           <div className="card overflow-hidden">
             <div className="px-5 py-4 border-b border-border flex items-center justify-between">
               <p className="text-content-primary font-bold">
@@ -665,9 +712,19 @@ export default function AnalyticsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {d.top.map((item, i) => (
+                {topItems.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className="px-5 py-8 text-center text-content-muted text-sm"
+                    >
+                      No sales data for this period.
+                    </td>
+                  </tr>
+                )}
+                {topItems.map((item, i) => (
                   <tr
-                    key={item.name}
+                    key={item.id}
                     className="hover:bg-surface-2 transition-colors"
                   >
                     <td className="px-5 py-3.5">
@@ -696,18 +753,9 @@ export default function AnalyticsPage() {
                       {fmt(item.revenue)}
                     </td>
                     <td className="px-5 py-3.5">
-                      <span
-                        className={cn(
-                          'flex items-center gap-1 text-xs font-bold',
-                          item.trend > 0 ? 'text-emerald-600' : 'text-red-500',
-                        )}
-                      >
-                        {item.trend > 0 ? (
-                          <TrendingUp className="h-3.5 w-3.5" />
-                        ) : (
-                          <TrendingUp className="h-3.5 w-3.5 rotate-180" />
-                        )}
-                        {Math.abs(item.trend)}%
+                      <span className="flex items-center gap-1 text-xs font-bold text-emerald-600">
+                        <TrendingUp className="h-3.5 w-3.5" />
+                        --
                       </span>
                     </td>
                   </tr>

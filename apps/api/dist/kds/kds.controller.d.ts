@@ -26,8 +26,11 @@ export declare class KdsController {
             unit_price: number;
             notes: string | null;
             course_number: number;
+            fire_status: import("@prisma/client").$Enums.FireStatus;
+            seat_number: number | null;
             order_id: string;
             kot_id: string | null;
+            invoice_id: string | null;
         })[];
     } & {
         status: import("@prisma/client").$Enums.KotStatus;

@@ -6,8 +6,8 @@ export declare class InventoryService {
     constructor(prisma: PrismaService);
     getIngredients(tenantId: string): Promise<{
         id: string;
-        name: string;
         tenant_id: string;
+        name: string;
         unit: import("@prisma/client").$Enums.IngredientUnit;
         current_stock: number;
         reorder_level: number;
@@ -15,8 +15,8 @@ export declare class InventoryService {
     }[]>;
     createIngredient(tenantId: string, dto: CreateIngredientDto): Promise<{
         id: string;
-        name: string;
         tenant_id: string;
+        name: string;
         unit: import("@prisma/client").$Enums.IngredientUnit;
         current_stock: number;
         reorder_level: number;
@@ -24,8 +24,8 @@ export declare class InventoryService {
     }>;
     updateStock(tenantId: string, ingredientId: string, dto: UpdateStockDto, userId: string): Promise<{
         id: string;
-        name: string;
         tenant_id: string;
+        name: string;
         unit: import("@prisma/client").$Enums.IngredientUnit;
         current_stock: number;
         reorder_level: number;

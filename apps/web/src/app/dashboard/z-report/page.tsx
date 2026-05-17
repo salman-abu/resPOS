@@ -1,5 +1,7 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
+import { API_BASE } from '@/lib/api';
+import { getAuthToken } from '@respos/utils';
 import {
   TrendingUp,
   Banknote,
@@ -27,6 +29,7 @@ interface ZReport {
   total_orders: number;
   void_orders: number;
   payment_summary: Record<string, number>;
+  source_summary?: Record<string, number>;
   cash_expected?: number;
   cash_variance?: number;
 }
@@ -104,11 +107,8 @@ export default function ZReportPage() {
   const [closingFloat, setClosingFloat] = useState('');
   const [pettyCash, setPettyCash] = useState('0');
 
-  const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
-  const token =
-    typeof window !== 'undefined'
-      ? (localStorage.getItem('rpos_token') ?? '')
-      : '';
+  const API = API_BASE;
+  const token = getAuthToken();
 
   const fetchReport = useCallback(async () => {
     setLoading(true);
@@ -349,6 +349,36 @@ export default function ZReportPage() {
                           </div>
                         );
                       },
+                    )}
+                  </div>
+                </div>
+
+                {/* Source Breakdown (Dine-in vs Online) */}
+                <div
+                  className="rounded-xl p-4"
+                  style={{
+                    background: 'var(--bg-elevated)',
+                    border: '1px solid var(--border)',
+                  }}
+                >
+                  <p
+                    className="text-xs font-semibold uppercase tracking-wider mb-3"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
+                    Revenue by Source
+                  </p>
+                  <div className="grid grid-cols-2 gap-4">
+                    {Object.entries(report.source_summary || {}).map(
+                      ([source, amount]) => (
+                        <div key={source} className="flex flex-col">
+                          <span className="text-[10px] font-black uppercase text-content-muted">
+                            {source === 'POS' ? 'Dine-in / Direct' : source}
+                          </span>
+                          <span className="text-sm font-bold text-content-primary">
+                            {fmt(amount as number)}
+                          </span>
+                        </div>
+                      ),
                     )}
                   </div>
                 </div>

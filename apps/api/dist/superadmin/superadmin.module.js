@@ -20,7 +20,10 @@ exports.SuperAdminModule = SuperAdminModule = __decorate([
         imports: [
             prisma_module_1.PrismaModule,
             jwt_1.JwtModule.register({
-                secret: process.env.JWT_SECRET || 'super-secret',
+                secret: process.env.JWT_SECRET ||
+                    (() => {
+                        throw new Error('JWT_SECRET environment variable is required');
+                    })(),
                 signOptions: { expiresIn: '1d' },
             }),
         ],

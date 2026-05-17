@@ -12,6 +12,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.BillingService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
+const floor_plan_gateway_1 = require("../floor-plan/floor-plan.gateway");
+const loyalty_service_1 = require("../loyalty/loyalty.service");
+const audit_service_1 = require("../audit/audit.service");
 const TAX_RATES = {
     EXEMPT: 0,
     GST_5: 5,
@@ -19,21 +22,62 @@ const TAX_RATES = {
     GST_18: 18,
     GST_28: 28,
 };
+function getFinancialYear(date = new Date()) {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    if (month >= 3) {
+        return `${String(year).slice(-2)}${String(year + 1).slice(-2)}`;
+    }
+    return `${String(year - 1).slice(-2)}${String(year).slice(-2)}`;
+}
+function getFinancialYearBounds(date = new Date()) {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    if (month >= 3) {
+        return {
+            start: new Date(year, 3, 1),
+            end: new Date(year + 1, 2, 31, 23, 59, 59),
+        };
+    }
+    return {
+        start: new Date(year - 1, 3, 1),
+        end: new Date(year, 2, 31, 23, 59, 59),
+    };
+}
 let BillingService = class BillingService {
     prisma;
-    constructor(prisma) {
+    floorPlanGateway;
+    loyaltyService;
+    auditService;
+    constructor(prisma, floorPlanGateway, loyaltyService, auditService) {
         this.prisma = prisma;
+        this.floorPlanGateway = floorPlanGateway;
+        this.loyaltyService = loyaltyService;
+        this.auditService = auditService;
     }
     async getDefaultOutlet(tenantId) {
         const outlet = await this.prisma.outlet.findFirst({
             where: { tenant_id: tenantId },
-            select: { id: true, state_code: true },
+            select: { id: true, state_code: true, outlet_code: true },
         });
         if (!outlet)
             throw new common_1.BadRequestException('No outlet configured.');
         return outlet;
     }
-    async generateInvoice(tenantId, dto) {
+    async generateInvoiceNumber(tenantId, outletId, outletCode) {
+        const fy = getFinancialYear();
+        const fyBounds = getFinancialYearBounds();
+        const prefix = outletCode || outletId.slice(0, 6).toUpperCase();
+        const count = await this.prisma.invoice.count({
+            where: {
+                tenant_id: tenantId,
+                order: { outlet_id: outletId },
+                created_at: { gte: fyBounds.start, lte: fyBounds.end },
+            },
+        });
+        return `${prefix}/${fy}/${String(count + 1).padStart(5, '0')}`;
+    }
+    async generateInvoice(tenantId, userId, dto) {
         const order = await this.prisma.order.findFirst({
             where: { id: dto.order_id, tenant_id: tenantId },
             include: {
@@ -51,8 +95,14 @@ let BillingService = class BillingService {
             throw new common_1.NotFoundException('Order not found.');
         if (order.status === 'VOID')
             throw new common_1.BadRequestException('Cannot bill a voided order.');
-        if (order.invoices.length > 0) {
-            throw new common_1.ConflictException('Invoice already generated for this order.');
+        const existingInvoices = await this.prisma.invoice.findMany({
+            where: { order_id: dto.order_id },
+        });
+        if (existingInvoices.length > 0) {
+            const allItemsAccounted = await this.checkAllItemsAccounted(order.id);
+            if (allItemsAccounted) {
+                throw new common_1.ConflictException('Full bill already generated/accounted for.');
+            }
         }
         const outlet = await this.getDefaultOutlet(tenantId);
         const tenant = await this.prisma.tenant.findUnique({
@@ -77,8 +127,9 @@ let BillingService = class BillingService {
                 igst += taxAmt;
             }
             else {
-                cgst += Math.round(taxAmt / 2);
-                sgst += Math.round(taxAmt / 2);
+                const cgstHalf = Math.round(taxAmt / 2);
+                cgst += cgstHalf;
+                sgst += taxAmt - cgstHalf;
             }
         }
         let discount = dto.discount ?? 0;
@@ -87,10 +138,10 @@ let BillingService = class BillingService {
         }
         const service_charge = dto.service_charge ?? 0;
         const total = subtotal + cgst + sgst + igst + service_charge - discount;
-        const invCount = await this.prisma.invoice.count();
-        const invoiceNumber = `INV-${new Date().getFullYear()}-${String(invCount + 1).padStart(5, '0')}`;
+        const invoiceNumber = await this.generateInvoiceNumber(tenantId, outlet.id, outlet.outlet_code);
         const invoice = await this.prisma.invoice.create({
             data: {
+                tenant_id: tenantId,
                 order_id: order.id,
                 invoice_number: invoiceNumber,
                 subtotal,
@@ -103,6 +154,11 @@ let BillingService = class BillingService {
                 discount_approved_by: dto.discount_approved_by,
                 total,
                 printed_at: new Date(),
+                order_items: {
+                    connect: order.order_items
+                        .filter((oi) => oi.status !== 'VOID')
+                        .map((oi) => ({ id: oi.id })),
+                },
             },
             include: { payments: true },
         });
@@ -114,6 +170,26 @@ let BillingService = class BillingService {
             await this.prisma.table.update({
                 where: { id: order.table_id },
                 data: { status: 'BILLED' },
+            });
+            this.floorPlanGateway.emitTableStatusChanged(tenantId, {
+                id: order.table_id,
+                status: 'BILLED',
+            });
+        }
+        if (discount > 0) {
+            await this.auditService.log({
+                tenantId,
+                action: 'APPLY_DISCOUNT',
+                entityType: 'INVOICE',
+                entityId: invoice.id,
+                performedBy: userId,
+                authorizedBy: dto.discount_approved_by,
+                reason: dto.discount_type,
+                oldValue: {
+                    subtotal,
+                    total: subtotal + cgst + sgst + igst + service_charge,
+                },
+                newValue: { discount, total: invoice.total },
             });
         }
         return {
@@ -159,7 +235,7 @@ let BillingService = class BillingService {
             throw new common_1.NotFoundException('Invoice not found.');
         return invoice;
     }
-    async settleInvoice(tenantId, invoiceId, dto) {
+    async settleInvoice(tenantId, userId, invoiceId, dto) {
         const invoice = await this.prisma.invoice.findFirst({
             where: { id: invoiceId, order: { tenant_id: tenantId } },
             include: {
@@ -186,16 +262,40 @@ let BillingService = class BillingService {
                 status: 'SUCCESS',
             },
         })));
-        await this.prisma.order.update({
+        const updatedOrder = await this.prisma.order.update({
             where: { id: invoice.order.id },
             data: { status: 'SETTLED', settled_at: new Date() },
+            select: { id: true, customer_id: true },
         });
+        if (updatedOrder.customer_id) {
+            await this.loyaltyService.triggerEarnPoints(tenantId, {
+                customerId: updatedOrder.customer_id,
+                orderId: updatedOrder.id,
+                amountSpent: invoice.total,
+            });
+        }
         if (invoice.order.table_id) {
             await this.prisma.table.update({
                 where: { id: invoice.order.table_id },
-                data: { status: 'DIRTY', current_order_id: null },
+                data: { status: 'AVAILABLE', current_order_id: null },
+            });
+            this.floorPlanGateway.emitTableStatusChanged(tenantId, {
+                id: invoice.order.table_id,
+                status: 'AVAILABLE',
             });
         }
+        await this.auditService.log({
+            tenantId,
+            action: 'PAYMENT_SETTLED',
+            entityType: 'INVOICE',
+            entityId: invoiceId,
+            performedBy: userId,
+            newValue: {
+                total: invoice.total,
+                paid: alreadyPaid + newTotal,
+                methods: dto.payments.map((p) => p.method),
+            },
+        });
         return {
             success: true,
             invoice_id: invoiceId,
@@ -240,16 +340,18 @@ let BillingService = class BillingService {
             },
         });
         const paymentSummary = {};
+        const sourceSummary = {};
         let grossSales = 0;
         let totalDiscount = 0;
         let totalTax = 0;
         const totalOrders = orders.length;
-        const voidCount = 0;
         for (const order of orders) {
+            const source = order.source || 'POS';
             for (const inv of order.invoices) {
                 grossSales += inv.subtotal;
                 totalDiscount += inv.discount;
                 totalTax += inv.cgst + inv.sgst + inv.igst;
+                sourceSummary[source] = (sourceSummary[source] ?? 0) + inv.total;
                 for (const pmt of inv.payments) {
                     if (pmt.status === 'SUCCESS') {
                         paymentSummary[pmt.method] =
@@ -280,6 +382,7 @@ let BillingService = class BillingService {
             total_orders: totalOrders,
             void_orders: voidOrders,
             payment_summary: paymentSummary,
+            source_summary: sourceSummary,
             cash_expected: (paymentSummary['CASH'] ?? 0) +
                 shift.opening_float -
                 (dto.petty_cash ?? 0),
@@ -333,10 +436,99 @@ let BillingService = class BillingService {
             orderBy: { name: 'asc' },
         });
     }
+    async checkAllItemsAccounted(orderId) {
+        const orderItems = await this.prisma.orderItem.findMany({
+            where: { order_id: orderId, status: { not: 'VOID' } },
+        });
+        return orderItems.every((oi) => oi.invoice_id !== null);
+    }
+    async splitInvoices(tenantId, userId, orderId, splits) {
+        const order = await this.prisma.order.findFirst({
+            where: { id: orderId, tenant_id: tenantId },
+            include: {
+                order_items: {
+                    include: {
+                        item: { select: { tax_slab: true, name: true } },
+                    },
+                },
+            },
+        });
+        if (!order)
+            throw new common_1.NotFoundException('Order not found');
+        const outlet = await this.getDefaultOutlet(tenantId);
+        const createdInvoices = [];
+        for (const split of splits) {
+            const items = order.order_items.filter((oi) => split.itemIds.includes(oi.id));
+            if (items.length === 0)
+                continue;
+            let subtotal = 0;
+            let cgst = 0;
+            let sgst = 0;
+            const igst = 0;
+            for (const oi of items) {
+                const lineBase = oi.unit_price * oi.quantity;
+                subtotal += lineBase;
+                const rate = TAX_RATES[oi.item.tax_slab] ?? 0;
+                const taxAmt = Math.round(lineBase * (rate / 100));
+                const cgstHalf = Math.round(taxAmt / 2);
+                cgst += cgstHalf;
+                sgst += taxAmt - cgstHalf;
+            }
+            const total = subtotal + cgst + sgst + igst;
+            const invoiceNumber = await this.generateInvoiceNumber(tenantId, outlet.id, outlet.outlet_code);
+            const invoice = await this.prisma.invoice.create({
+                data: {
+                    tenant_id: tenantId,
+                    order_id: order.id,
+                    invoice_number: invoiceNumber,
+                    subtotal,
+                    cgst,
+                    sgst,
+                    igst,
+                    service_charge: 0,
+                    discount: 0,
+                    total,
+                    order_items: {
+                        connect: items.map((oi) => ({ id: oi.id })),
+                    },
+                },
+            });
+            createdInvoices.push(invoice);
+        }
+        const allAccounted = await this.checkAllItemsAccounted(orderId);
+        if (allAccounted) {
+            await this.prisma.order.update({
+                where: { id: orderId },
+                data: { status: 'BILLED' },
+            });
+            if (order.table_id) {
+                this.floorPlanGateway.emitTableStatusChanged(tenantId, {
+                    id: order.table_id,
+                    status: 'BILLED',
+                });
+            }
+        }
+        await this.auditService.log({
+            tenantId,
+            action: 'INVOICE_SPLIT',
+            entityType: 'ORDER',
+            entityId: orderId,
+            performedBy: userId,
+            newValue: {
+                splitCount: createdInvoices.length,
+                invoiceIds: createdInvoices.map((inv) => inv.id),
+                invoiceNumbers: createdInvoices.map((inv) => inv.invoice_number),
+            },
+        });
+        return createdInvoices;
+    }
 };
 exports.BillingService = BillingService;
 exports.BillingService = BillingService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        floor_plan_gateway_1.FloorPlanGateway,
+        loyalty_service_1.LoyaltyService,
+        audit_service_1.AuditService])
 ], BillingService);
 //# sourceMappingURL=billing.service.js.map

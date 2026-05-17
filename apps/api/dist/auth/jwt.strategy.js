@@ -20,11 +20,22 @@ let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(pas
         super({
             jwtFromRequest: passport_jwt_1.ExtractJwt.fromAuthHeaderAsBearerToken(),
             ignoreExpiration: false,
-            secretOrKey: process.env.JWT_SECRET || 'super-secret-key-change-me',
+            secretOrKey: process.env.JWT_SECRET ||
+                (() => {
+                    throw new Error('JWT_SECRET environment variable is required');
+                })(),
         });
         this.prisma = prisma;
     }
     async validate(payload) {
+        if (payload.is_super_admin) {
+            return {
+                sub: payload.sub,
+                email: payload.email,
+                is_super_admin: true,
+                level: payload.level,
+            };
+        }
         const user = await this.prisma.user.findUnique({
             where: { id: payload.sub },
             include: { tenant: true },
@@ -36,7 +47,7 @@ let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(pas
             throw new common_1.UnauthorizedException('Tenant account is suspended');
         }
         return {
-            userId: payload.sub,
+            sub: payload.sub,
             tenantId: payload.tenantId,
             role: payload.role,
             user,

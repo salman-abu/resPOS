@@ -8,31 +8,40 @@ interface ItemCardProps {
   item: MenuItem;
   onAdd: (item: MenuItem) => void;
   inCartQty?: number;
+  managerMode?: boolean;
 }
 
-const ITEM_TYPE_BADGE: Record<
+const ITEM_TYPE_ACCENT: Record<
   string,
-  { label: string; color: string; dot: string }
+  { label: string; bg: string; border: string; text: string; dot: string }
 > = {
   VEG: {
     label: 'V',
-    color: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    dot: 'bg-emerald-500',
+    bg: 'bg-success-light/50',
+    border: 'border-success-default/40',
+    text: 'text-success-default',
+    dot: 'bg-success-default',
   },
   NON_VEG: {
     label: 'NV',
-    color: 'bg-red-50 text-red-700 border-red-200',
-    dot: 'bg-red-500',
+    bg: 'bg-danger-light/50',
+    border: 'border-danger-default/40',
+    text: 'text-danger-default',
+    dot: 'bg-danger-default',
   },
   EGG: {
     label: 'E',
-    color: 'bg-amber-50 text-amber-700 border-amber-200',
-    dot: 'bg-amber-500',
+    bg: 'bg-warning-light/50',
+    border: 'border-warning-default/40',
+    text: 'text-warning-default',
+    dot: 'bg-warning-default',
   },
   VEGAN: {
     label: 'VG',
-    color: 'bg-teal-50 text-teal-700 border-teal-200',
-    dot: 'bg-teal-500',
+    bg: 'bg-info-light/50',
+    border: 'border-info-default/40',
+    text: 'text-info-default',
+    dot: 'bg-info-default',
   },
 };
 
@@ -40,84 +49,112 @@ function formatPrice(paise: number): string {
   return `₹${(paise / 100).toFixed(0)}`;
 }
 
-function getFallbackImage(name: string) {
-  const n = name.toLowerCase();
-  if (n.includes('biryani') || n.includes('rice')) return '/food/biryani.png';
-  if (n.includes('naan') || n.includes('roti') || n.includes('bread'))
-    return '/food/naan.png';
-  // Default to a rich curry image for paneer, chicken, chai, jamun etc.
-  return '/food/curry.png';
-}
+export function ItemCard({
+  item,
+  onAdd,
+  inCartQty = 0,
+  managerMode = false,
+}: ItemCardProps) {
+  const accent = ITEM_TYPE_ACCENT[item.item_type] ?? ITEM_TYPE_ACCENT.VEG;
+  const isAvailable = item.is_available ?? true;
 
-export function ItemCard({ item, onAdd, inCartQty = 0 }: ItemCardProps) {
-  const badge = ITEM_TYPE_BADGE[item.item_type] ?? ITEM_TYPE_BADGE.VEG;
-  const imageUrl = item.image_url || getFallbackImage(item.name);
+  const handleClick = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (managerMode) {
+      if (
+        confirm(
+          `Mark "${item.name}" as ${isAvailable ? 'SOLD OUT' : 'AVAILABLE'}?`,
+        )
+      ) {
+        onAdd(item); // We will hijack onAdd for manager mode action in page.tsx
+      }
+    } else {
+      if (isAvailable) onAdd(item);
+    }
+  };
 
   return (
     <div
       className={cn(
-        'group relative flex flex-col bg-white border rounded-2xl overflow-hidden cursor-pointer',
-        'transition-all duration-200 hover:-translate-y-0.5',
-        inCartQty > 0
-          ? 'border-brand-400 shadow-glow-blue'
-          : 'border-border shadow-card hover:shadow-card-hover hover:border-border-strong',
+        'group relative flex flex-col bg-surface-card border rounded-sm overflow-hidden h-28',
+        managerMode
+          ? 'cursor-pointer border-border-subtle active:border-warning-default'
+          : isAvailable
+            ? 'cursor-pointer border-border-subtle active:border-border-strong'
+            : 'cursor-not-allowed opacity-60 border-border-subtle',
+        'active:scale-[0.97] transition-transform duration-75',
+        accent.bg,
+        inCartQty > 0 && !managerMode && 'border-success-default',
       )}
-      onClick={() => onAdd(item)}
+      onClick={handleClick}
     >
-      {/* Image */}
-      <div className="relative h-28 bg-surface-3 overflow-hidden">
-        <img
-          src={imageUrl}
-          alt={item.name}
-          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-        />
-
-        {/* Cart qty badge */}
-        {inCartQty > 0 && (
-          <div className="absolute top-2 right-2 h-6 w-6 rounded-full bg-brand-600 text-white text-xs font-bold flex items-center justify-center shadow-md">
-            {inCartQty}
-          </div>
-        )}
-
-        {/* Veg/NonVeg indicator */}
+      {/* Top bar: badge + qty block */}
+      <div className="flex items-center justify-between px-2 pt-2">
         <span
           className={cn(
-            'absolute top-2 left-2 text-[10px] font-bold px-1.5 py-0.5 rounded border',
-            badge.color,
+            'text-[10px] font-black px-1.5 py-0.5 border rounded-none uppercase tracking-wider',
+            'bg-surface-sunken text-content-primary border-border-subtle',
           )}
         >
-          {badge.label}
+          {accent.label}
         </span>
+
+        {/* Cart qty badge — solid geometric block */}
+        {inCartQty > 0 && !managerMode && isAvailable && (
+          <span
+            className="h-5 px-1.5 bg-success-default text-content-inverse text-xs font-black font-mono flex items-center justify-center border border-success-default"
+            style={{ fontVariantNumeric: 'tabular-nums' }}
+          >
+            {inCartQty}
+          </span>
+        )}
       </div>
 
+      {/* SOLD OUT Overlay */}
+      {!isAvailable && (
+        <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+          <span className="bg-danger-default text-content-inverse text-[10px] font-black px-2 py-1 border border-danger-light tracking-[0.2em] uppercase rotate-[-12deg]">
+            SOLD OUT
+          </span>
+        </div>
+      )}
+
       {/* Content */}
-      <div className="flex-1 p-3 flex flex-col gap-1">
-        <p className="text-content-primary text-sm font-semibold leading-tight line-clamp-2">
+      <div className="flex-1 p-2 flex flex-col gap-0.5">
+        <p className="text-content-primary text-sm font-bold leading-tight line-clamp-2 tracking-tight">
           {item.name}
         </p>
         {item.description && (
-          <p className="text-content-muted text-xs line-clamp-1">
+          <p className="text-content-secondary text-[10px] line-clamp-1 font-medium uppercase tracking-wide">
             {item.description}
           </p>
         )}
-        <div className="mt-auto pt-2 flex items-center justify-between">
-          <span className="text-brand-700 font-bold text-sm">
+        <div className="mt-auto flex items-center justify-between">
+          <span
+            className="font-mono text-sm font-black text-content-primary tracking-tight"
+            style={{ fontVariantNumeric: 'tabular-nums' }}
+          >
             {formatPrice(item.base_price)}
           </span>
-          <button
-            className={cn(
-              'h-7 w-7 rounded-full flex items-center justify-center transition-all duration-150 press',
-              inCartQty > 0
-                ? 'bg-brand-600 text-white shadow-sm'
-                : 'bg-surface-3 text-content-secondary group-hover:bg-brand-600 group-hover:text-white group-hover:shadow-sm',
-            )}
-            onClick={(e) => {
-              e.stopPropagation();
-              onAdd(item);
-            }}
-          >
-            <Plus className="h-4 w-4" />
-          </button>
+          {((item.variants && item.variants.length > 0) ||
+            (item.addons && item.addons.some((a) => a.is_available))) && (
+            <span className="text-[9px] font-black text-content-muted bg-surface-sunken px-1.5 py-0.5 border border-border-subtle uppercase tracking-wider">
+              OPTS
+            </span>
+          )}
+          {!managerMode && isAvailable && (
+            <button
+              className={cn(
+                'h-6 w-6 flex items-center justify-center border active:scale-[0.85] transition-transform duration-75',
+                inCartQty > 0
+                  ? 'bg-success-default text-content-inverse border-success-default'
+                  : 'bg-surface-sunken text-content-secondary border-border-strong active:bg-border-strong active:text-content-inverse',
+              )}
+              onClick={handleClick}
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -126,14 +163,14 @@ export function ItemCard({ item, onAdd, inCartQty = 0 }: ItemCardProps) {
 
 export function ItemCardSkeleton() {
   return (
-    <div className="flex flex-col bg-white border border-border rounded-2xl overflow-hidden shadow-card">
-      <div className="h-28 skeleton rounded-none" />
-      <div className="p-3 space-y-2">
-        <div className="h-3.5 skeleton w-3/4" />
-        <div className="h-3 skeleton w-1/2" />
-        <div className="flex justify-between items-center pt-2">
-          <div className="h-4 skeleton w-10" />
-          <div className="h-7 w-7 skeleton rounded-full" />
+    <div className="flex flex-col bg-surface-card border border-border-subtle rounded-sm overflow-hidden h-28">
+      <div className="h-8 bg-surface-sunken animate-pulse rounded-none" />
+      <div className="p-2 space-y-1.5 flex-1">
+        <div className="h-3.5 bg-surface-sunken animate-pulse w-3/4 rounded-none" />
+        <div className="h-3 bg-surface-sunken animate-pulse w-1/2 rounded-none" />
+        <div className="flex justify-between items-center mt-auto pt-1">
+          <div className="h-4 bg-surface-sunken animate-pulse w-10 rounded-none" />
+          <div className="h-6 w-6 bg-surface-sunken animate-pulse rounded-none" />
         </div>
       </div>
     </div>

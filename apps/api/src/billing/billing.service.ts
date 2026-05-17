@@ -12,6 +12,9 @@ import {
   CloseShiftDto,
 } from './dto/billing.dto';
 import { $Enums } from '@prisma/client';
+import { FloorPlanGateway } from '../floor-plan/floor-plan.gateway';
+import { LoyaltyService } from '../loyalty/loyalty.service';
+import { AuditService } from '../audit/audit.service';
 
 // ─── Tax Rate Map ────────────────────────────────────────────────────────────
 const TAX_RATES: Record<$Enums.TaxSlab, number> = {
@@ -22,22 +25,77 @@ const TAX_RATES: Record<$Enums.TaxSlab, number> = {
   GST_28: 28,
 };
 
+// ─── Financial Year Helpers ──────────────────────────────────────────────────
+function getFinancialYear(date = new Date()): string {
+  const year = date.getFullYear();
+  const month = date.getMonth(); // 0-indexed
+  // FY starts April 1; e.g., April 2024 → March 2025 = "2425"
+  if (month >= 3) {
+    return `${String(year).slice(-2)}${String(year + 1).slice(-2)}`;
+  }
+  return `${String(year - 1).slice(-2)}${String(year).slice(-2)}`;
+}
+
+function getFinancialYearBounds(date = new Date()) {
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  if (month >= 3) {
+    return {
+      start: new Date(year, 3, 1),
+      end: new Date(year + 1, 2, 31, 23, 59, 59),
+    };
+  }
+  return {
+    start: new Date(year - 1, 3, 1),
+    end: new Date(year, 2, 31, 23, 59, 59),
+  };
+}
+
 @Injectable()
 export class BillingService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private floorPlanGateway: FloorPlanGateway,
+    private loyaltyService: LoyaltyService,
+    private auditService: AuditService,
+  ) {}
 
   // ─── Private: Outlet Helper ───────────────────────────────────────────────
   private async getDefaultOutlet(tenantId: string) {
     const outlet = await this.prisma.outlet.findFirst({
       where: { tenant_id: tenantId },
-      select: { id: true, state_code: true },
+      select: { id: true, state_code: true, outlet_code: true },
     });
     if (!outlet) throw new BadRequestException('No outlet configured.');
     return outlet;
   }
 
+  private async generateInvoiceNumber(
+    tenantId: string,
+    outletId: string,
+    outletCode: string | null,
+  ): Promise<string> {
+    const fy = getFinancialYear();
+    const fyBounds = getFinancialYearBounds();
+    const prefix = outletCode || outletId.slice(0, 6).toUpperCase();
+
+    const count = await this.prisma.invoice.count({
+      where: {
+        tenant_id: tenantId,
+        order: { outlet_id: outletId },
+        created_at: { gte: fyBounds.start, lte: fyBounds.end },
+      },
+    });
+
+    return `${prefix}/${fy}/${String(count + 1).padStart(5, '0')}`;
+  }
+
   // ─── Generate Invoice ─────────────────────────────────────────────────────
-  async generateInvoice(tenantId: string, dto: GenerateInvoiceDto) {
+  async generateInvoice(
+    tenantId: string,
+    userId: string,
+    dto: GenerateInvoiceDto,
+  ) {
     const order = await this.prisma.order.findFirst({
       where: { id: dto.order_id, tenant_id: tenantId },
       include: {
@@ -55,8 +113,20 @@ export class BillingService {
     if (!order) throw new NotFoundException('Order not found.');
     if (order.status === 'VOID')
       throw new BadRequestException('Cannot bill a voided order.');
-    if (order.invoices.length > 0) {
-      throw new ConflictException('Invoice already generated for this order.');
+
+    // Check if there are already invoices
+    const existingInvoices = await this.prisma.invoice.findMany({
+      where: { order_id: dto.order_id },
+    });
+
+    // If we have existing invoices, ensure they are part of a split or throw
+    if (existingInvoices.length > 0) {
+      const allItemsAccounted = await this.checkAllItemsAccounted(order.id);
+      if (allItemsAccounted) {
+        throw new ConflictException(
+          'Full bill already generated/accounted for.',
+        );
+      }
     }
 
     const outlet = await this.getDefaultOutlet(tenantId);
@@ -86,8 +156,9 @@ export class BillingService {
       if (isInterState) {
         igst += taxAmt;
       } else {
-        cgst += Math.round(taxAmt / 2);
-        sgst += Math.round(taxAmt / 2);
+        const cgstHalf = Math.round(taxAmt / 2);
+        cgst += cgstHalf;
+        sgst += taxAmt - cgstHalf; // ensures cgst + sgst exactly equals taxAmt
       }
     }
 
@@ -101,11 +172,15 @@ export class BillingService {
     const total = subtotal + cgst + sgst + igst + service_charge - discount;
 
     // ── Invoice Number ──
-    const invCount = await this.prisma.invoice.count();
-    const invoiceNumber = `INV-${new Date().getFullYear()}-${String(invCount + 1).padStart(5, '0')}`;
+    const invoiceNumber = await this.generateInvoiceNumber(
+      tenantId,
+      outlet.id,
+      outlet.outlet_code,
+    );
 
     const invoice = await this.prisma.invoice.create({
       data: {
+        tenant_id: tenantId,
         order_id: order.id,
         invoice_number: invoiceNumber,
         subtotal,
@@ -118,6 +193,11 @@ export class BillingService {
         discount_approved_by: dto.discount_approved_by,
         total,
         printed_at: new Date(),
+        order_items: {
+          connect: order.order_items
+            .filter((oi) => oi.status !== 'VOID')
+            .map((oi) => ({ id: oi.id })),
+        },
       },
       include: { payments: true },
     });
@@ -133,6 +213,28 @@ export class BillingService {
       await this.prisma.table.update({
         where: { id: order.table_id },
         data: { status: 'BILLED' },
+      });
+      this.floorPlanGateway.emitTableStatusChanged(tenantId, {
+        id: order.table_id,
+        status: 'BILLED',
+      });
+    }
+
+    // ── Audit Log: Discount applied ──
+    if (discount > 0) {
+      await this.auditService.log({
+        tenantId,
+        action: 'APPLY_DISCOUNT',
+        entityType: 'INVOICE',
+        entityId: invoice.id,
+        performedBy: userId,
+        authorizedBy: dto.discount_approved_by,
+        reason: dto.discount_type,
+        oldValue: {
+          subtotal,
+          total: subtotal + cgst + sgst + igst + service_charge,
+        },
+        newValue: { discount, total: invoice.total },
       });
     }
 
@@ -184,6 +286,7 @@ export class BillingService {
   // ─── Settle Invoice (Split Payment) ──────────────────────────────────────
   async settleInvoice(
     tenantId: string,
+    userId: string,
     invoiceId: string,
     dto: SettleInvoiceDto,
   ) {
@@ -225,17 +328,45 @@ export class BillingService {
     );
 
     // Settle order + free table
-    await this.prisma.order.update({
+    const updatedOrder = await this.prisma.order.update({
       where: { id: invoice.order.id },
       data: { status: 'SETTLED', settled_at: new Date() },
+      select: { id: true, customer_id: true },
     });
+
+    // Credit Loyalty Points if customer exists
+    if (updatedOrder.customer_id) {
+      await this.loyaltyService.triggerEarnPoints(tenantId, {
+        customerId: updatedOrder.customer_id,
+        orderId: updatedOrder.id,
+        amountSpent: invoice.total,
+      });
+    }
 
     if (invoice.order.table_id) {
       await this.prisma.table.update({
         where: { id: invoice.order.table_id },
-        data: { status: 'DIRTY', current_order_id: null },
+        data: { status: 'AVAILABLE', current_order_id: null },
+      });
+      this.floorPlanGateway.emitTableStatusChanged(tenantId, {
+        id: invoice.order.table_id,
+        status: 'AVAILABLE',
       });
     }
+
+    // ── Audit Log: Payment settled ──
+    await this.auditService.log({
+      tenantId,
+      action: 'PAYMENT_SETTLED',
+      entityType: 'INVOICE',
+      entityId: invoiceId,
+      performedBy: userId,
+      newValue: {
+        total: invoice.total,
+        paid: alreadyPaid + newTotal,
+        methods: dto.payments.map((p) => p.method),
+      },
+    });
 
     return {
       success: true,
@@ -289,17 +420,21 @@ export class BillingService {
 
     // Build Z-Report data
     const paymentSummary: Record<string, number> = {};
+    const sourceSummary: Record<string, number> = {};
     let grossSales = 0;
     let totalDiscount = 0;
     let totalTax = 0;
     const totalOrders = orders.length;
-    const voidCount = 0;
 
     for (const order of orders) {
+      const source = order.source || 'POS';
       for (const inv of order.invoices) {
         grossSales += inv.subtotal;
         totalDiscount += inv.discount;
         totalTax += inv.cgst + inv.sgst + inv.igst;
+
+        sourceSummary[source] = (sourceSummary[source] ?? 0) + inv.total;
+
         for (const pmt of inv.payments) {
           if (pmt.status === 'SUCCESS') {
             paymentSummary[pmt.method] =
@@ -332,6 +467,7 @@ export class BillingService {
       total_orders: totalOrders,
       void_orders: voidOrders,
       payment_summary: paymentSummary,
+      source_summary: sourceSummary,
       cash_expected:
         (paymentSummary['CASH'] ?? 0) +
         shift.opening_float -
@@ -391,5 +527,111 @@ export class BillingService {
       },
       orderBy: { name: 'asc' },
     });
+  }
+  private async checkAllItemsAccounted(orderId: string) {
+    const orderItems = await this.prisma.orderItem.findMany({
+      where: { order_id: orderId, status: { not: 'VOID' } },
+    });
+    return orderItems.every((oi) => oi.invoice_id !== null);
+  }
+
+  async splitInvoices(
+    tenantId: string,
+    userId: string,
+    orderId: string,
+    splits: { itemIds: string[] }[],
+  ) {
+    const order = await this.prisma.order.findFirst({
+      where: { id: orderId, tenant_id: tenantId },
+      include: {
+        order_items: {
+          include: {
+            item: { select: { tax_slab: true, name: true } },
+          },
+        },
+      },
+    });
+    if (!order) throw new NotFoundException('Order not found');
+
+    const outlet = await this.getDefaultOutlet(tenantId);
+    const createdInvoices: any[] = [];
+    for (const split of splits) {
+      const items = order.order_items.filter((oi) =>
+        split.itemIds.includes(oi.id),
+      );
+      if (items.length === 0) continue;
+
+      let subtotal = 0;
+      let cgst = 0;
+      let sgst = 0;
+      const igst = 0;
+
+      for (const oi of items) {
+        const lineBase = oi.unit_price * oi.quantity;
+        subtotal += lineBase;
+        const rate = TAX_RATES[oi.item.tax_slab] ?? 0;
+        const taxAmt = Math.round(lineBase * (rate / 100));
+        const cgstHalf = Math.round(taxAmt / 2);
+        cgst += cgstHalf;
+        sgst += taxAmt - cgstHalf; // ensures cgst + sgst exactly equals taxAmt
+      }
+
+      const total = subtotal + cgst + sgst + igst;
+      const invoiceNumber = await this.generateInvoiceNumber(
+        tenantId,
+        outlet.id,
+        outlet.outlet_code,
+      );
+
+      const invoice = await this.prisma.invoice.create({
+        data: {
+          tenant_id: tenantId,
+          order_id: order.id,
+          invoice_number: invoiceNumber,
+          subtotal,
+          cgst,
+          sgst,
+          igst,
+          service_charge: 0,
+          discount: 0,
+          total,
+          order_items: {
+            connect: items.map((oi) => ({ id: oi.id })),
+          },
+        },
+      });
+      createdInvoices.push(invoice);
+    }
+
+    // Update order status if all items are now invoiced
+    const allAccounted = await this.checkAllItemsAccounted(orderId);
+    if (allAccounted) {
+      await this.prisma.order.update({
+        where: { id: orderId },
+        data: { status: 'BILLED' },
+      });
+      if (order.table_id) {
+        this.floorPlanGateway.emitTableStatusChanged(tenantId, {
+          id: order.table_id,
+          status: 'BILLED',
+        });
+      }
+    }
+
+    // ── Audit Log: Invoice split ──
+    await this.auditService.log({
+      tenantId,
+      action: 'INVOICE_SPLIT',
+      entityType: 'ORDER',
+      entityId: orderId,
+      performedBy: userId,
+      newValue: {
+        splitCount: createdInvoices.length,
+        invoiceIds: createdInvoices.map((inv) => inv.id),
+        invoiceNumbers: createdInvoices.map((inv) => inv.invoice_number),
+      },
+    });
+
+    return createdInvoices;
   }
 }

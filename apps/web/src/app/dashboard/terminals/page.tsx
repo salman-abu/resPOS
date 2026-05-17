@@ -1,21 +1,42 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { MonitorSmartphone, Copy, CheckCircle2, Zap } from 'lucide-react';
+import { getAuthToken } from '@respos/utils';
 
 export default function TerminalsPage() {
+  const router = useRouter();
   const [copied, setCopied] = useState(false);
-  const tenantId = 'f5e51ebe-1709-46ca-94d8-2b325dd946c0'; // Hardcoded test DB tenant for the presentation demo
+  const [tenantId, setTenantId] = useState('');
+
+  useEffect(() => {
+    // Decode tenant ID from the stored JWT token
+    const token = getAuthToken();
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setTenantId(payload.tenantId ?? '');
+      } catch {
+        setTenantId('');
+      }
+    }
+    // Fallback: also check localStorage
+    const stored = localStorage.getItem('device_tenant_id');
+    if (!tenantId && stored) setTenantId(stored);
+  }, []);
 
   const handleCopy = () => {
+    if (!tenantId) return;
     navigator.clipboard.writeText(tenantId);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   const pairCurrentDevice = () => {
+    if (!tenantId) return;
     localStorage.setItem('device_tenant_id', tenantId);
-    window.location.href = '/pos/pin';
+    router.push('/pos/pin');
   };
 
   return (

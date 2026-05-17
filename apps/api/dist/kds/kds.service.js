@@ -13,12 +13,15 @@ exports.KdsService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
 const kds_gateway_1 = require("./kds.gateway");
+const audit_service_1 = require("../audit/audit.service");
 let KdsService = class KdsService {
     prisma;
     kdsGateway;
-    constructor(prisma, kdsGateway) {
+    auditService;
+    constructor(prisma, kdsGateway, auditService) {
         this.prisma = prisma;
         this.kdsGateway = kdsGateway;
+        this.auditService = auditService;
     }
     async getActiveKots(tenantId, station) {
         return this.prisma.kOT.findMany({
@@ -89,6 +92,39 @@ let KdsService = class KdsService {
             item_id: orderItemId,
             done,
         });
+        const order = await this.prisma.order.findUnique({
+            where: { id: kot.order_id },
+            include: { order_items: { select: { status: true } } },
+        });
+        if (order) {
+            const allReady = order.order_items.every((oi) => ['READY', 'SERVED', 'VOID'].includes(oi.status));
+            if (allReady) {
+                await this.prisma.order.update({
+                    where: { id: order.id },
+                    data: { status: 'READY' },
+                });
+                const fullOrder = await this.prisma.order.findUnique({
+                    where: { id: order.id },
+                });
+                this.kdsGateway.emitOrderUpdate(tenantId, {
+                    id: order.id,
+                    status: 'READY',
+                    token: fullOrder?.queue_token_number,
+                    name: fullOrder?.order_name,
+                });
+            }
+            else if (done) {
+                const fullOrder = await this.prisma.order.findUnique({
+                    where: { id: order.id },
+                });
+                this.kdsGateway.emitOrderUpdate(tenantId, {
+                    id: order.id,
+                    status: 'PREPARING',
+                    token: fullOrder?.queue_token_number,
+                    name: fullOrder?.order_name,
+                });
+            }
+        }
         return { success: true, all_done: allDone };
     }
     async bumpKot(tenantId, kotId) {
@@ -119,12 +155,16 @@ let KdsService = class KdsService {
                     where: { id: order.id },
                     data: { status: 'SERVED' },
                 });
+                this.kdsGateway.emitOrderUpdate(tenantId, {
+                    id: order.id,
+                    status: 'SERVED',
+                });
             }
         }
         this.kdsGateway.emitKotBumped(tenantId, kot.station, kotId);
         return { success: true, kot_id: kotId };
     }
-    async recallKot(tenantId, kotId) {
+    async recallKot(tenantId, userId, kotId) {
         const kot = await this.prisma.kOT.findFirst({
             where: { id: kotId, tenant_id: tenantId },
         });
@@ -143,6 +183,18 @@ let KdsService = class KdsService {
             ...recalled,
             recalled: true,
         });
+        await this.auditService
+            .log({
+            tenantId,
+            action: 'DELETE_KOT',
+            entityType: 'KOT',
+            entityId: kotId,
+            performedBy: userId,
+            reason: 'KOT recalled to PREPARING',
+            oldValue: { status: kot.status },
+            newValue: { status: 'PREPARING' },
+        })
+            .catch(() => { });
         return { success: true };
     }
     async getKotById(tenantId, kotId) {
@@ -170,6 +222,7 @@ exports.KdsService = KdsService;
 exports.KdsService = KdsService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        kds_gateway_1.KdsGateway])
+        kds_gateway_1.KdsGateway,
+        audit_service_1.AuditService])
 ], KdsService);
 //# sourceMappingURL=kds.service.js.map

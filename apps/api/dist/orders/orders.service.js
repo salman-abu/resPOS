@@ -13,15 +13,21 @@ exports.OrdersService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
 const kds_gateway_1 = require("../kds/kds.gateway");
+const floor_plan_gateway_1 = require("../floor-plan/floor-plan.gateway");
 const inventory_service_1 = require("../inventory/inventory.service");
+const audit_service_1 = require("../audit/audit.service");
 let OrdersService = class OrdersService {
     prisma;
     kdsGateway;
+    floorPlanGateway;
     inventoryService;
-    constructor(prisma, kdsGateway, inventoryService) {
+    auditService;
+    constructor(prisma, kdsGateway, floorPlanGateway, inventoryService, auditService) {
         this.prisma = prisma;
         this.kdsGateway = kdsGateway;
+        this.floorPlanGateway = floorPlanGateway;
         this.inventoryService = inventoryService;
+        this.auditService = auditService;
     }
     async getDefaultOutlet(tenantId) {
         const outlet = await this.prisma.outlet.findFirst({
@@ -34,6 +40,10 @@ let OrdersService = class OrdersService {
     }
     async createOrder(tenantId, userId, dto) {
         const outletId = await this.getDefaultOutlet(tenantId);
+        let queue_token_number;
+        if (dto.order_type === 'TAKEAWAY' || dto.order_type === 'AGGREGATOR') {
+            queue_token_number = await this.getNextTokenNumber(tenantId);
+        }
         if (dto.order_type === 'DINE_IN' && !dto.table_id) {
             throw new common_1.BadRequestException('table_id is required for DINE_IN orders.');
         }
@@ -44,6 +54,11 @@ let OrdersService = class OrdersService {
                 order_type: dto.order_type,
                 table_id: dto.table_id,
                 pax_count: dto.pax_count,
+                customer_id: dto.customer_id,
+                order_name: dto.order_name,
+                brand_id: dto.brand_id,
+                source: dto.source,
+                queue_token_number,
                 waiter_id: userId,
                 status: 'DRAFT',
                 order_items: {
@@ -55,6 +70,18 @@ let OrdersService = class OrdersService {
                         notes: i.notes,
                         course_number: i.course_number ?? 1,
                         status: 'PENDING',
+                        fire_status: i.fire_status ?? 'FIRED',
+                        seat_number: i.seat_number,
+                        addons: i.addons?.length
+                            ? {
+                                create: i.addons.map((a) => ({
+                                    addon_id: a.id,
+                                    name: a.name,
+                                    price: a.price,
+                                    modifier_id: a.modifier_id,
+                                })),
+                            }
+                            : undefined,
                     })),
                 },
             },
@@ -72,6 +99,10 @@ let OrdersService = class OrdersService {
             await this.prisma.table.update({
                 where: { id: dto.table_id },
                 data: { status: 'OCCUPIED', current_order_id: order.id },
+            });
+            this.floorPlanGateway.emitTableStatusChanged(tenantId, {
+                id: dto.table_id,
+                status: 'OCCUPIED',
             });
         }
         return order;
@@ -95,6 +126,18 @@ let OrdersService = class OrdersService {
                 notes: i.notes,
                 course_number: i.course_number ?? 1,
                 status: 'PENDING',
+                fire_status: i.fire_status ?? 'FIRED',
+                seat_number: i.seat_number,
+                addons: i.addons?.length
+                    ? {
+                        create: i.addons.map((a) => ({
+                            addon_id: a.id,
+                            name: a.name,
+                            price: a.price,
+                            modifier_id: a.modifier_id,
+                        })),
+                    }
+                    : undefined,
             },
             include: {
                 item: { select: { name: true, station_route: true } },
@@ -111,6 +154,7 @@ let OrdersService = class OrdersService {
                     where: {
                         id: { in: itemIds },
                         status: 'PENDING',
+                        fire_status: 'FIRED',
                     },
                     include: {
                         item: { select: { name: true, station_route: true } },
@@ -177,6 +221,7 @@ let OrdersService = class OrdersService {
                     quantity: i.quantity,
                     notes: i.notes,
                     status: i.status,
+                    seat_number: i.seat_number,
                 })),
             });
             await this.prisma.orderItem.updateMany({
@@ -188,9 +233,15 @@ let OrdersService = class OrdersService {
             });
         }
         if (order.status === 'DRAFT') {
-            await this.prisma.order.update({
+            const updatedOrder = await this.prisma.order.update({
                 where: { id: orderId },
                 data: { status: 'PLACED' },
+            });
+            this.kdsGateway.emitOrderUpdate(tenantId, {
+                id: orderId,
+                status: 'PLACED',
+                token: updatedOrder.queue_token_number,
+                name: updatedOrder.order_name,
             });
         }
         return {
@@ -199,6 +250,12 @@ let OrdersService = class OrdersService {
             kots,
         };
     }
+    async attachCustomer(tenantId, orderId, customerId) {
+        return this.prisma.order.update({
+            where: { id: orderId, tenant_id: tenantId },
+            data: { customer_id: customerId },
+        });
+    }
     async getOrder(tenantId, orderId) {
         const order = await this.prisma.order.findFirst({
             where: { id: orderId, tenant_id: tenantId },
@@ -206,9 +263,15 @@ let OrdersService = class OrdersService {
                 order_items: {
                     include: {
                         item: {
-                            select: { name: true, item_type: true, station_route: true },
+                            select: {
+                                name: true,
+                                item_type: true,
+                                station_route: true,
+                                tax_slab: true,
+                            },
                         },
                         variant: true,
+                        addons: true,
                     },
                 },
                 kots: { include: { items: true } },
@@ -220,6 +283,75 @@ let OrdersService = class OrdersService {
             throw new common_1.NotFoundException('Order not found.');
         return order;
     }
+    async getCfdOrders(tenantId) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return this.prisma.order.findMany({
+            where: {
+                tenant_id: tenantId,
+                created_at: { gte: today },
+                status: { in: ['PLACED', 'PREPARING', 'READY'] },
+                queue_token_number: { not: null },
+            },
+            select: {
+                id: true,
+                status: true,
+                queue_token_number: true,
+                order_name: true,
+            },
+            orderBy: { created_at: 'asc' },
+        });
+    }
+    async getDispatchOrders(tenantId) {
+        return this.prisma.order.findMany({
+            where: {
+                tenant_id: tenantId,
+                status: { in: ['PLACED', 'PREPARING', 'READY'] },
+                order_type: { in: ['TAKEAWAY', 'AGGREGATOR', 'DELIVERY', 'ONLINE'] },
+            },
+            include: {
+                order_items: {
+                    include: {
+                        item: {
+                            select: { name: true, category: { select: { name: true } } },
+                        },
+                        variant: true,
+                        addons: true,
+                    },
+                },
+                customer: true,
+            },
+            orderBy: { created_at: 'desc' },
+        });
+    }
+    async getActiveOrderByTable(tenantId, tableId) {
+        return this.prisma.order.findFirst({
+            where: {
+                tenant_id: tenantId,
+                table_id: tableId,
+                status: { notIn: ['SETTLED', 'VOID'] },
+            },
+            include: {
+                order_items: {
+                    include: {
+                        item: {
+                            select: {
+                                name: true,
+                                item_type: true,
+                                station_route: true,
+                                base_price: true,
+                                tax_slab: true,
+                            },
+                        },
+                        variant: true,
+                        addons: true,
+                    },
+                },
+                table: { select: { table_number: true } },
+            },
+            orderBy: { created_at: 'desc' },
+        });
+    }
     async getActiveOrders(tenantId) {
         return this.prisma.order.findMany({
             where: {
@@ -229,13 +361,19 @@ let OrdersService = class OrdersService {
             include: {
                 table: { select: { table_number: true } },
                 order_items: {
-                    select: { id: true, quantity: true, status: true, unit_price: true },
+                    select: {
+                        id: true,
+                        quantity: true,
+                        status: true,
+                        unit_price: true,
+                        item: { select: { name: true } },
+                    },
                 },
             },
             orderBy: { created_at: 'desc' },
         });
     }
-    async voidOrder(tenantId, orderId, reason) {
+    async voidOrder(tenantId, orderId, reason, userId) {
         const order = await this.prisma.order.findFirst({
             where: { id: orderId, tenant_id: tenantId },
             select: { id: true, table_id: true, status: true },
@@ -251,8 +389,185 @@ let OrdersService = class OrdersService {
                 where: { id: order.table_id },
                 data: { status: 'DIRTY', current_order_id: null },
             });
+            this.floorPlanGateway.emitTableStatusChanged(tenantId, {
+                id: order.table_id,
+                status: 'DIRTY',
+            });
         }
+        await this.auditService.log({
+            tenantId,
+            action: 'VOID_BILL',
+            entityType: 'ORDER',
+            entityId: orderId,
+            performedBy: userId,
+            reason,
+            oldValue: { status: order.status },
+            newValue: { status: 'VOID' },
+        });
         return { success: true };
+    }
+    async voidItem(tenantId, orderId, itemId, userId) {
+        const order = await this.prisma.order.findFirst({
+            where: { id: orderId, tenant_id: tenantId },
+            select: { id: true },
+        });
+        if (!order)
+            throw new common_1.NotFoundException('Order not found.');
+        const item = await this.prisma.orderItem.findFirst({
+            where: { id: itemId, order_id: orderId },
+            include: { item: { select: { name: true } } },
+        });
+        if (!item)
+            throw new common_1.NotFoundException('Item not found.');
+        await this.prisma.orderItem.update({
+            where: { id: itemId },
+            data: { status: 'VOID' },
+        });
+        return { job_id: `void-${itemId}`, undo_window_ms: 0 };
+    }
+    async holdItems(tenantId, orderId, itemIds) {
+        await this.prisma.orderItem.updateMany({
+            where: {
+                order_id: orderId,
+                id: { in: itemIds },
+                status: 'PENDING',
+            },
+            data: { fire_status: 'HELD' },
+        });
+        return { success: true };
+    }
+    async fireHeldItems(tenantId, orderId, userId, courseNumber) {
+        const heldItems = await this.prisma.orderItem.findMany({
+            where: {
+                order_id: orderId,
+                fire_status: 'HELD',
+                status: 'PENDING',
+                ...(courseNumber ? { course_number: courseNumber } : {}),
+            },
+            select: { id: true },
+        });
+        if (heldItems.length === 0) {
+            throw new common_1.BadRequestException('No held items found for this order/course.');
+        }
+        const itemIds = heldItems.map((i) => i.id);
+        await this.prisma.orderItem.updateMany({
+            where: { id: { in: itemIds } },
+            data: { fire_status: 'FIRED' },
+        });
+        return this.fireKot(tenantId, orderId, userId, itemIds);
+    }
+    async openTab(tenantId, orderId, tabName) {
+        return this.prisma.order.update({
+            where: { id: orderId, tenant_id: tenantId },
+            data: { is_tab_open: true, tab_name: tabName },
+        });
+    }
+    async getOpenTabs(tenantId) {
+        return this.prisma.order.findMany({
+            where: {
+                tenant_id: tenantId,
+                is_tab_open: true,
+                status: { notIn: ['SETTLED', 'VOID'] },
+            },
+            include: {
+                table: { select: { table_number: true } },
+                order_items: {
+                    include: {
+                        item: true,
+                        variant: true,
+                        addons: true,
+                    },
+                },
+            },
+            orderBy: { created_at: 'desc' },
+        });
+    }
+    async getLastRound(tenantId, orderId) {
+        const lastKot = await this.prisma.kOT.findFirst({
+            where: { order_id: orderId, tenant_id: tenantId },
+            orderBy: { printed_at: 'desc' },
+            include: {
+                items: {
+                    include: {
+                        item: true,
+                        variant: true,
+                        addons: true,
+                    },
+                },
+            },
+        });
+        return lastKot?.items || [];
+    }
+    async getNextTokenNumber(tenantId) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const count = await this.prisma.order.count({
+            where: {
+                tenant_id: tenantId,
+                created_at: { gte: today },
+            },
+        });
+        return count + 1;
+    }
+    async transferOrder(tenantId, orderId, newTableId) {
+        const order = await this.prisma.order.findFirst({
+            where: { id: orderId, tenant_id: tenantId },
+            include: { table: true },
+        });
+        if (!order)
+            throw new common_1.NotFoundException('Order not found.');
+        if (['SETTLED', 'VOID'].includes(order.status)) {
+            throw new common_1.BadRequestException('Cannot transfer a settled or voided order.');
+        }
+        if (order.table_id === newTableId) {
+            throw new common_1.BadRequestException('Order is already assigned to this table.');
+        }
+        const newTable = await this.prisma.table.findFirst({
+            where: { id: newTableId, tenant_id: tenantId },
+        });
+        if (!newTable)
+            throw new common_1.NotFoundException('Target table not found.');
+        if (newTable.status !== 'AVAILABLE') {
+            throw new common_1.BadRequestException('Target table is not available.');
+        }
+        const oldTableId = order.table_id;
+        await this.prisma.$transaction(async (tx) => {
+            await tx.order.update({
+                where: { id: orderId },
+                data: { table_id: newTableId },
+            });
+            await tx.table.update({
+                where: { id: newTableId },
+                data: { status: 'OCCUPIED', current_order_id: orderId },
+            });
+            if (oldTableId) {
+                const otherActiveOrders = await tx.order.count({
+                    where: {
+                        tenant_id: tenantId,
+                        table_id: oldTableId,
+                        status: { notIn: ['SETTLED', 'VOID'] },
+                        id: { not: orderId },
+                    },
+                });
+                if (otherActiveOrders === 0) {
+                    await tx.table.update({
+                        where: { id: oldTableId },
+                        data: { status: 'AVAILABLE', current_order_id: null },
+                    });
+                }
+            }
+        });
+        if (oldTableId) {
+            this.floorPlanGateway.emitTableStatusChanged(tenantId, {
+                id: oldTableId,
+                status: 'AVAILABLE',
+            });
+        }
+        this.floorPlanGateway.emitTableStatusChanged(tenantId, {
+            id: newTableId,
+            status: 'OCCUPIED',
+        });
+        return { success: true, order_id: orderId, new_table_id: newTableId };
     }
 };
 exports.OrdersService = OrdersService;
@@ -260,6 +575,8 @@ exports.OrdersService = OrdersService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         kds_gateway_1.KdsGateway,
-        inventory_service_1.InventoryService])
+        floor_plan_gateway_1.FloorPlanGateway,
+        inventory_service_1.InventoryService,
+        audit_service_1.AuditService])
 ], OrdersService);
 //# sourceMappingURL=orders.service.js.map

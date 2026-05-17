@@ -65,6 +65,15 @@ export class SettleInvoiceDto {
   @ValidateNested({ each: true })
   @Type(() => RecordPaymentDto)
   payments: RecordPaymentDto[];
+
+  @IsOptional()
+  @IsString()
+  customer_id?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  redeem_points?: number;
 }
 
 // ─── Open Shift DTO ───────────────────────────────────────────────────────────

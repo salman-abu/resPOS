@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
+import { API_BASE } from './api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -10,6 +11,7 @@ export interface KdsItem {
   quantity: number;
   notes?: string;
   status: string; // PENDING | SENT_TO_KDS | READY | SERVED
+  seat_number?: number;
 }
 
 export interface KdsTicket {
@@ -43,10 +45,8 @@ interface UseKdsSocketOptions {
   onKotStatus?: (kotId: string, status: string) => void;
 }
 
-const API_URL =
-  typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_URL
-    ? process.env.NEXT_PUBLIC_API_URL
-    : 'http://localhost:3001';
+// Socket.IO connects at the server root — strip the /api/v1 suffix
+const API_URL = API_BASE.replace(/\/api\/v\d+$/, '');
 
 export function useKdsSocket({
   tenantId,

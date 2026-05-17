@@ -97,46 +97,25 @@ export default function ThermalBill({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(4px)' }}
+      style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(4px)' }}
     >
-      <div
-        className="relative max-w-sm w-full rounded-2xl overflow-hidden"
-        style={{
-          background: 'var(--bg-card)',
-          border: '1px solid var(--border)',
-        }}
-      >
+      <div className="relative max-w-sm w-full border-2 border-slate-700 overflow-hidden bg-slate-900">
         {/* Toolbar */}
-        <div
-          className="flex items-center justify-between px-4 py-3"
-          style={{
-            borderBottom: '1px solid var(--border)',
-            background: 'var(--bg-elevated)',
-          }}
-        >
-          <span
-            className="font-bold text-sm"
-            style={{ color: 'var(--text-primary)' }}
-          >
-            🧾 Bill Preview
+        <div className="flex items-center justify-between px-4 py-3 border-b-2 border-slate-800 bg-slate-950">
+          <span className="font-black text-sm text-slate-100 uppercase tracking-widest">
+            Bill Preview
           </span>
           <div className="flex gap-2">
             <button
               onClick={handlePrint}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold"
-              style={{ background: '#6366f1', color: '#fff' }}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-black uppercase tracking-wider bg-cyan-500 text-slate-900 border-2 border-cyan-400 active:bg-cyan-400 active:scale-[0.92] transition-all duration-75"
             >
               <Printer size={14} /> Print
             </button>
             {onClose && (
               <button
                 onClick={onClose}
-                className="px-3 py-1.5 rounded-lg text-xs font-bold"
-                style={{
-                  background: 'var(--bg-elevated)',
-                  border: '1px solid var(--border)',
-                  color: 'var(--text-muted)',
-                }}
+                className="px-3 py-1.5 text-xs font-black uppercase tracking-wider bg-slate-800 border-2 border-slate-700 text-slate-400 active:bg-slate-700 active:text-slate-100 active:scale-[0.92] transition-all duration-75"
               >
                 Close
               </button>
@@ -145,8 +124,9 @@ export default function ThermalBill({
         </div>
 
         {/* Thermal Preview */}
-        <div className="p-4 max-h-[75vh] overflow-y-auto">
+        <div className="p-8 bg-slate-950 max-h-[75vh] overflow-y-auto scrollbar-thin">
           <div
+            className="border-2 border-slate-800"
             ref={printRef}
             style={{
               fontFamily: "'Courier Prime', Courier, monospace",
@@ -154,6 +134,8 @@ export default function ThermalBill({
               width: '100%',
               maxWidth: 300,
               margin: '0 auto',
+              background: '#fff',
+              padding: '24px 16px',
               color: '#111',
               lineHeight: 1.5,
             }}
@@ -234,7 +216,7 @@ export default function ThermalBill({
             />
 
             {/* Items */}
-            {order.items.map((item, i) => (
+            {(order.items || []).map((item, i) => (
               <div key={i} style={{ marginBottom: 3 }}>
                 <div
                   style={{
@@ -370,7 +352,8 @@ export default function ThermalBill({
               }}
             />
             <div style={{ textAlign: 'center', fontSize: 10, color: '#555' }}>
-              Thank you! Visit Again ✨<br />
+              Thank you! Visit Again
+              <br />
               Powered by NextGen RPOS
             </div>
           </div>

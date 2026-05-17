@@ -22,14 +22,17 @@ let BillingController = class BillingController {
     constructor(billingService) {
         this.billingService = billingService;
     }
-    generateInvoice(req, dto) {
-        return this.billingService.generateInvoice(req.tenantId, dto);
+    async generate(req, dto) {
+        return this.billingService.generateInvoice(req.tenantId, req.user.sub, dto);
+    }
+    async split(req, dto) {
+        return this.billingService.splitInvoices(req.tenantId, req.user.sub, dto.order_id, dto.splits);
     }
     getInvoice(req, id) {
         return this.billingService.getInvoice(req.tenantId, id);
     }
     settleInvoice(req, id, dto) {
-        return this.billingService.settleInvoice(req.tenantId, id, dto);
+        return this.billingService.settleInvoice(req.tenantId, req.user.sub, id, dto);
     }
     openShift(req, dto) {
         return this.billingService.openShift(req.tenantId, req.user.sub, dto);
@@ -51,8 +54,16 @@ __decorate([
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, billing_dto_1.GenerateInvoiceDto]),
-    __metadata("design:returntype", void 0)
-], BillingController.prototype, "generateInvoice", null);
+    __metadata("design:returntype", Promise)
+], BillingController.prototype, "generate", null);
+__decorate([
+    (0, common_1.Post)('invoice/split'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], BillingController.prototype, "split", null);
 __decorate([
     (0, common_1.Get)('invoice/:id'),
     __param(0, (0, common_1.Req)()),
@@ -88,6 +99,7 @@ __decorate([
 ], BillingController.prototype, "closeShift", null);
 __decorate([
     (0, common_1.Get)('shift/z-report'),
+    (0, common_1.Header)('Cache-Control', 'private, max-age=30, stale-while-revalidate=60'),
     __param(0, (0, common_1.Req)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
@@ -95,6 +107,7 @@ __decorate([
 ], BillingController.prototype, "getZReport", null);
 __decorate([
     (0, common_1.Get)('tables'),
+    (0, common_1.Header)('Cache-Control', 'private, max-age=10, stale-while-revalidate=30'),
     __param(0, (0, common_1.Req)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),

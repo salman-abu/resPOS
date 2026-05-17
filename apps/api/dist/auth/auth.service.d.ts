@@ -1,9 +1,12 @@
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
+import { AuditService } from '../audit/audit.service';
 export declare class AuthService {
     private prisma;
     private jwtService;
-    constructor(prisma: PrismaService, jwtService: JwtService);
+    private auditService;
+    private redis;
+    constructor(prisma: PrismaService, jwtService: JwtService, auditService: AuditService);
     getTerminalInfo(tenantId: string): Promise<{
         tenantName: string;
         staff: {
@@ -30,4 +33,10 @@ export declare class AuthService {
             tenant_id: string;
         };
     }>;
+    verifyManagerPin(tenantId: string, managerId: string, pin: string): Promise<{
+        authorization_token: string;
+        manager_name: string;
+        expires_in: number;
+    }>;
+    validateManagerAuthToken(token: string): Promise<boolean>;
 }

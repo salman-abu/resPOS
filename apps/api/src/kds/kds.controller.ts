@@ -42,6 +42,6 @@ export class KdsController {
   /** PATCH /kds/kot/:kotId/recall — Recall a bumped KOT */
   @Patch('kot/:kotId/recall')
   recallKot(@Req() req: any, @Param('kotId') kotId: string) {
-    return this.kdsService.recallKot(req.tenantId, kotId);
+    return this.kdsService.recallKot(req.tenantId, req.user.sub, kotId);
   }
 }

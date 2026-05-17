@@ -21,13 +21,16 @@ exports.AuthModule = AuthModule = __decorate([
         imports: [
             passport_1.PassportModule,
             jwt_1.JwtModule.register({
-                secret: process.env.JWT_SECRET || 'super-secret-key-change-me',
+                secret: process.env.JWT_SECRET ||
+                    (() => {
+                        throw new Error('JWT_SECRET environment variable is required');
+                    })(),
                 signOptions: { expiresIn: '1d' },
             }),
         ],
         providers: [auth_service_1.AuthService, jwt_strategy_1.JwtStrategy],
         controllers: [auth_controller_1.AuthController],
-        exports: [auth_service_1.AuthService],
+        exports: [auth_service_1.AuthService, jwt_1.JwtModule],
     })
 ], AuthModule);
 //# sourceMappingURL=auth.module.js.map

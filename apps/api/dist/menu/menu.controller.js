@@ -22,34 +22,96 @@ let MenuController = class MenuController {
         this.menuService = menuService;
     }
     getCategories(req) {
-        const tenantId = req.tenantId;
-        return this.menuService.getCategories(tenantId);
+        return this.menuService.getCategories(req.tenantId);
+    }
+    createCategory(req, name) {
+        return this.menuService.createCategory(req.tenantId, name);
+    }
+    updateCategory(req, id, name) {
+        return this.menuService.updateCategory(req.tenantId, id, name);
+    }
+    deleteCategory(req, id) {
+        return this.menuService.deleteCategory(req.tenantId, id);
     }
     getItems(req, categoryId) {
-        const tenantId = req.tenantId;
-        return this.menuService.getItems(tenantId, categoryId);
+        return this.menuService.getItems(req.tenantId, categoryId);
+    }
+    createItem(req, body) {
+        return this.menuService.createItem(req.tenantId, body);
+    }
+    updateItem(req, id, body) {
+        return this.menuService.updateItem(req.tenantId, id, body);
     }
     toggleAvailability(req, id, is_available) {
-        const tenantId = req.tenantId;
-        return this.menuService.toggleAvailability(tenantId, id, is_available);
+        return this.menuService.toggleAvailability(req.tenantId, id, is_available);
+    }
+    deleteItem(req, id) {
+        return this.menuService.deleteItem(req.tenantId, id);
+    }
+    syncMenu(req) {
+        return this.menuService.syncMenu(req.tenantId);
     }
 };
 exports.MenuController = MenuController;
 __decorate([
     (0, common_1.Get)('categories'),
+    (0, common_1.Header)('Cache-Control', 'private, max-age=60, stale-while-revalidate=300'),
     __param(0, (0, common_1.Req)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], MenuController.prototype, "getCategories", null);
 __decorate([
+    (0, common_1.Post)('categories'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Body)('name')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], MenuController.prototype, "createCategory", null);
+__decorate([
+    (0, common_1.Patch)('categories/:id'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('id')),
+    __param(2, (0, common_1.Body)('name')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, String]),
+    __metadata("design:returntype", void 0)
+], MenuController.prototype, "updateCategory", null);
+__decorate([
+    (0, common_1.Delete)('categories/:id'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], MenuController.prototype, "deleteCategory", null);
+__decorate([
     (0, common_1.Get)('items'),
+    (0, common_1.Header)('Cache-Control', 'private, max-age=60, stale-while-revalidate=300'),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Query)('categoryId')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", void 0)
 ], MenuController.prototype, "getItems", null);
+__decorate([
+    (0, common_1.Post)('items'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", void 0)
+], MenuController.prototype, "createItem", null);
+__decorate([
+    (0, common_1.Patch)('items/:id'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('id')),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, Object]),
+    __metadata("design:returntype", void 0)
+], MenuController.prototype, "updateItem", null);
 __decorate([
     (0, common_1.Patch)('items/:id/availability'),
     __param(0, (0, common_1.Req)()),
@@ -59,6 +121,21 @@ __decorate([
     __metadata("design:paramtypes", [Object, String, Boolean]),
     __metadata("design:returntype", void 0)
 ], MenuController.prototype, "toggleAvailability", null);
+__decorate([
+    (0, common_1.Delete)('items/:id'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], MenuController.prototype, "deleteItem", null);
+__decorate([
+    (0, common_1.Post)('sync'),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], MenuController.prototype, "syncMenu", null);
 exports.MenuController = MenuController = __decorate([
     (0, common_1.Controller)('menu'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),

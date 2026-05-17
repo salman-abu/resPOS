@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { seedMenuCache } from '@/lib/db';
+import { setAuthToken } from '@respos/utils';
 import {
   Zap,
   Mail,
@@ -24,43 +26,95 @@ export default function LoginPage() {
     e.preventDefault();
     setError('');
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 800));
-    if (pin === '1234') {
+
+    try {
+      const apiUrl =
+        process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+
+      let res: Response;
+      try {
+        res = await fetch(`${apiUrl}/auth/owner/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, pin }),
+        });
+      } catch {
+        setError(
+          'Cannot connect to server. Make sure the API is running on port 3001.',
+        );
+        setLoading(false);
+        return;
+      }
+
+      if (!res.ok) {
+        let message = 'Invalid email or PIN. Please try again.';
+        try {
+          const errBody = await res.json();
+          if (errBody?.message) message = errBody.message;
+        } catch {
+          /* ignore */
+        }
+        setError(message);
+        setLoading(false);
+        return;
+      }
+
+      const data = await res.json();
+
+      // Store token
+      setAuthToken(data.access_token);
+      localStorage.setItem('user_info', JSON.stringify(data.user));
+
+      // Phase 2.1: Preload full menu into Dexie.js immediately after login
+      try {
+        const headers = { Authorization: `Bearer ${data.access_token}` };
+        Promise.all([
+          fetch(`${apiUrl}/menu/categories`, { headers }).then((r) => r.json()),
+          fetch(`${apiUrl}/menu/items`, { headers }).then((r) => r.json()),
+        ])
+          .then(([cats, items]) => {
+            if (cats && items) {
+              seedMenuCache(cats, items).catch(console.error);
+            }
+          })
+          .catch(console.error);
+      } catch (err) {
+        console.error('Failed to preload menu', err);
+      }
+
       router.push('/dashboard');
-    } else {
-      setError('Invalid email or PIN. Please try again.');
+    } catch (err: any) {
+      setError(
+        err.message || 'An unexpected error occurred. Please try again.',
+      );
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
       {/* Subtle dot pattern background */}
       <div
-        className="absolute inset-0 pointer-events-none"
+        className="absolute inset-0 pointer-events-none opacity-20"
         style={{
           backgroundImage:
-            'radial-gradient(circle at 1px 1px, #E2E8F0 1px, transparent 0)',
+            'radial-gradient(circle at 1px 1px, #334155 1px, transparent 0)',
           backgroundSize: '28px 28px',
         }}
       />
 
-      {/* Gradient blobs — light & subtle */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-100 rounded-full blur-3xl opacity-60 pointer-events-none" />
-      <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-violet-100 rounded-full blur-3xl opacity-40 pointer-events-none" />
-
       <div className="relative w-full max-w-sm animate-scale-in">
         {/* Card */}
-        <div className="bg-white rounded-3xl border border-border shadow-elevated p-8">
+        <div className="bg-slate-900 border-2 border-slate-700 p-8">
           {/* Brand */}
           <div className="flex flex-col items-center mb-8">
-            <div className="h-14 w-14 rounded-2xl bg-brand-600 flex items-center justify-center shadow-lg mb-4">
-              <Zap className="h-7 w-7 text-white" />
+            <div className="h-14 w-14 bg-cyan-500 flex items-center justify-center border-2 border-cyan-400 shadow-lg mb-4">
+              <Zap className="h-7 w-7 text-slate-900" />
             </div>
-            <h1 className="text-2xl font-black text-content-primary tracking-tight">
+            <h1 className="text-2xl font-black text-slate-100 tracking-tight uppercase">
               resPOS
             </h1>
-            <p className="text-content-muted text-sm mt-1">
+            <p className="text-slate-500 text-sm mt-1 font-bold uppercase tracking-wider">
               Owner & Manager Portal
             </p>
           </div>
@@ -70,12 +124,12 @@ export default function LoginPage() {
             <div className="space-y-1.5">
               <label
                 htmlFor="email"
-                className="text-content-secondary text-sm font-semibold"
+                className="text-slate-400 text-xs font-black uppercase tracking-wider"
               >
                 Email address
               </label>
               <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-content-muted" />
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
                 <input
                   id="email"
                   type="email"
@@ -83,7 +137,7 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="owner@restaurant.com"
                   required
-                  className="input-field w-full pl-10"
+                  className="w-full bg-slate-950 border-2 border-slate-700 pl-10 pr-4 py-3 text-slate-100 outline-none focus:border-cyan-500 transition-all placeholder:text-slate-600 font-bold tracking-tight"
                 />
               </div>
             </div>
@@ -91,12 +145,12 @@ export default function LoginPage() {
             <div className="space-y-1.5">
               <label
                 htmlFor="pin"
-                className="text-content-secondary text-sm font-semibold"
+                className="text-slate-400 text-xs font-black uppercase tracking-wider"
               >
                 Secure PIN
               </label>
               <div className="relative">
-                <KeyRound className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-content-muted" />
+                <KeyRound className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
                 <input
                   id="pin"
                   type={showPin ? 'text' : 'password'}
@@ -107,12 +161,12 @@ export default function LoginPage() {
                   placeholder="••••••"
                   maxLength={6}
                   required
-                  className="input-field w-full pl-10 pr-12 font-mono tracking-widest text-base"
+                  className="w-full bg-slate-950 border-2 border-slate-700 pl-10 pr-12 py-3 font-mono tracking-widest text-base text-slate-100 outline-none focus:border-cyan-500 transition-all placeholder:text-slate-600"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPin((v) => !v)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-content-muted hover:text-content-secondary transition-colors"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 active:text-slate-300 transition-colors"
                 >
                   {showPin ? (
                     <EyeOff className="h-4 w-4" />
@@ -124,7 +178,7 @@ export default function LoginPage() {
             </div>
 
             {error && (
-              <div className="flex items-center gap-2 text-danger text-sm bg-danger/8 border border-danger/20 rounded-xl px-3 py-2.5 animate-fade-in">
+              <div className="flex items-center gap-2 text-rose-400 text-sm bg-rose-500/10 border-2 border-rose-500/30 px-3 py-2.5 animate-fade-in font-bold uppercase tracking-wider">
                 <AlertCircle className="h-4 w-4 flex-shrink-0" />
                 {error}
               </div>
@@ -133,11 +187,11 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading || !email || !pin}
-              className="btn-primary w-full flex items-center justify-center gap-2 py-3"
+              className="w-full flex items-center justify-center gap-2 py-3 bg-cyan-500 text-slate-900 font-black uppercase tracking-widest border-2 border-cyan-400 active:bg-cyan-400 active:scale-[0.97] transition-all disabled:opacity-40"
             >
               {loading ? (
                 <>
-                  <span className="h-4 w-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  <span className="h-4 w-4 border-2 border-slate-900/40 border-t-slate-900 animate-spin" />
                   Authenticating…
                 </>
               ) : (
@@ -149,32 +203,34 @@ export default function LoginPage() {
           </form>
 
           <div className="my-5 flex items-center gap-3">
-            <div className="flex-1 h-px bg-border" />
-            <span className="text-content-muted text-xs font-medium">or</span>
-            <div className="flex-1 h-px bg-border" />
+            <div className="flex-1 h-px bg-slate-700" />
+            <span className="text-slate-500 text-xs font-black uppercase tracking-wider">
+              or
+            </span>
+            <div className="flex-1 h-px bg-slate-700" />
           </div>
 
           <a
             href="/pos/pin"
-            className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-border bg-surface-2 text-content-secondary hover:text-content-primary hover:bg-surface-3 hover:border-border-strong text-sm font-medium transition-all"
+            className="flex items-center justify-center gap-2 w-full py-2.5 border-2 border-slate-700 bg-slate-800 text-slate-300 active:text-slate-100 active:bg-slate-700 text-sm font-bold uppercase tracking-wider transition-all active:scale-[0.97]"
           >
             Staff PIN Login <ArrowRight className="h-4 w-4" />
           </a>
 
-          <p className="mt-5 text-center text-xs text-content-muted">
+          <p className="mt-5 text-center text-xs text-slate-500 font-bold uppercase tracking-wider">
             New restaurant?{' '}
             <a
               href="/onboarding"
-              className="text-brand-600 hover:text-brand-700 font-semibold"
+              className="text-cyan-400 active:text-cyan-300 font-black hover:underline"
             >
               Set up your account →
             </a>
           </p>
         </div>
 
-        <p className="text-center text-xs text-content-muted mt-4">
-          Demo — any email + PIN{' '}
-          <code className="font-mono font-bold text-brand-600 bg-brand-50 px-1.5 py-0.5 rounded">
+        <p className="text-center text-xs text-slate-600 mt-4 font-mono tracking-tight">
+          Demo — use DB email + PIN{' '}
+          <code className="font-mono font-black text-cyan-400 bg-cyan-500/10 px-1.5 py-0.5 border border-cyan-500/30">
             1234
           </code>
         </p>

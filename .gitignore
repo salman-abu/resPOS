@@ -1,10 +1,46 @@
+# Dependencies
 node_modules
-.vercel
+.pnp
+.pnp.js
+
+# Environment files
 .env
 .env.*
 !.env.example
-dist
-.next
-coverage
-build
+.env.local
+.env.*.local
+
+# Build outputs
+dist/
+.next/
+out/
+build/
+coverage/
+
+# Vercel
+.vercel/
+
+# Prisma
+packages/db/node_modules
+
+# Logs
 *.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Misc scratch files
+api_build.log
+build_output*.log
+lint_output.txt
+test.js
+test2.js

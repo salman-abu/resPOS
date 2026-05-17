@@ -31,7 +31,7 @@ let InventoryController = class InventoryController {
         return this.inventoryService.createIngredient(req.tenantId, dto);
     }
     updateStock(req, id, dto) {
-        return this.inventoryService.updateStock(req.tenantId, id, dto, req.user.id);
+        return this.inventoryService.updateStock(req.tenantId, id, dto, req.user.sub);
     }
 };
 exports.InventoryController = InventoryController;

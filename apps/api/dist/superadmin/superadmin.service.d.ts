@@ -26,8 +26,9 @@ export declare class SuperAdminService {
         };
     } & {
         id: string;
-        slug: string;
+        created_at: Date;
         name: string;
+        slug: string;
         gstin: string | null;
         state_code: string | null;
         address: string | null;
@@ -37,12 +38,12 @@ export declare class SuperAdminService {
         subscription_ends_at: Date | null;
         settings: import("@prisma/client/runtime/library").JsonValue | null;
         is_active: boolean;
-        created_at: Date;
     })[]>;
     toggleTenantStatus(id: string, is_active: boolean): Promise<{
         id: string;
-        slug: string;
+        created_at: Date;
         name: string;
+        slug: string;
         gstin: string | null;
         state_code: string | null;
         address: string | null;
@@ -52,12 +53,12 @@ export declare class SuperAdminService {
         subscription_ends_at: Date | null;
         settings: import("@prisma/client/runtime/library").JsonValue | null;
         is_active: boolean;
-        created_at: Date;
     }>;
     updateTenantSubscription(id: string, data: any): Promise<{
         id: string;
-        slug: string;
+        created_at: Date;
         name: string;
+        slug: string;
         gstin: string | null;
         state_code: string | null;
         address: string | null;
@@ -67,7 +68,6 @@ export declare class SuperAdminService {
         subscription_ends_at: Date | null;
         settings: import("@prisma/client/runtime/library").JsonValue | null;
         is_active: boolean;
-        created_at: Date;
     }>;
     impersonateTenant(tenantId: string): Promise<{
         access_token: string;

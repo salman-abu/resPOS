@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthController = void 0;
 const common_1 = require("@nestjs/common");
 const auth_service_1 = require("./auth.service");
+const jwt_auth_guard_1 = require("./guards/jwt-auth.guard");
 let AuthController = class AuthController {
     authService;
     constructor(authService) {
@@ -30,6 +31,9 @@ let AuthController = class AuthController {
         if (!tenantId)
             return { error: 'Missing tenantId' };
         return this.authService.getTerminalInfo(tenantId);
+    }
+    async verifyManagerPin(body) {
+        return this.authService.verifyManagerPin(body.tenantId, body.managerId, body.pin);
     }
 };
 exports.AuthController = AuthController;
@@ -48,12 +52,20 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "loginOwner", null);
 __decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Get)('terminal-info'),
     __param(0, (0, common_1.Query)('tenantId')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "getTerminalInfo", null);
+__decorate([
+    (0, common_1.Post)('verify-manager-pin'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "verifyManagerPin", null);
 exports.AuthController = AuthController = __decorate([
     (0, common_1.Controller)('auth'),
     __metadata("design:paramtypes", [auth_service_1.AuthService])

@@ -7,45 +7,68 @@
 /* ─── CSS Design Tokens (Light Theme) ──────────────────────────────────────── */
 
 :root {
-  /* Backgrounds */
-  --bg-base:     #F8FAFC;
-  --bg-card:     #FFFFFF;
-  --bg-hover:    #F1F5F9;
-  --bg-elevated: #FFFFFF;
-  --bg-muted:    #F8FAFC;
+  /* Surfaces */
+  --surface-base:   #F8FAFC;
+  --surface-card:   #FFFFFF;
+  --surface-sunken: #F1F5F9;
 
-  /* Borders */
-  --border:        #E2E8F0;
-  --border-active: #3B82F6;
-  --border-subtle: #F1F5F9;
-  --border-strong: #CBD5E1;
-
-  /* Brand */
-  --brand:       #2563EB;
-  --brand-light: #3B82F6;
-  --brand-50:    #EFF6FF;
-
-  /* Status */
-  --success: #059669;
-  --warning: #D97706;
-  --danger:  #DC2626;
-  --info:    #7C3AED;
-
-  /* Text */
+  /* Typography */
   --text-primary:   #0F172A;
   --text-secondary: #475569;
   --text-muted:     #94A3B8;
-  --text-disabled:  #CBD5E1;
+  --text-inverse:   #FFFFFF;
+
+  /* Borders */
+  --border-subtle:  #E2E8F0;
+  --border-strong:  #CBD5E1;
+
+  /* Brand */
+  --brand-light:    #DBEAFE;
+  --brand-default:  #2563EB;
+  --brand-strong:   #1D4ED8;
+
+  /* Semantic Actions */
+  --success-light:  #DCFCE7;
+  --success-default:#16A34A;
+  --danger-light:   #FEE2E2;
+  --danger-default: #DC2626;
+  --warning-light:  #FEF3C7;
+  --warning-default:#D97706;
+  --info-light:     #E0E7FF;
+  --info-default:   #4F46E5;
 
   /* Radius */
-  --radius-card:   16px;
-  --radius-button: 12px;
-  --radius-input:  10px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 16px;
+  --radius-full: 9999px;
 
   /* Shadows */
-  --shadow-card:    0 1px 3px rgba(15,23,42,0.08), 0 1px 2px rgba(15,23,42,0.04);
-  --shadow-hover:   0 4px 12px rgba(15,23,42,0.10);
-  --shadow-elevated:0 10px 40px rgba(15,23,42,0.12);
+  --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -1px rgba(15, 23, 42, 0.03);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -2px rgba(15, 23, 42, 0.04);
+
+  /* ─── Shadcn UI Required Tokens ─────────────────────────────────────────── */
+  --background: 210 40% 98%;      /* surface-base */
+  --foreground: 222 47% 11%;      /* text-primary */
+  --card: 0 0% 100%;              /* surface-card */
+  --card-foreground: 222 47% 11%; /* text-primary */
+  --popover: 0 0% 100%;           /* surface-card */
+  --popover-foreground: 222 47% 11%; /* text-primary */
+  --primary: 221 83% 53%;       /* brand-default */
+  --primary-foreground: 0 0% 100%; /* text-inverse */
+  --secondary: 210 40% 96%;     /* surface-sunken */
+  --secondary-foreground: 222 47% 11%; /* text-primary */
+  --muted: 210 40% 96%;         /* surface-sunken */
+  --muted-foreground: 215 16% 62%; /* text-muted */
+  --accent: 214 100% 93%;       /* brand-light */
+  --accent-foreground: 224 76% 48%; /* brand-strong */
+  --destructive: 0 72% 51%;     /* danger-default */
+  --destructive-foreground: 0 0% 100%; /* text-inverse */
+  --border: 214 32% 91%;        /* border-subtle */
+  --input: 214 32% 91%;         /* border-subtle */
+  --ring: 221 83% 53%;          /* brand-default */
+  --radius: 0.5rem;
 }
 
 /* ─── Base Reset ────────────────────────────────────────────────────────────── */
@@ -66,7 +89,7 @@ html {
 body {
   font-family: 'Inter', var(--font-inter), system-ui, -apple-system, sans-serif;
   font-feature-settings: "cv11", "ss01";
-  background-color: var(--bg-base);
+  background-color: var(--surface-base);
   color: var(--text-primary);
   line-height: 1.5;
   min-height: 100vh;
@@ -101,14 +124,14 @@ body {
 
   /* White card with soft shadow */
   .card {
-    background: #FFFFFF;
-    border: 1px solid #E2E8F0;
-    border-radius: var(--radius-card);
-    box-shadow: var(--shadow-card);
+    background: var(--surface-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
   }
 
   .card-hover {
-    @apply card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-hover;
+    @apply card transition-all duration-200 hover:-translate-y-0.5 shadow-sm hover:shadow-md;
   }
 
   /* Glassmorphism card (for modals/overlays on light bg) */
@@ -117,49 +140,49 @@ body {
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(226, 232, 240, 0.8);
-    border-radius: var(--radius-card);
-    box-shadow: var(--shadow-elevated);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
   }
 
   /* Buttons */
   .btn-primary {
-    @apply bg-brand-600 hover:bg-brand-700 active:bg-brand-800 text-white font-semibold
-           rounded-xl transition-all duration-200 shadow-sm hover:shadow-md
+    @apply bg-brand hover:bg-brand-strong active:bg-brand-strong text-content-inverse font-semibold
+           rounded-md transition-all duration-200 shadow-sm hover:shadow-md
            disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none;
   }
 
   .btn-secondary {
-    @apply bg-surface-3 hover:bg-surface-4 text-content-primary font-semibold
-           rounded-xl border border-border transition-all duration-200
+    @apply bg-surface-sunken hover:bg-surface-card text-content-primary font-semibold
+           rounded-md border border-border-subtle transition-all duration-200
            disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .btn-ghost {
-    @apply bg-transparent hover:bg-surface-3 text-content-secondary hover:text-content-primary
-           font-medium rounded-xl transition-all duration-200;
+    @apply bg-transparent hover:bg-surface-sunken text-content-secondary hover:text-content-primary
+           font-medium rounded-md transition-all duration-200;
   }
 
   .btn-danger {
-    @apply bg-danger/10 hover:bg-danger/20 text-danger border border-danger/25
-           font-semibold rounded-xl transition-all duration-200;
+    @apply bg-danger-light hover:bg-danger-light text-danger border border-danger-light
+           font-semibold rounded-md transition-all duration-200;
   }
 
   /* Input */
   .input-field {
-    @apply bg-white border border-border rounded-lg px-3 py-2.5
+    @apply bg-surface-card border border-border-subtle rounded-md px-3 py-2.5
            text-content-primary placeholder:text-content-muted text-sm
-           outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/10
+           outline-none focus:border-brand focus:ring-2 focus:ring-brand-light
            transition-all duration-200 shadow-sm;
   }
 
   /* Nav item */
   .nav-item {
-    @apply flex items-center gap-3 px-3 py-2.5 rounded-xl text-content-secondary
-           hover:bg-surface-3 hover:text-content-primary transition-all duration-150 cursor-pointer;
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-md text-content-secondary
+           hover:bg-surface-sunken hover:text-content-primary transition-all duration-150 cursor-pointer;
   }
 
   .nav-item-active {
-    @apply bg-brand-50 text-brand-700 font-semibold border border-brand-100;
+    @apply bg-brand-light text-brand-strong font-semibold border border-brand-light;
   }
 
   /* Badge */
@@ -220,7 +243,7 @@ body {
   .press { @apply active:scale-95 transition-transform duration-100; }
 
   /* Divider */
-  .divider { @apply border-t border-border; }
+  .divider { @apply border-t border-border-subtle; }
 }
 
 /* ─── Animations ────────────────────────────────────────────────────────────── */

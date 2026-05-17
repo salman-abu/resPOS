@@ -13,6 +13,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { setAuthToken } from '@respos/utils';
 
 const ROLE_REDIRECT: Record<string, string> = {
   OWNER: '/dashboard',
@@ -132,10 +133,35 @@ export default function PinPadPage() {
 
   const submitPin = async (pinValue: string) => {
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 700));
-    if (pinValue === '1234') {
+    setError(false);
+
+    try {
+      const tenantId = localStorage.getItem('device_tenant_id');
+      const apiUrl =
+        process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+
+      const res = await fetch(`${apiUrl}/auth/staff/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenantId,
+          userId: selected!.id,
+          pin: pinValue,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Invalid PIN');
+      }
+
+      const data = await res.json();
+
+      // Store token
+      setAuthToken(data.access_token);
+      localStorage.setItem('user_info', JSON.stringify(data.user));
+
       router.push(ROLE_REDIRECT[selected!.role] ?? '/pos');
-    } else {
+    } catch (err) {
       setLoading(false);
       setError(true);
       setShake(true);
@@ -147,9 +173,9 @@ export default function PinPadPage() {
   // ── Loading & Pairing ───────────────────────────────────────────────────
   if (loadingInitial) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
-        <Loader2 className="h-8 w-8 text-brand-600 animate-spin mb-4" />
-        <p className="text-content-muted font-medium">
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6">
+        <Loader2 className="h-8 w-8 text-cyan-400 animate-spin mb-4" />
+        <p className="text-slate-500 font-black uppercase tracking-wider">
           Initializing Terminal...
         </p>
       </div>
@@ -158,22 +184,22 @@ export default function PinPadPage() {
 
   if (!isPaired) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 relative">
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 relative">
         <button
           onClick={() => router.push('/')}
-          className="absolute top-8 left-8 flex items-center gap-2 text-content-muted hover:text-content-primary font-medium transition-colors"
+          className="absolute top-8 left-8 flex items-center gap-2 text-slate-500 active:text-slate-300 font-bold uppercase tracking-wider text-xs transition-colors"
         >
           <ChevronLeft className="w-5 h-5" /> Back to Home
         </button>
 
-        <div className="w-full max-w-sm bg-white rounded-3xl border border-border shadow-elevated p-8 text-center">
-          <div className="mx-auto bg-blue-50 w-16 h-16 rounded-full flex items-center justify-center mb-6">
-            <MonitorSmartphone className="h-8 w-8 text-brand-600" />
+        <div className="w-full max-w-sm bg-slate-900 border-2 border-slate-700 p-8 text-center">
+          <div className="mx-auto bg-cyan-500/10 w-16 h-16 border border-cyan-500/30 flex items-center justify-center mb-6">
+            <MonitorSmartphone className="h-8 w-8 text-cyan-400" />
           </div>
-          <h2 className="text-2xl font-bold text-content-primary mb-2">
+          <h2 className="text-2xl font-black text-slate-100 uppercase tracking-widest mb-2">
             Terminal Not Paired
           </h2>
-          <p className="text-content-muted text-sm mb-8 leading-relaxed">
+          <p className="text-slate-500 text-sm mb-8 leading-relaxed font-bold uppercase tracking-wider">
             This device has not been linked to a restaurant. Please enter your
             Tenant ID to pair this terminal.
           </p>
@@ -186,17 +212,22 @@ export default function PinPadPage() {
                 setPairCode(e.target.value);
                 setPairError('');
               }}
-              className="input-field w-full font-mono text-center"
+              className="w-full bg-slate-950 border-2 border-slate-700 px-4 py-3 outline-none focus:border-cyan-500 transition-all text-slate-100 font-mono tracking-tight text-center placeholder:text-slate-600"
               required
             />
             {pairError && (
-              <p className="text-danger text-sm font-medium">{pairError}</p>
+              <p className="text-rose-400 text-sm font-bold uppercase tracking-wider">
+                {pairError}
+              </p>
             )}
-            <button type="submit" className="btn-primary w-full py-3">
+            <button
+              type="submit"
+              className="w-full py-3 border-2 border-cyan-400 bg-cyan-500 text-slate-900 font-black uppercase tracking-widest active:bg-cyan-400 active:scale-[0.97] transition-all"
+            >
               Pair Device
             </button>
           </form>
-          <p className="mt-6 text-xs text-content-disabled">
+          <p className="mt-6 text-xs text-slate-600 font-bold uppercase tracking-wider">
             In production, you would generate a 6-digit pin from the Owner
             Dashboard.
           </p>
@@ -208,13 +239,13 @@ export default function PinPadPage() {
   // ── Staff Selection ───────────────────────────────────────────────────────
   if (!selected) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6">
         {/* Subtle background pattern */}
         <div
-          className="absolute inset-0 pointer-events-none"
+          className="absolute inset-0 pointer-events-none opacity-20"
           style={{
             backgroundImage:
-              'radial-gradient(circle at 1px 1px, #E2E8F0 1px, transparent 0)',
+              'radial-gradient(circle at 1px 1px, #334155 1px, transparent 0)',
             backgroundSize: '24px 24px',
           }}
         />
@@ -222,27 +253,31 @@ export default function PinPadPage() {
         {/* Header */}
         <div className="relative flex flex-col items-center mb-10 animate-fade-in">
           <div className="flex items-center gap-3 mb-6">
-            <div className="h-11 w-11 rounded-2xl bg-brand-600 flex items-center justify-center shadow-lg">
-              <Zap className="h-5 w-5 text-white" />
+            <div className="h-11 w-11 bg-cyan-500 flex items-center justify-center border-2 border-cyan-400">
+              <Zap className="h-5 w-5 text-slate-900" />
             </div>
             <div>
-              <p className="text-content-primary font-black text-xl tracking-tight">
+              <p className="text-slate-100 font-black text-xl tracking-tight uppercase">
                 resPOS
               </p>
-              <p className="text-content-muted text-xs">{tenantName}</p>
+              <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">
+                {tenantName}
+              </p>
             </div>
           </div>
 
-          <h1 className="text-3xl font-bold text-content-primary mb-2">
+          <h1 className="text-3xl font-black text-slate-100 uppercase tracking-widest mb-2">
             Who&apos;s working today?
           </h1>
-          <p className="text-content-muted text-sm">{time}</p>
+          <p className="text-slate-500 text-sm font-mono tracking-tight">
+            {time}
+          </p>
         </div>
 
         {/* Staff Grid */}
-        <div className="relative grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 max-w-5xl w-full animate-fade-in">
+        <div className="relative grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2 max-w-5xl w-full animate-fade-in">
           {staffList.length === 0 && (
-            <div className="col-span-full text-center text-content-muted py-8">
+            <div className="col-span-full text-center text-slate-500 py-8 font-black uppercase tracking-wider">
               No staff members found for this terminal.
             </div>
           )}
@@ -251,31 +286,31 @@ export default function PinPadPage() {
               key={staff.id}
               onClick={() => setSelected(staff)}
               className={cn(
-                'group flex flex-col items-center gap-3 p-5 rounded-2xl',
-                'bg-white border border-border shadow-card',
-                'hover:shadow-card-hover hover:border-brand-200 hover:-translate-y-0.5',
-                'transition-all duration-200 press',
+                'group flex flex-col items-center gap-3 p-5',
+                'bg-slate-800 border-2 border-slate-700',
+                'active:bg-slate-700 active:border-slate-600 active:scale-[0.97]',
+                'transition-all duration-75',
               )}
             >
               <Avatar name={staff.name} role={staff.role} size="xl" />
               <div className="text-center">
-                <p className="text-content-primary font-semibold text-sm">
+                <p className="text-slate-100 font-bold text-sm tracking-tight">
                   {staff.name.split(' ')[0]}
                 </p>
-                <p className="text-content-muted text-[10px] font-bold tracking-widest uppercase mt-0.5">
+                <p className="text-slate-500 text-[10px] font-black tracking-widest uppercase mt-0.5">
                   {staff.role}
                 </p>
               </div>
-              <ChevronRight className="h-4 w-4 text-content-disabled group-hover:text-brand-500 transition-colors" />
+              <ChevronRight className="h-4 w-4 text-slate-600 group-hover:text-cyan-400 transition-colors" />
             </button>
           ))}
         </div>
 
-        <p className="relative mt-10 text-content-muted text-sm animate-fade-in">
+        <p className="relative mt-10 text-slate-500 text-sm font-bold uppercase tracking-wider">
           Owner or Manager?{' '}
           <a
             href="/login"
-            className="text-brand-600 hover:text-brand-700 font-semibold hover:underline"
+            className="text-cyan-400 active:text-cyan-300 font-black hover:underline"
           >
             Sign in with email →
           </a>
@@ -286,13 +321,13 @@ export default function PinPadPage() {
 
   // ── PIN Entry ─────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
       {/* Dot grid bg */}
       <div
-        className="absolute inset-0 pointer-events-none"
+        className="absolute inset-0 pointer-events-none opacity-20"
         style={{
           backgroundImage:
-            'radial-gradient(circle at 1px 1px, #E2E8F0 1px, transparent 0)',
+            'radial-gradient(circle at 1px 1px, #334155 1px, transparent 0)',
           backgroundSize: '24px 24px',
         }}
       />
@@ -303,15 +338,15 @@ export default function PinPadPage() {
           shake && 'animate-shake',
         )}
       >
-        <div className="bg-white rounded-3xl border border-border shadow-elevated p-8 flex flex-col items-center gap-6">
+        <div className="bg-slate-900 border-2 border-slate-700 p-8 flex flex-col items-center gap-6">
           {/* Avatar */}
           <div className="flex flex-col items-center gap-3 animate-bounce-in">
             <Avatar name={selected.name} role={selected.role} size="2xl" />
             <div className="text-center">
-              <h2 className="text-xl font-bold text-content-primary">
+              <h2 className="text-xl font-black text-slate-100 uppercase tracking-widest">
                 {selected.name}
               </h2>
-              <p className="text-content-muted text-sm mt-0.5">
+              <p className="text-slate-500 text-sm mt-0.5 font-bold uppercase tracking-wider">
                 Enter your 4-digit PIN
               </p>
             </div>
@@ -323,35 +358,36 @@ export default function PinPadPage() {
               <div
                 key={i}
                 className={cn(
-                  'h-4 w-4 rounded-full border-2 transition-all duration-200',
+                  'h-4 w-4 border-2 transition-all duration-75',
                   i < pin.length
                     ? error
-                      ? 'bg-danger border-danger'
-                      : 'bg-brand-600 border-brand-600 scale-110'
-                    : 'bg-transparent border-border-strong',
+                      ? 'bg-rose-500 border-rose-400'
+                      : 'bg-cyan-500 border-cyan-400'
+                    : 'bg-transparent border-slate-600',
                 )}
               />
             ))}
           </div>
 
           {error && (
-            <p className="text-danger text-sm font-medium -mt-2 animate-fade-in">
+            <p className="text-rose-400 text-sm font-black uppercase tracking-wider -mt-2 animate-fade-in">
               Wrong PIN. Please try again.
             </p>
           )}
 
           {/* Keypad */}
-          <div className="grid grid-cols-3 gap-2.5 w-full">
+          <div className="grid grid-cols-3 gap-2 w-full">
             {KEYPAD.map((num) => (
               <button
                 key={num}
                 onClick={() => handleKey(num)}
                 disabled={loading}
                 className={cn(
-                  'h-14 rounded-2xl text-2xl font-bold text-content-primary',
-                  'bg-surface-3 border border-border hover:bg-surface-4 hover:border-border-strong',
-                  'active:scale-95 transition-all duration-150 shadow-sm',
-                  'disabled:opacity-50 disabled:cursor-not-allowed',
+                  'h-16 text-2xl font-black text-slate-100',
+                  'bg-slate-800 border-2 border-slate-700',
+                  'active:bg-slate-700 active:border-slate-600 active:scale-[0.97]',
+                  'transition-all duration-75',
+                  'disabled:opacity-40 disabled:cursor-not-allowed',
                 )}
               >
                 {num}
@@ -360,7 +396,7 @@ export default function PinPadPage() {
 
             <button
               onClick={() => setSelected(null)}
-              className="h-14 rounded-2xl text-sm font-semibold text-content-secondary hover:bg-surface-3 border border-border transition-all duration-150 active:scale-95"
+              className="h-16 text-sm font-black text-slate-300 bg-slate-800 border-2 border-slate-700 active:bg-slate-700 active:text-slate-100 active:scale-[0.97] transition-all duration-75 uppercase tracking-wider"
             >
               ← Back
             </button>
@@ -369,9 +405,10 @@ export default function PinPadPage() {
               onClick={() => handleKey('0')}
               disabled={loading}
               className={cn(
-                'h-14 rounded-2xl text-2xl font-bold text-content-primary',
-                'bg-surface-3 border border-border hover:bg-surface-4 hover:border-border-strong',
-                'active:scale-95 transition-all duration-150 shadow-sm disabled:opacity-50',
+                'h-16 text-2xl font-black text-slate-100',
+                'bg-slate-800 border-2 border-slate-700',
+                'active:bg-slate-700 active:border-slate-600 active:scale-[0.97]',
+                'transition-all duration-75 disabled:opacity-40',
               )}
             >
               0
@@ -380,24 +417,27 @@ export default function PinPadPage() {
             <button
               onClick={handleDelete}
               disabled={loading || pin.length === 0}
-              className="h-14 rounded-2xl flex items-center justify-center text-content-muted hover:text-danger hover:bg-danger/10 border border-border transition-all duration-150 active:scale-95 disabled:opacity-30"
+              className="h-16 flex items-center justify-center text-slate-400 bg-slate-800 border-2 border-slate-700 active:bg-rose-500/10 active:text-rose-400 active:border-rose-500/30 active:scale-[0.97] transition-all duration-75 disabled:opacity-20"
             >
               <Delete className="h-5 w-5" />
             </button>
           </div>
 
           {loading && (
-            <div className="flex items-center gap-2 text-brand-600 animate-fade-in">
+            <div className="flex items-center gap-2 text-cyan-400 animate-fade-in">
               <ShieldCheck className="h-4 w-4" />
-              <span className="text-sm font-medium">Authenticating…</span>
+              <span className="text-sm font-black uppercase tracking-wider">
+                Authenticating…
+              </span>
             </div>
           )}
 
-          <p className="text-content-muted text-xs text-center">
+          <p className="text-slate-600 text-xs text-center font-mono tracking-tight">
             Demo PIN:{' '}
-            <code className="font-mono font-bold text-brand-600 bg-brand-50 px-1.5 py-0.5 rounded">
+            <code className="font-mono font-black text-cyan-400 bg-cyan-500/10 px-1.5 py-0.5 border border-cyan-500/30">
               1234
-            </code>
+            </code>{' '}
+            (Check DB for specific user PIN hash)
           </p>
         </div>
       </div>

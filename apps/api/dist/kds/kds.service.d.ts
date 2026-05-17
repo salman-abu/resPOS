@@ -1,9 +1,11 @@
 import { PrismaService } from '../prisma/prisma.service';
 import { KdsGateway } from './kds.gateway';
+import { AuditService } from '../audit/audit.service';
 export declare class KdsService {
     private prisma;
     private kdsGateway;
-    constructor(prisma: PrismaService, kdsGateway: KdsGateway);
+    private auditService;
+    constructor(prisma: PrismaService, kdsGateway: KdsGateway, auditService: AuditService);
     getActiveKots(tenantId: string, station?: string): Promise<({
         order: {
             table: {
@@ -28,8 +30,11 @@ export declare class KdsService {
             unit_price: number;
             notes: string | null;
             course_number: number;
+            fire_status: import("@prisma/client").$Enums.FireStatus;
+            seat_number: number | null;
             order_id: string;
             kot_id: string | null;
+            invoice_id: string | null;
         })[];
     } & {
         status: import("@prisma/client").$Enums.KotStatus;
@@ -49,7 +54,7 @@ export declare class KdsService {
         success: boolean;
         kot_id: string;
     }>;
-    recallKot(tenantId: string, kotId: string): Promise<{
+    recallKot(tenantId: string, userId: string, kotId: string): Promise<{
         success: boolean;
     }>;
     private getKotById;

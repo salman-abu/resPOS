@@ -1,12 +1,15 @@
 import {
   Controller,
   Get,
+  Post,
   Patch,
+  Delete,
   Param,
   Query,
   Body,
   UseGuards,
   Req,
+  Header,
 } from '@nestjs/common';
 import { MenuService } from './menu.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -16,37 +19,67 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 export class MenuController {
   constructor(private readonly menuService: MenuService) {}
 
-  /**
-   * GET /menu/categories
-   * Returns all active categories for the current tenant.
-   */
+  // ── Categories ─────────────────────────────────────────────────────────────
+
   @Get('categories')
+  @Header('Cache-Control', 'private, max-age=60, stale-while-revalidate=300')
   getCategories(@Req() req: any) {
-    const tenantId: string = req.tenantId;
-    return this.menuService.getCategories(tenantId);
+    return this.menuService.getCategories(req.tenantId);
   }
 
-  /**
-   * GET /menu/items?categoryId=<uuid>
-   * Returns all available items. Optionally filtered by category.
-   */
+  @Post('categories')
+  createCategory(@Req() req: any, @Body('name') name: string) {
+    return this.menuService.createCategory(req.tenantId, name);
+  }
+
+  @Patch('categories/:id')
+  updateCategory(
+    @Req() req: any,
+    @Param('id') id: string,
+    @Body('name') name: string,
+  ) {
+    return this.menuService.updateCategory(req.tenantId, id, name);
+  }
+
+  @Delete('categories/:id')
+  deleteCategory(@Req() req: any, @Param('id') id: string) {
+    return this.menuService.deleteCategory(req.tenantId, id);
+  }
+
+  // ── Items ──────────────────────────────────────────────────────────────────
+
   @Get('items')
+  @Header('Cache-Control', 'private, max-age=60, stale-while-revalidate=300')
   getItems(@Req() req: any, @Query('categoryId') categoryId?: string) {
-    const tenantId: string = req.tenantId;
-    return this.menuService.getItems(tenantId, categoryId);
+    return this.menuService.getItems(req.tenantId, categoryId);
   }
 
-  /**
-   * PATCH /menu/items/:id/availability
-   * Toggles "86" (mark unavailable) on an item.
-   */
+  @Post('items')
+  createItem(@Req() req: any, @Body() body: any) {
+    return this.menuService.createItem(req.tenantId, body);
+  }
+
+  @Patch('items/:id')
+  updateItem(@Req() req: any, @Param('id') id: string, @Body() body: any) {
+    return this.menuService.updateItem(req.tenantId, id, body);
+  }
+
   @Patch('items/:id/availability')
   toggleAvailability(
     @Req() req: any,
     @Param('id') id: string,
     @Body('is_available') is_available: boolean,
   ) {
-    const tenantId: string = req.tenantId;
-    return this.menuService.toggleAvailability(tenantId, id, is_available);
+    return this.menuService.toggleAvailability(req.tenantId, id, is_available);
+  }
+
+  @Delete('items/:id')
+  deleteItem(@Req() req: any, @Param('id') id: string) {
+    return this.menuService.deleteItem(req.tenantId, id);
+  }
+
+  @Post('sync')
+  syncMenu(@Req() req: any) {
+    return this.menuService.syncMenu(req.tenantId);
   }
 }

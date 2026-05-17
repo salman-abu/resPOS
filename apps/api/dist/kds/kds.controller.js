@@ -31,7 +31,7 @@ let KdsController = class KdsController {
         return this.kdsService.bumpKot(req.tenantId, kotId);
     }
     recallKot(req, kotId) {
-        return this.kdsService.recallKot(req.tenantId, kotId);
+        return this.kdsService.recallKot(req.tenantId, req.user.sub, kotId);
     }
 };
 exports.KdsController = KdsController;

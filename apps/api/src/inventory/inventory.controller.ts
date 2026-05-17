@@ -42,7 +42,7 @@ export class InventoryController {
       req.tenantId,
       id,
       dto,
-      req.user.id,
+      req.user.sub,
     );
   }
 }

@@ -26,6 +26,33 @@ export interface Addon {
   is_available: boolean;
 }
 
+export interface Modifier {
+  id: string;
+  group_id: string;
+  name: string;
+  price_adjustment: number;
+  is_available: boolean;
+  sort_order: number;
+}
+
+export interface ModifierGroup {
+  id: string;
+  item_id: string;
+  name: string;
+  is_required: boolean;
+  min_select: number;
+  max_select: number;
+  sort_order: number;
+  modifiers: Modifier[];
+}
+
+export interface CompositeItem {
+  id: string;
+  name: string;
+  base_price: number;
+  components: any;
+}
+
 export interface MenuItem {
   id: string;
   category_id: string;
@@ -40,6 +67,7 @@ export interface MenuItem {
   sort_order: number;
   variants: Variant[];
   addons: Addon[];
+  modifier_groups?: ModifierGroup[];
 }
 
 // ─── Cart Types ─────────────────────────────────────────────────────────────
@@ -48,9 +76,12 @@ export interface CartAddon {
   id: string;
   name: string;
   price: number;
+  modifier_id?: string;
 }
 
 export interface CartItem {
+  /** Database ID (if already saved) */
+  id?: string;
   /** Unique line ID in cart (item_id + variant_id combo) */
   cartLineId: string;
   item_id: string;
@@ -64,6 +95,8 @@ export interface CartItem {
   quantity: number;
   notes?: string;
   course_number: number;
+  fire_status: FireStatus;
+  seat_number?: number;
   addons: CartAddon[];
   addons_total: number;
 }
@@ -75,8 +108,14 @@ export interface CartState {
   table_id?: string;
   table_number?: string;
   pax_count: number;
+  adult_pax?: number;
+  child_pax?: number;
   items: CartItem[];
   active_order_id?: string;
+  customer?: { id: string; name: string; mobile: string; points: number } | null;
+  redeem_points: number;
+  rupees_per_point: number;
+  service_charge_rate: number;
 }
 
 // ─── Table Types ─────────────────────────────────────────────────────────────
@@ -110,6 +149,7 @@ export type OrderStatus =
   | 'SETTLED'
   | 'VOID';
 export type KotStatus = 'PRINTED' | 'PREPARING' | 'READY' | 'CANCELLED';
+export type FireStatus = 'HELD' | 'FIRED';
 export type OrderItemStatus =
   | 'PENDING'
   | 'SENT_TO_KDS'
@@ -125,6 +165,7 @@ export interface KotItem {
   quantity: number;
   notes?: string;
   course_number: number;
+  seat_number?: number;
 }
 
 export interface KotPayload {
@@ -136,6 +177,32 @@ export interface KotPayload {
 }
 
 // ─── Invoice / Payment Types ──────────────────────────────────────────────────
+
+export interface Order {
+  id: string;
+  tenant_id: string;
+  order_type: OrderType;
+  status: OrderStatus;
+  table_id?: string | null;
+  customer_id?: string | null;
+  pax_count: number;
+  order_items: any[];
+}
+
+export interface Invoice {
+  id: string;
+  invoice_number: string;
+  order_id: string;
+  subtotal: number;
+  cgst: number;
+  sgst: number;
+  igst: number;
+  service_charge: number;
+  discount: number;
+  total: number;
+  status: string;
+  payments: any[];
+}
 
 export type PaymentMethod =
   | 'CASH'
@@ -171,4 +238,41 @@ export interface AuthUser {
   name: string;
   role: Role;
   tenant_id: string;
+}
+
+// ─── Offline Sync Types ───────────────────────────────────────────────────────
+
+export type OrderEventType =
+  | 'ITEM_ADDED'
+  | 'ITEM_REMOVED'
+  | 'ITEM_UPDATED'
+  | 'DISCOUNT_APPLIED'
+  | 'TABLE_CHANGED'
+  | 'ORDER_PLACED'
+  | 'COURSE_FIRED'
+  | 'ORDER_SETTLED';
+
+export interface OrderEvent {
+  id: string;
+  tenant_id: string;
+  order_id: string;
+  event_type: OrderEventType;
+  payload: Record<string, unknown>;
+  device_id: string;
+  user_id: string;
+  client_timestamp: number; // epoch ms
+  server_timestamp?: number;
+}
+
+export interface SyncConflictResult {
+  resolved: boolean;
+  order_id: string;
+  error_code?: 'CONFLICT_ORDER_CLOSED';
+  invoice?: unknown;
+}
+
+export interface SyncResponse {
+  processed: number;
+  conflicts: SyncConflictResult[];
+  canonical_state: Record<string, unknown>;
 }
