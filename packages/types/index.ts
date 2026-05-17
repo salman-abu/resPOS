@@ -112,7 +112,12 @@ export interface CartState {
   child_pax?: number;
   items: CartItem[];
   active_order_id?: string;
-  customer?: { id: string; name: string; mobile: string; points: number } | null;
+  customer?: {
+    id: string;
+    name: string;
+    mobile: string;
+    points: number;
+  } | null;
   redeem_points: number;
   rupees_per_point: number;
   service_charge_rate: number;

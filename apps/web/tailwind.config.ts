@@ -138,10 +138,13 @@ const config: Config = {
         md: 'var(--shadow-md)',
         lg: 'var(--shadow-lg)',
         card: '0 1px 3px rgba(15,23,42,0.08), 0 1px 2px rgba(15,23,42,0.04)',
-        'card-hover': '0 4px 12px rgba(15,23,42,0.10), 0 2px 4px rgba(15,23,42,0.06)',
-        elevated: '0 10px 40px rgba(15,23,42,0.12), 0 4px 8px rgba(15,23,42,0.08)',
+        'card-hover':
+          '0 4px 12px rgba(15,23,42,0.10), 0 2px 4px rgba(15,23,42,0.06)',
+        elevated:
+          '0 10px 40px rgba(15,23,42,0.12), 0 4px 8px rgba(15,23,42,0.08)',
         modal: '0 20px 60px rgba(15,23,42,0.20)',
-        'glow-blue': '0 0 0 3px rgba(59,130,246,0.15), 0 2px 8px rgba(59,130,246,0.20)',
+        'glow-blue':
+          '0 0 0 3px rgba(59,130,246,0.15), 0 2px 8px rgba(59,130,246,0.20)',
         'glow-green': '0 0 0 3px rgba(5,150,105,0.15)',
         'glow-amber': '0 0 0 3px rgba(217,119,6,0.15)',
         'inner-top': 'inset 0 1px 0 rgba(255,255,255,0.8)',

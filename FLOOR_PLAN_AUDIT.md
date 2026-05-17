@@ -21,13 +21,13 @@
 
 ## ✅ Resolved in Previous Sprints
 
-| # | Issue | Status | Notes |
-|---|-------|--------|-------|
-| 1 | POS page ignores table_id / table_number query params | ✅ Fixed | `pos/page.tsx` now reads query params and attaches orders to tables. |
-| 2 | No "Resume Order" when clicking OCCUPIED/BILLED table | ✅ Fixed | Clicking occupied tables loads the active order into the cart. |
-| 3 | No DIRTY→AVAILABLE reset (no "Mark Clean" action) | ✅ Fixed | "Mark Clean" button is available on DIRTY tables. |
-| 5 | Token key mismatch between pages | ✅ Fixed | Standardized to `rpos_auth_token` via `@respos/utils/auth.ts`. |
-| 6 | No real-time WebSocket for floor plan | ✅ Fixed | `useTableSocket` handles `table:status-changed` events instantly. |
+| #   | Issue                                                 | Status   | Notes                                                                |
+| --- | ----------------------------------------------------- | -------- | -------------------------------------------------------------------- |
+| 1   | POS page ignores table_id / table_number query params | ✅ Fixed | `pos/page.tsx` now reads query params and attaches orders to tables. |
+| 2   | No "Resume Order" when clicking OCCUPIED/BILLED table | ✅ Fixed | Clicking occupied tables loads the active order into the cart.       |
+| 3   | No DIRTY→AVAILABLE reset (no "Mark Clean" action)     | ✅ Fixed | "Mark Clean" button is available on DIRTY tables.                    |
+| 5   | Token key mismatch between pages                      | ✅ Fixed | Standardized to `rpos_auth_token` via `@respos/utils/auth.ts`.       |
+| 6   | No real-time WebSocket for floor plan                 | ✅ Fixed | `useTableSocket` handles `table:status-changed` events instantly.    |
 
 ---
 

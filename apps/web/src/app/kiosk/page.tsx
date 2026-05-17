@@ -49,7 +49,12 @@ export default function KioskPage() {
     rupees_per_point,
     service_charge_rate,
   } = useCartStore();
-  const totals = calcCartTotals(cartItems, redeem_points, rupees_per_point, service_charge_rate);
+  const totals = calcCartTotals(
+    cartItems,
+    redeem_points,
+    rupees_per_point,
+    service_charge_rate,
+  );
   const idleTimer = useRef<NodeJS.Timeout | null>(null);
 
   const resetIdleTimer = () => {

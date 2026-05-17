@@ -30,7 +30,12 @@ function makeCartLineId(
 
 // ─── Cart Derived Calculations ────────────────────────────────────────────────
 
-export function calcCartTotals(items: CartItem[], redeemPoints = 0, rate = 0, serviceChargeRate = 0) {
+export function calcCartTotals(
+  items: CartItem[],
+  redeemPoints = 0,
+  rate = 0,
+  serviceChargeRate = 0,
+) {
   // Pass items to GST engine
   const gstResult = calculateCartGST(items, { is_igst: false });
 
@@ -216,10 +221,11 @@ export const useCartStore = create<CartStore>()(
 
       clearCart: () => set({ ...initialState }),
 
-      clearItems: () => set((state) => ({
-        items: [],
-        redeem_points: 0,
-      })),
+      clearItems: () =>
+        set((state) => ({
+          items: [],
+          redeem_points: 0,
+        })),
 
       setActiveOrderId: (id) => set({ active_order_id: id }),
 

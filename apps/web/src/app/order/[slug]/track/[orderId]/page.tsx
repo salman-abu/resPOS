@@ -1,7 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card';
 import { CheckCircle2, Clock, ChefHat, Bike, Receipt } from 'lucide-react';
 import { API_BASE } from '@/lib/api';
 
@@ -72,7 +78,9 @@ export default function OrderTrackingPage({
           <h1 className="text-3xl font-black text-emerald-500 mb-2">
             Track Order
           </h1>
-          <p className="text-zinc-400">Order #{order.orderId.split('-')[0].toUpperCase()}</p>
+          <p className="text-zinc-400">
+            Order #{order.orderId.split('-')[0].toUpperCase()}
+          </p>
         </div>
 
         <Card className="bg-zinc-900 border-zinc-800 text-white">
@@ -90,10 +98,15 @@ export default function OrderTrackingPage({
                 const isCurrent = idx === currentStatusIndex;
 
                 return (
-                  <div key={step.status} className="relative flex items-center gap-4 pl-8">
+                  <div
+                    key={step.status}
+                    className="relative flex items-center gap-4 pl-8"
+                  >
                     <div
                       className={`absolute -left-[17px] w-8 h-8 rounded-full flex items-center justify-center border-4 border-zinc-900 ${
-                        isCompleted ? 'bg-emerald-500 text-white' : 'bg-zinc-800 text-zinc-500'
+                        isCompleted
+                          ? 'bg-emerald-500 text-white'
+                          : 'bg-zinc-800 text-zinc-500'
                       } ${isCurrent ? 'ring-2 ring-emerald-500/50' : ''}`}
                     >
                       <Icon className="w-4 h-4" />
@@ -107,7 +120,9 @@ export default function OrderTrackingPage({
                         {step.label}
                       </p>
                       {isCurrent && (
-                        <p className="text-sm text-emerald-500">In Progress...</p>
+                        <p className="text-sm text-emerald-500">
+                          In Progress...
+                        </p>
                       )}
                     </div>
                   </div>
@@ -124,7 +139,10 @@ export default function OrderTrackingPage({
           <CardContent className="space-y-4">
             <div className="space-y-2">
               {order.items.map((item: any, i: number) => (
-                <div key={i} className="flex justify-between border-b border-zinc-800 pb-2">
+                <div
+                  key={i}
+                  className="flex justify-between border-b border-zinc-800 pb-2"
+                >
                   <p>
                     {item.quantity}x {item.name}
                   </p>
@@ -135,10 +153,15 @@ export default function OrderTrackingPage({
             <div className="pt-2">
               <p className="text-sm text-zinc-400">Delivering to:</p>
               <p className="font-semibold">{order.customerName}</p>
-              <p className="text-zinc-300 text-sm mt-1">{order.deliveryAddress}</p>
+              <p className="text-zinc-300 text-sm mt-1">
+                {order.deliveryAddress}
+              </p>
               <div className="mt-4 p-3 bg-zinc-800 rounded-lg flex gap-3 items-center">
-                 <Clock className="text-emerald-500 w-5 h-5" />
-                 <p className="text-sm">Payment Mode: <strong className="text-emerald-500">Cash on Delivery</strong></p>
+                <Clock className="text-emerald-500 w-5 h-5" />
+                <p className="text-sm">
+                  Payment Mode:{' '}
+                  <strong className="text-emerald-500">Cash on Delivery</strong>
+                </p>
               </div>
             </div>
           </CardContent>

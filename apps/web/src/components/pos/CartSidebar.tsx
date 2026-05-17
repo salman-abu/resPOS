@@ -284,7 +284,14 @@ interface IconBtnProps {
   active?: boolean;
   danger?: boolean;
 }
-function IconBtn({ icon, label, onClick, disabled, active, danger }: IconBtnProps) {
+function IconBtn({
+  icon,
+  label,
+  onClick,
+  disabled,
+  active,
+  danger,
+}: IconBtnProps) {
   return (
     <button
       onClick={onClick}
@@ -331,7 +338,12 @@ export function CartSidebar({
     active_order_id,
   } = useCartStore();
   const { role } = useDeviceRole();
-  const totals = calcCartTotals(items, redeem_points, rupees_per_point, service_charge_rate);
+  const totals = calcCartTotals(
+    items,
+    redeem_points,
+    rupees_per_point,
+    service_charge_rate,
+  );
   const [customerModalOpen, setCustomerModalOpen] = useState(false);
   const [shiftCloseOpen, setShiftCloseOpen] = useState(false);
 
@@ -466,7 +478,9 @@ export function CartSidebar({
             </p>
           </div>
         ) : (
-          items.map((item) => <CartLineItem key={item.cartLineId} item={item} />)
+          items.map((item) => (
+            <CartLineItem key={item.cartLineId} item={item} />
+          ))
         )}
       </div>
 
@@ -474,34 +488,51 @@ export function CartSidebar({
       {items.length > 0 && (
         <div className="flex-shrink-0 bg-surface-base border-t border-border-subtle px-4 pt-2.5 pb-2 space-y-1 text-sm">
           <div className="flex justify-between text-content-secondary">
-            <span className="text-xs font-bold uppercase tracking-wider">Subtotal</span>
-            <span className="font-medium font-mono tracking-tight" style={{ fontVariantNumeric: 'tabular-nums' }}>
+            <span className="text-xs font-bold uppercase tracking-wider">
+              Subtotal
+            </span>
+            <span
+              className="font-medium font-mono tracking-tight"
+              style={{ fontVariantNumeric: 'tabular-nums' }}
+            >
               {formatPrice(totals.subtotal)}
             </span>
           </div>
           <div className="flex justify-between text-content-muted text-xs">
             <span className="font-bold uppercase tracking-wider">CGST</span>
-            <span className="font-mono tracking-tight" style={{ fontVariantNumeric: 'tabular-nums' }}>
+            <span
+              className="font-mono tracking-tight"
+              style={{ fontVariantNumeric: 'tabular-nums' }}
+            >
               {formatPrice(totals.cgst)}
             </span>
           </div>
           <div className="flex justify-between text-content-muted text-xs">
             <span className="font-bold uppercase tracking-wider">SGST</span>
-            <span className="font-mono tracking-tight" style={{ fontVariantNumeric: 'tabular-nums' }}>
+            <span
+              className="font-mono tracking-tight"
+              style={{ fontVariantNumeric: 'tabular-nums' }}
+            >
               {formatPrice(totals.sgst)}
             </span>
           </div>
           {totals.discount > 0 && (
             <div className="flex justify-between text-info-default text-xs font-black">
               <span className="uppercase tracking-wider">Points Discount</span>
-              <span className="font-mono tracking-tight" style={{ fontVariantNumeric: 'tabular-nums' }}>
+              <span
+                className="font-mono tracking-tight"
+                style={{ fontVariantNumeric: 'tabular-nums' }}
+              >
                 -{formatPrice(totals.discount)}
               </span>
             </div>
           )}
           <div className="flex justify-between text-content-primary font-black text-base pt-1.5 border-t border-border-subtle">
             <span className="uppercase tracking-widest">Total</span>
-            <span className="text-success-default font-mono tracking-tight" style={{ fontVariantNumeric: 'tabular-nums' }}>
+            <span
+              className="text-success-default font-mono tracking-tight"
+              style={{ fontVariantNumeric: 'tabular-nums' }}
+            >
               {formatPrice(totals.total)}
             </span>
           </div>

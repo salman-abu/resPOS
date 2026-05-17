@@ -10,7 +10,8 @@ import {
 import { useEffect, useState } from 'react';
 import { getAuthToken } from '@respos/utils';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
 
 interface ZoneData {
   zone: string;
@@ -45,7 +46,9 @@ export function TableTurnHeatmap() {
       }
     }
     load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   if (loading) {

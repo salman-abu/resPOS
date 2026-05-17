@@ -69,7 +69,7 @@ export function POSHeader({
           />
         </button>
         {showOrderTypeMenu && (
-            <div className="absolute top-full left-0 mt-1 w-36 bg-surface-card border border-border-subtle shadow-2xl z-20 overflow-hidden animate-scale-in">
+          <div className="absolute top-full left-0 mt-1 w-36 bg-surface-card border border-border-subtle shadow-2xl z-20 overflow-hidden animate-scale-in">
             {(['DINE_IN', 'TAKEAWAY', 'DELIVERY'] as const).map((ot) => (
               <button
                 key={ot}
@@ -104,7 +104,9 @@ export function POSHeader({
                 TBL {table_number}
               </span>
             ) : (
-              <span className="text-warning-default font-black">SELECT TBL</span>
+              <span className="text-warning-default font-black">
+                SELECT TBL
+              </span>
             )}
           </span>
           {pax_count > 0 && (
@@ -160,7 +162,9 @@ export function POSHeader({
           <span
             className={cn(
               'w-2 h-2 rounded-none flex-shrink-0',
-              isOnline ? 'bg-success-default' : 'bg-warning-default animate-pulse',
+              isOnline
+                ? 'bg-success-default'
+                : 'bg-warning-default animate-pulse',
             )}
           />
           <span className="hidden sm:block">

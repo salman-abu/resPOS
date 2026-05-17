@@ -176,15 +176,23 @@ export default function SettingsPage() {
 
           if (data.slug) {
             try {
-              const sfRes = await fetch(`${API_BASE}/storefront/${data.slug}/menu`);
+              const sfRes = await fetch(
+                `${API_BASE}/storefront/${data.slug}/menu`,
+              );
               if (sfRes.ok) {
                 const sfData = await sfRes.json();
                 setStorefront({
                   slug: sfData.slug ?? data.slug,
-                  is_published: sfData.is_published ?? sfData.isPublished ?? true,
-                  restaurant_name: sfData.restaurantName ?? sfData.restaurant_name ?? data.name,
+                  is_published:
+                    sfData.is_published ?? sfData.isPublished ?? true,
+                  restaurant_name:
+                    sfData.restaurantName ??
+                    sfData.restaurant_name ??
+                    data.name,
                   description: sfData.description ?? '',
-                  delivery_fee: sfData.deliveryZones?.[0]?.fee ? Math.round(sfData.deliveryZones[0].fee / 100) : 29,
+                  delivery_fee: sfData.deliveryZones?.[0]?.fee
+                    ? Math.round(sfData.deliveryZones[0].fee / 100)
+                    : 29,
                 });
               }
             } catch (sfErr) {
@@ -223,19 +231,26 @@ export default function SettingsPage() {
         restaurantName: storefront.restaurant_name,
         description: storefront.description,
         deliveryZones: [
-          { label: 'Standard Delivery', fee: storefront.delivery_fee * 100, minOrder: 0 }
+          {
+            label: 'Standard Delivery',
+            fee: storefront.delivery_fee * 100,
+            minOrder: 0,
+          },
         ],
-        theme: { primaryColor: '#10B981', accentColor: '#F97316' }
+        theme: { primaryColor: '#10B981', accentColor: '#F97316' },
       };
 
-      const sfRes = await fetch(`${API_BASE}/online/settings/${storefront.slug}?outletId=outlet-main`, {
-        method: 'PATCH',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
+      const sfRes = await fetch(
+        `${API_BASE}/online/settings/${storefront.slug}?outletId=outlet-main`,
+        {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(sfPayload),
         },
-        body: JSON.stringify(sfPayload),
-      });
+      );
 
       if (res.ok && sfRes.ok) {
         setSaved(true);
@@ -425,7 +440,10 @@ export default function SettingsPage() {
                     <input
                       value={storefront.restaurant_name}
                       onChange={(e) =>
-                        setStorefront({ ...storefront, restaurant_name: e.target.value })
+                        setStorefront({
+                          ...storefront,
+                          restaurant_name: e.target.value,
+                        })
                       }
                       className="w-full px-3 py-2 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-brand-300"
                     />
@@ -438,7 +456,10 @@ export default function SettingsPage() {
                     <textarea
                       value={storefront.description}
                       onChange={(e) =>
-                        setStorefront({ ...storefront, description: e.target.value })
+                        setStorefront({
+                          ...storefront,
+                          description: e.target.value,
+                        })
                       }
                       className="w-full px-3 py-2 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 min-h-[80px]"
                     />
@@ -453,7 +474,10 @@ export default function SettingsPage() {
                       min="0"
                       value={storefront.delivery_fee}
                       onChange={(e) =>
-                        setStorefront({ ...storefront, delivery_fee: Number(e.target.value) })
+                        setStorefront({
+                          ...storefront,
+                          delivery_fee: Number(e.target.value),
+                        })
                       }
                       className="w-full sm:w-1/3 px-3 py-2 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-brand-300"
                     />

@@ -20,7 +20,8 @@ import {
   Loader2,
 } from 'lucide-react';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
 
 type Range = 'today' | 'week' | 'month';
 
@@ -322,7 +323,9 @@ function ZReport({
       </div>
       <div className="flex justify-between">
         <span className="text-content-muted">Total Orders</span>
-        <span className="font-bold text-content-primary">{stats.orders_today}</span>
+        <span className="font-bold text-content-primary">
+          {stats.orders_today}
+        </span>
       </div>
       <div className="border-t border-dashed border-border-strong my-3" />
       <p className="text-content-secondary font-bold text-xs uppercase tracking-wider mb-2">
@@ -393,7 +396,11 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [trend, setTrend] = useState<TrendData | null>(null);
-  const [payment, setPayment] = useState<PaymentMix>({ cash: 0, upi: 0, card: 0 });
+  const [payment, setPayment] = useState<PaymentMix>({
+    cash: 0,
+    upi: 0,
+    card: 0,
+  });
   const [topItems, setTopItems] = useState<DashboardStats['top_sellers']>([]);
   const [tableTurn, setTableTurn] = useState<TableTurnData | null>(null);
 
@@ -405,17 +412,23 @@ export default function AnalyticsPage() {
 
     async function load() {
       try {
-        const [dashboard, trendData, payMix, turn, sellers] = await Promise.all([
-          fetchJSON<DashboardStats>(`${API_BASE}/analytics/dashboard-stats`),
-          fetchJSON<TrendData>(`${API_BASE}/analytics/revenue-trend?days=${days}`),
-          fetchJSON<PaymentMix>(`${API_BASE}/analytics/payment-mix?days=${days}`),
-          fetchJSON<TableTurnData>(`${API_BASE}/analytics/table-turn`),
-          range !== 'today'
-            ? fetchJSON<DashboardStats['top_sellers']>(
-                `${API_BASE}/analytics/top-sellers?period=${range}`,
-              )
-            : Promise.resolve([]),
-        ]);
+        const [dashboard, trendData, payMix, turn, sellers] = await Promise.all(
+          [
+            fetchJSON<DashboardStats>(`${API_BASE}/analytics/dashboard-stats`),
+            fetchJSON<TrendData>(
+              `${API_BASE}/analytics/revenue-trend?days=${days}`,
+            ),
+            fetchJSON<PaymentMix>(
+              `${API_BASE}/analytics/payment-mix?days=${days}`,
+            ),
+            fetchJSON<TableTurnData>(`${API_BASE}/analytics/table-turn`),
+            range !== 'today'
+              ? fetchJSON<DashboardStats['top_sellers']>(
+                  `${API_BASE}/analytics/top-sellers?period=${range}`,
+                )
+              : Promise.resolve([]),
+          ],
+        );
 
         if (cancelled) return;
         setStats(dashboard);

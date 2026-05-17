@@ -33,7 +33,12 @@ export default function StaffReportPage() {
   const [period, setPeriod] = useState('2026-05');
   const [report, setReport] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [payrollConfigs, setPayrollConfigs] = useState<Record<string, { type: 'hourly' | 'monthly'; rate: number; prorate: boolean }>>({});
+  const [payrollConfigs, setPayrollConfigs] = useState<
+    Record<
+      string,
+      { type: 'hourly' | 'monthly'; rate: number; prorate: boolean }
+    >
+  >({});
 
   // Load payroll configs from localStorage on mount
   useEffect(() => {
@@ -69,8 +74,16 @@ export default function StaffReportPage() {
     fetchReport();
   }, [period]);
 
-  const updateConfig = (userId: string, key: 'type' | 'rate' | 'prorate', value: any) => {
-    const current = payrollConfigs[userId] || { type: 'hourly', rate: 0, prorate: false };
+  const updateConfig = (
+    userId: string,
+    key: 'type' | 'rate' | 'prorate',
+    value: any,
+  ) => {
+    const current = payrollConfigs[userId] || {
+      type: 'hourly',
+      rate: 0,
+      prorate: false,
+    };
     const updated = {
       ...payrollConfigs,
       [userId]: {
@@ -90,10 +103,15 @@ export default function StaffReportPage() {
 
   const handleExport = () => {
     const daysInMonth = getDaysInMonth(period);
-    const csvHeader = 'Name,Role,Present Days,Total Hours,Pay Type,Pay Rate (INR),Prorated,Estimated Salary (INR)\n';
+    const csvHeader =
+      'Name,Role,Present Days,Total Hours,Pay Type,Pay Rate (INR),Prorated,Estimated Salary (INR)\n';
     const csvRows = report
       .map((row) => {
-        const config = payrollConfigs[row.userId] || { type: 'hourly', rate: 0, prorate: false };
+        const config = payrollConfigs[row.userId] || {
+          type: 'hourly',
+          rate: 0,
+          prorate: false,
+        };
         let estSalary = 0;
         if (config.type === 'hourly') {
           estSalary = row.totalHours * config.rate;
@@ -105,8 +123,10 @@ export default function StaffReportPage() {
         return `"${row.name}","${row.role}",${row.presentDays},${row.totalHours},"${config.type.toUpperCase()}",${config.rate},${config.type === 'monthly' ? config.prorate : 'N/A'},${estSalary.toFixed(2)}`;
       })
       .join('\n');
-    
-    const blob = new Blob([csvHeader + csvRows], { type: 'text/csv;charset=utf-8;' });
+
+    const blob = new Blob([csvHeader + csvRows], {
+      type: 'text/csv;charset=utf-8;',
+    });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
@@ -124,7 +144,8 @@ export default function StaffReportPage() {
             Staff Attendance & Payroll Report
           </h1>
           <p className="text-muted-foreground">
-            Review hours worked, manage salaries (hourly/monthly), and export payroll spreadsheets.
+            Review hours worked, manage salaries (hourly/monthly), and export
+            payroll spreadsheets.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -137,7 +158,11 @@ export default function StaffReportPage() {
               <SelectItem value="2026-04">April 2026</SelectItem>
             </SelectContent>
           </Select>
-          <Button onClick={handleExport} variant="outline" className="border-brand-default text-brand-default hover:bg-brand-light">
+          <Button
+            onClick={handleExport}
+            variant="outline"
+            className="border-brand-default text-brand-default hover:bg-brand-light"
+          >
             <Download className="mr-2 h-4 w-4" /> Export CSV
           </Button>
         </div>
@@ -185,9 +210,13 @@ export default function StaffReportPage() {
                 </TableRow>
               ) : (
                 report.map((row) => {
-                  const config = payrollConfigs[row.userId] || { type: 'hourly', rate: 0, prorate: false };
+                  const config = payrollConfigs[row.userId] || {
+                    type: 'hourly',
+                    rate: 0,
+                    prorate: false,
+                  };
                   const daysInMonth = getDaysInMonth(period);
-                  
+
                   let estSalary = 0;
                   if (config.type === 'hourly') {
                     estSalary = row.totalHours * config.rate;
@@ -206,7 +235,10 @@ export default function StaffReportPage() {
                         </span>
                       </TableCell>
                       <TableCell className="text-right">
-                        {row.presentDays} <span className="text-[10px] text-muted-foreground">/ {daysInMonth}d</span>
+                        {row.presentDays}{' '}
+                        <span className="text-[10px] text-muted-foreground">
+                          / {daysInMonth}d
+                        </span>
                       </TableCell>
                       <TableCell className="text-right font-medium">
                         {row.totalHours} hrs
@@ -214,7 +246,13 @@ export default function StaffReportPage() {
                       <TableCell className="text-center">
                         <select
                           value={config.type}
-                          onChange={(e) => updateConfig(row.userId, 'type', e.target.value as any)}
+                          onChange={(e) =>
+                            updateConfig(
+                              row.userId,
+                              'type',
+                              e.target.value as any,
+                            )
+                          }
                           className="bg-slate-50 dark:bg-zinc-800 border border-border rounded px-2 py-1 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-brand-default"
                         >
                           <option value="hourly">Hourly wage</option>
@@ -223,13 +261,23 @@ export default function StaffReportPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
-                          <span className="text-muted-foreground text-xs">₹</span>
+                          <span className="text-muted-foreground text-xs">
+                            ₹
+                          </span>
                           <input
                             type="number"
                             min="0"
                             value={config.rate || ''}
-                            onChange={(e) => updateConfig(row.userId, 'rate', parseFloat(e.target.value) || 0)}
-                            placeholder={config.type === 'hourly' ? 'Rate/hr' : 'Salary/mo'}
+                            onChange={(e) =>
+                              updateConfig(
+                                row.userId,
+                                'rate',
+                                parseFloat(e.target.value) || 0,
+                              )
+                            }
+                            placeholder={
+                              config.type === 'hourly' ? 'Rate/hr' : 'Salary/mo'
+                            }
                             className="w-24 text-right bg-slate-50 dark:bg-zinc-800 border border-border rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-brand-default"
                           />
                         </div>
@@ -239,16 +287,28 @@ export default function StaffReportPage() {
                           <input
                             type="checkbox"
                             checked={config.prorate}
-                            onChange={(e) => updateConfig(row.userId, 'prorate', e.target.checked)}
+                            onChange={(e) =>
+                              updateConfig(
+                                row.userId,
+                                'prorate',
+                                e.target.checked,
+                              )
+                            }
                             className="h-4 w-4 rounded border-gray-300 text-brand-default focus:ring-brand-default"
                             title="Pro-rate by days present"
                           />
                         ) : (
-                          <span className="text-xs text-muted-foreground">—</span>
+                          <span className="text-xs text-muted-foreground">
+                            —
+                          </span>
                         )}
                       </TableCell>
                       <TableCell className="text-right font-bold text-emerald-500">
-                        ₹{estSalary.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        ₹
+                        {estSalary.toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
                       </TableCell>
                     </TableRow>
                   );

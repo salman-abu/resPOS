@@ -21,7 +21,7 @@ export class AuthService {
     private auditService: AuditService,
   ) {
     if (process.env.MOCK_REDIS === 'true') {
-      this.redis = new RedisMock() as unknown as Redis;
+      this.redis = new RedisMock();
     } else {
       this.redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
     }

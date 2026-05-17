@@ -105,7 +105,10 @@ export default function StorefrontPage({
         const data = await res.json();
         // Redirect to tracking page
         if (data.trackingUrl) {
-          window.location.href = data.trackingUrl.replace('/storefront', '/order');
+          window.location.href = data.trackingUrl.replace(
+            '/storefront',
+            '/order',
+          );
         } else {
           setOrdered(true);
         }
@@ -256,7 +259,9 @@ export default function StorefrontPage({
                   </div>
                   <Button
                     className="w-full h-12 text-lg mt-4 bg-emerald-600 hover:bg-emerald-700 text-white"
-                    disabled={name.length < 2 || phone.length < 10 || address.length < 5}
+                    disabled={
+                      name.length < 2 || phone.length < 10 || address.length < 5
+                    }
                     onClick={handleCheckout}
                   >
                     Place Order (₹{(subtotal / 100).toFixed(2)})

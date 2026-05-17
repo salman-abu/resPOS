@@ -105,7 +105,10 @@ export default function POSPage() {
   // Variant/addon customiser
   const [customiserItem, setCustomiserItem] = useState<MenuItem | null>(null);
   const [usualItems, setUsualItems] = useState<MenuItem[]>([]);
-  const [tenantInfo, setTenantInfo] = useState({ name: 'Restaurant', gstin: '' });
+  const [tenantInfo, setTenantInfo] = useState({
+    name: 'Restaurant',
+    gstin: '',
+  });
 
   const {
     items: cartItems,
@@ -127,7 +130,12 @@ export default function POSPage() {
     service_charge_rate,
     setServiceChargeRate,
   } = useCartStore();
-  const cartTotals = calcCartTotals(cartItems, redeem_points, rupees_per_point, service_charge_rate);
+  const cartTotals = calcCartTotals(
+    cartItems,
+    redeem_points,
+    rupees_per_point,
+    service_charge_rate,
+  );
 
   // Load service charge rate and tenant info from tenant settings on mount
   useEffect(() => {
@@ -140,7 +148,7 @@ export default function POSPage() {
       .then((data) => {
         const pct = data?.settings?.payments?.service_charge_pct;
         if (typeof pct === 'number') setServiceChargeRate(pct);
-        
+
         if (data?.settings?.restaurant) {
           setTenantInfo({
             name: data.settings.restaurant.name || 'NextGen Restaurant',
@@ -623,17 +631,14 @@ export default function POSPage() {
     if (active_order_id) {
       // Items already saved to order — call backend
       try {
-        const res = await fetch(
-          `${API}/orders/${active_order_id}/items/hold`,
-          {
-            method: 'PATCH',
-            headers: {
-              ...getAuthHeader(),
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ item_ids: pendingItems.map((i) => i.id) }),
+        const res = await fetch(`${API}/orders/${active_order_id}/items/hold`, {
+          method: 'PATCH',
+          headers: {
+            ...getAuthHeader(),
+            'Content-Type': 'application/json',
           },
-        );
+          body: JSON.stringify({ item_ids: pendingItems.map((i) => i.id) }),
+        });
         if (!res.ok) throw new Error('Failed to hold items');
       } catch (e: any) {
         alert(e.message);

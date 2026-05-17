@@ -421,7 +421,8 @@ export default function DashboardPage() {
             <section>
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-content-primary font-bold flex items-center gap-2">
-                  <ChefHat className="h-4 w-4 text-warning-default" /> Top Sellers
+                  <ChefHat className="h-4 w-4 text-warning-default" /> Top
+                  Sellers
                 </h2>
                 <Link
                   href="/dashboard/analytics"
@@ -501,8 +502,8 @@ export default function DashboardPage() {
             <section>
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-content-primary font-bold flex items-center gap-2">
-                  <TableProperties className="h-4 w-4 text-brand-default" /> Floor
-                  Status
+                  <TableProperties className="h-4 w-4 text-brand-default" />{' '}
+                  Floor Status
                 </h2>
                 <Link
                   href="/pos/tables"
@@ -514,10 +515,10 @@ export default function DashboardPage() {
               <div className="grid grid-cols-4 gap-2">
                 {loading ? (
                   [...Array(12)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="h-16 rounded-xl bg-surface-sunken animate-pulse"
-                  />
+                    <div
+                      key={i}
+                      className="h-16 rounded-xl bg-surface-sunken animate-pulse"
+                    />
                   ))
                 ) : tables.length === 0 ? (
                   <div className="col-span-4 py-6 text-center text-content-muted text-sm">

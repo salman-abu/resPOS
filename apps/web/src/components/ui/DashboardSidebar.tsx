@@ -318,7 +318,8 @@ export function DashboardSidebar({
                       <span
                         className={cn(
                           'text-[10px] font-bold px-1.5 py-0.5 rounded-full',
-                          item.badgeColor ?? 'bg-surface-sunken text-content-muted',
+                          item.badgeColor ??
+                            'bg-surface-sunken text-content-muted',
                         )}
                       >
                         {item.badge}

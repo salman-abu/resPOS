@@ -22,7 +22,8 @@ import {
   Loader2,
 } from 'lucide-react';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -52,8 +53,21 @@ interface StaffMember {
 }
 
 const HOURS = [
-  '8a', '9a', '10a', '11a', '12p', '1p', '2p', '3p', '4p', '5p', '6p', '7p',
-  '8p', '9p', '10p',
+  '8a',
+  '9a',
+  '10a',
+  '11a',
+  '12p',
+  '1p',
+  '2p',
+  '3p',
+  '4p',
+  '5p',
+  '6p',
+  '7p',
+  '8p',
+  '9p',
+  '10p',
 ];
 
 function fmt(paise: number): string {
@@ -217,13 +231,19 @@ export default function StaffHubPage() {
       }
     }
     load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const staff = staffList.find((s) => s.id === selectedId) ?? staffList[0];
   const maxOrders = Math.max(...staffList.map((s) => s.stats.orders), 1);
-  const ordersPct = staff ? pct(staff.stats.orders, staff.stats.orders_target) : 0;
-  const revPct = staff ? pct(staff.stats.revenue, staff.stats.revenue_target) : 0;
+  const ordersPct = staff
+    ? pct(staff.stats.orders, staff.stats.orders_target)
+    : 0;
+  const revPct = staff
+    ? pct(staff.stats.revenue, staff.stats.revenue_target)
+    : 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -470,7 +490,9 @@ export default function StaffHubPage() {
               />
               <StatPill
                 label="Tables"
-                value={staff.stats.tables > 0 ? String(staff.stats.tables) : '—'}
+                value={
+                  staff.stats.tables > 0 ? String(staff.stats.tables) : '—'
+                }
                 icon={<Users className="h-4 w-4" />}
                 accent="amber"
               />
@@ -496,7 +518,9 @@ export default function StaffHubPage() {
                   Order Activity Today
                 </h3>
                 <span className="text-content-muted text-xs ml-auto">
-                  Peak: {HOURS[staff.hourly.indexOf(Math.max(...staff.hourly))] ?? '--'}
+                  Peak:{' '}
+                  {HOURS[staff.hourly.indexOf(Math.max(...staff.hourly))] ??
+                    '--'}
                 </span>
               </div>
               <div className="flex items-end gap-1 h-16">
