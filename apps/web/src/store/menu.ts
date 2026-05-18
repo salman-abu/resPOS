@@ -20,15 +20,15 @@ export const useMenuStore = create<MenuState & MenuActions>((set) => ({
   loading: false,
   initialized: false,
 
-  setMenu: (categories, items) => 
+  setMenu: (categories, items) =>
     set({ categories, items, loading: false, initialized: true }),
-    
+
   setLoading: (loading) => set({ loading }),
 
   updateItemAvailability: (itemId, isAvailable) =>
     set((state) => ({
       items: state.items.map((i) =>
-        i.id === itemId ? { ...i, is_available: isAvailable } : i
+        i.id === itemId ? { ...i, is_available: isAvailable } : i,
       ),
     })),
 }));

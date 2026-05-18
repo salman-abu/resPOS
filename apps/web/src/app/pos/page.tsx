@@ -458,7 +458,7 @@ export default function POSPage() {
       }));
 
       // ⚡ OPTIMISTIC UI: Instantly clear UI so cashier can take the next order (0ms latency)
-      clearItems(); 
+      clearItems();
       setKotOpen(false);
 
       if (!orderIdToFire) {
@@ -510,7 +510,7 @@ export default function POSPage() {
     } catch (error: any) {
       console.error('Fire KOT Error:', error);
       toastError(error.message || 'Failed to fire KOT. Please try again.');
-      
+
       // 🔄 ROLLBACK: Restore items to cart if KOT failed to fire
       useCartStore.getState().hydrateCart(previousItems);
       setKotOpen(true);
@@ -519,13 +519,13 @@ export default function POSPage() {
 
   const handleFireHeld = async () => {
     if (!active_order_id) return;
-    
+
     // Save previous state for optimistic rollback
     const previousItems = [...cartItems];
-    
+
     // ⚡ OPTIMISTIC UI: Instantly update all HELD items to FIRED
-    const optimisticItems = cartItems.map((i) => 
-      i.fire_status === 'HELD' ? { ...i, fire_status: 'FIRED' as const } : i
+    const optimisticItems = cartItems.map((i) =>
+      i.fire_status === 'HELD' ? { ...i, fire_status: 'FIRED' as const } : i,
     );
     useCartStore.getState().hydrateCart(optimisticItems);
 
