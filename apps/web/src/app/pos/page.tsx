@@ -433,13 +433,13 @@ export default function POSPage() {
       return;
     }
 
+    // Save previous state for optimistic rollback (MUST be outside try block to be accessible in catch)
+    const previousItems = [...cartItems];
+
     try {
       // Always pull fresh state to ensure auto-retries use the cleared ID
       let orderIdToFire = useCartStore.getState().active_order_id;
       let itemIdsToFire: string[] = [];
-
-      // Save previous state for optimistic rollback
-      const previousItems = [...cartItems];
 
       const payloadItems = cartItems.map((ci) => ({
         item_id: ci.item_id,
