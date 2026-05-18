@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { API_BASE } from '@/lib/api';
 import { getAuthToken } from '@respos/utils';
 import { useTableSocket } from '@/lib/table-socket';
+import { useTableStore } from '@/store/tables';
 import {
   Loader2,
   RefreshCw,
@@ -87,8 +88,7 @@ function elapsed(dateStr: string) {
 }
 
 export default function TablesPage() {
-  const [zones, setZones] = useState<Zone[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { zones, setZones, loading, setLoading, updateTableStatus } = useTableStore();
   const [error, setError] = useState('');
   const [filter, setFilter] = useState<string>('ALL');
   const router = useRouter();
@@ -118,14 +118,7 @@ export default function TablesPage() {
     tenantId,
     token,
     onTableStatusChanged: (payload) => {
-      setZones((prev) =>
-        prev.map((z) => ({
-          ...z,
-          tables: z.tables.map((t) =>
-            t.id === payload.id ? { ...t, status: payload.status } : t,
-          ),
-        })),
-      );
+      updateTableStatus(payload.id, payload.status);
     },
   });
 
@@ -210,14 +203,7 @@ export default function TablesPage() {
         body: JSON.stringify({ status: 'AVAILABLE' }),
       });
       if (!res.ok) throw new Error('Failed');
-      setZones((prev) =>
-        prev.map((z) => ({
-          ...z,
-          tables: z.tables.map((t) =>
-            t.id === table.id ? { ...t, status: 'AVAILABLE' } : t,
-          ),
-        })),
-      );
+      updateTableStatus(table.id, 'AVAILABLE');
       showToast(`Table ${table.table_number} marked as available`);
     } catch {
       showToast('Failed to update table status');
