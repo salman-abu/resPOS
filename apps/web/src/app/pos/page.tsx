@@ -433,12 +433,13 @@ export default function POSPage() {
       return;
     }
 
-    // Save previous state for optimistic rollback (MUST be outside try block to be accessible in catch)
-    const previousItems = [...cartItems];
-
     try {
-      let orderIdToFire = active_order_id;
+      // Always pull fresh state to ensure auto-retries use the cleared ID
+      let orderIdToFire = useCartStore.getState().active_order_id;
       let itemIdsToFire: string[] = [];
+
+      // Save previous state for optimistic rollback
+      const previousItems = [...cartItems];
 
       const payloadItems = cartItems.map((ci) => ({
         item_id: ci.item_id,
@@ -480,7 +481,7 @@ export default function POSPage() {
         }
         const order = await res.json();
         orderIdToFire = order.id;
-        setActiveOrderId(order.id);
+        useCartStore.getState().setActiveOrderId(order.id);
         itemIdsToFire = order.order_items.map((oi: { id: string }) => oi.id);
       } else {
         const res = await fetch(`${API}/orders/${orderIdToFire}/items`, {
@@ -508,10 +509,20 @@ export default function POSPage() {
         }
       }
     } catch (error: any) {
-      console.error('Fire KOT Error:', error);
-      toastError(error.message || 'Failed to fire KOT. Please try again.');
+      const errMsg = error.message || '';
 
-      // 🔄 ROLLBACK: Restore items to cart if KOT failed to fire
+      // 🛡️ SELF-HEALING: If the previous order was paid/closed, silently start a new order
+      if (errMsg.includes('Cannot add items to a closed order')) {
+        console.warn('Stale closed order detected. Auto-restarting order for table...');
+        useCartStore.getState().setActiveOrderId(undefined);
+        useCartStore.getState().hydrateCart(previousItems);
+        return handleFireKOT(); // Recursive auto-retry
+      }
+
+      console.error('Fire KOT Error:', error);
+      toastError(errMsg || 'Failed to fire KOT. Please try again.');
+
+      // 🔄 ROLLBACK: Restore items to cart for normal network failures
       useCartStore.getState().hydrateCart(previousItems);
       setKotOpen(true);
     }
