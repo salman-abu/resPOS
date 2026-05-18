@@ -263,7 +263,10 @@ export default function DashboardPage() {
               className={cn('h-4 w-4', refreshing && 'animate-spin')}
             />
           </button>
-          <button aria-label="Notifications" className="relative h-9 w-9 rounded-xl bg-surface-sunken border border-border flex items-center justify-center text-content-secondary hover:bg-surface-base transition-all">
+          <button
+            aria-label="Notifications"
+            className="relative h-9 w-9 rounded-xl bg-surface-sunken border border-border flex items-center justify-center text-content-secondary hover:bg-surface-base transition-all"
+          >
             <Bell className="h-4 w-4" />
             <span className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full" />
           </button>

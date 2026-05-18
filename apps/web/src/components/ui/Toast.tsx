@@ -1,6 +1,12 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  ReactNode,
+} from 'react';
 import { X, CheckCircle2, AlertCircle, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -46,17 +52,24 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             key={t.id}
             className={cn(
               'flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border min-w-[300px] animate-fade-in',
-              t.type === 'success' && 'bg-success-light border-success-default text-success-default',
-              t.type === 'error' && 'bg-danger-light border-danger-default text-danger-default',
-              t.type === 'info' && 'bg-surface-card border-border-strong text-content-primary',
+              t.type === 'success' &&
+                'bg-success-light border-success-default text-success-default',
+              t.type === 'error' &&
+                'bg-danger-light border-danger-default text-danger-default',
+              t.type === 'info' &&
+                'bg-surface-card border-border-strong text-content-primary',
             )}
           >
             {t.type === 'success' && <CheckCircle2 className="h-5 w-5" />}
             {t.type === 'error' && <AlertCircle className="h-5 w-5" />}
-            {t.type === 'info' && <Info className="h-5 w-5 text-brand-default" />}
+            {t.type === 'info' && (
+              <Info className="h-5 w-5 text-brand-default" />
+            )}
             <span className="font-semibold text-sm flex-1">{t.message}</span>
             <button
-              onClick={() => setToasts((prev) => prev.filter((x) => x.id !== t.id))}
+              onClick={() =>
+                setToasts((prev) => prev.filter((x) => x.id !== t.id))
+              }
               className="p-1 hover:bg-black/5 rounded-md transition-colors"
             >
               <X className="h-4 w-4" />

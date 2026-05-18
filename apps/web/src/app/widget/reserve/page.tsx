@@ -93,8 +93,8 @@ export default function ReserveWidgetPage() {
           </div>
           <h2 className="text-xl font-bold mb-2">Reservation Confirmed</h2>
           <p className="text-gray-500 mb-6">
-            Thank you, {formData.guestName}! Your table for {partySize} is reserved at{' '}
-            {selectedSlot} on {selectedDate}.
+            Thank you, {formData.guestName}! Your table for {partySize} is
+            reserved at {selectedSlot} on {selectedDate}.
           </p>
           <Button onClick={() => window.location.reload()}>Make Another</Button>
         </div>
@@ -107,7 +107,9 @@ export default function ReserveWidgetPage() {
       <div className="max-w-lg mx-auto">
         <div className="bg-white rounded-xl border shadow-sm p-6">
           <h1 className="text-xl font-bold mb-1">Book a Table</h1>
-          <p className="text-gray-500 text-sm mb-6">Reserve your spot in seconds</p>
+          <p className="text-gray-500 text-sm mb-6">
+            Reserve your spot in seconds
+          </p>
 
           {/* Date & Party */}
           <div className="grid grid-cols-2 gap-3 mb-6">
@@ -134,11 +136,17 @@ export default function ReserveWidgetPage() {
 
           {/* Time Slots */}
           <div className="mb-6">
-            <label className="text-sm font-medium mb-2 block">Select Time</label>
+            <label className="text-sm font-medium mb-2 block">
+              Select Time
+            </label>
             {loading ? (
-              <div className="text-gray-400 text-sm py-4">Checking availability...</div>
+              <div className="text-gray-400 text-sm py-4">
+                Checking availability...
+              </div>
             ) : !availability ? (
-              <div className="text-gray-400 text-sm py-4">Select date to view slots</div>
+              <div className="text-gray-400 text-sm py-4">
+                Select date to view slots
+              </div>
             ) : (
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                 {availability.slots.map((slot: any) => (
@@ -150,8 +158,8 @@ export default function ReserveWidgetPage() {
                       selectedSlot === slot.time
                         ? 'bg-blue-600 text-white border-blue-600'
                         : slot.available
-                        ? 'bg-white text-gray-700 border-gray-200 hover:border-blue-300'
-                        : 'bg-gray-50 text-gray-300 border-gray-100 cursor-not-allowed'
+                          ? 'bg-white text-gray-700 border-gray-200 hover:border-blue-300'
+                          : 'bg-gray-50 text-gray-300 border-gray-100 cursor-not-allowed'
                     }`}
                   >
                     {slot.time}

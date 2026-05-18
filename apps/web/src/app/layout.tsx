@@ -57,9 +57,7 @@ export default function RootLayout({
         className={`${inter.variable} ${geistMono.variable} font-sans antialiased bg-surface-base text-content-primary`}
       >
         <NavigationProgress />
-        <ToastProvider>
-          {children}
-        </ToastProvider>
+        <ToastProvider>{children}</ToastProvider>
         <script
           dangerouslySetInnerHTML={{
             __html: `

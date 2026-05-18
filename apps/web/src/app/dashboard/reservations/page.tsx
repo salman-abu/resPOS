@@ -28,13 +28,40 @@ import {
   Settings,
 } from 'lucide-react';
 
-const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
-  PENDING: { label: 'Pending', color: 'text-warning-default bg-warning-light', icon: AlertCircle },
-  CONFIRMED: { label: 'Confirmed', color: 'text-info-default bg-info-light', icon: CheckCircle },
-  SEATED: { label: 'Seated', color: 'text-success-default bg-success-light', icon: Armchair },
-  CANCELLED: { label: 'Cancelled', color: 'text-danger-default bg-danger-light', icon: XCircle },
-  NOSHOW: { label: 'No Show', color: 'text-content-secondary bg-surface-sunken', icon: AlertCircle },
-  COMPLETED: { label: 'Completed', color: 'text-success-strong bg-success-light', icon: CheckCircle },
+const statusConfig: Record<
+  string,
+  { label: string; color: string; icon: any }
+> = {
+  PENDING: {
+    label: 'Pending',
+    color: 'text-warning-default bg-warning-light',
+    icon: AlertCircle,
+  },
+  CONFIRMED: {
+    label: 'Confirmed',
+    color: 'text-info-default bg-info-light',
+    icon: CheckCircle,
+  },
+  SEATED: {
+    label: 'Seated',
+    color: 'text-success-default bg-success-light',
+    icon: Armchair,
+  },
+  CANCELLED: {
+    label: 'Cancelled',
+    color: 'text-danger-default bg-danger-light',
+    icon: XCircle,
+  },
+  NOSHOW: {
+    label: 'No Show',
+    color: 'text-content-secondary bg-surface-sunken',
+    icon: AlertCircle,
+  },
+  COMPLETED: {
+    label: 'Completed',
+    color: 'text-success-strong bg-success-light',
+    icon: CheckCircle,
+  },
 };
 
 export default function ReservationsPage() {
@@ -67,7 +94,9 @@ export default function ReservationsPage() {
 
   useEffect(() => {
     loadAll();
-    getReservationSettings().then(setSettings).catch(() => {});
+    getReservationSettings()
+      .then(setSettings)
+      .catch(() => {});
   }, [selectedDate]);
 
   async function loadAll() {
@@ -200,7 +229,10 @@ export default function ReservationsPage() {
                   min={1}
                   value={formData.partySize}
                   onChange={(e) =>
-                    setFormData({ ...formData, partySize: Number(e.target.value) })
+                    setFormData({
+                      ...formData,
+                      partySize: Number(e.target.value),
+                    })
                   }
                 />
               </div>
@@ -278,41 +310,65 @@ export default function ReservationsPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-surface-sunken border-b border-border">
-                    <th className="px-4 py-3 text-left font-medium text-content-secondary">Time</th>
-                    <th className="px-4 py-3 text-left font-medium text-content-secondary">Guest</th>
-                    <th className="px-4 py-3 text-left font-medium text-content-secondary">Party</th>
-                    <th className="px-4 py-3 text-left font-medium text-content-secondary">Table</th>
-                    <th className="px-4 py-3 text-left font-medium text-content-secondary">Status</th>
-                    <th className="px-4 py-3 text-left font-medium text-content-secondary">Notes</th>
-                    <th className="px-4 py-3 text-left font-medium text-content-secondary">Actions</th>
+                    <th className="px-4 py-3 text-left font-medium text-content-secondary">
+                      Time
+                    </th>
+                    <th className="px-4 py-3 text-left font-medium text-content-secondary">
+                      Guest
+                    </th>
+                    <th className="px-4 py-3 text-left font-medium text-content-secondary">
+                      Party
+                    </th>
+                    <th className="px-4 py-3 text-left font-medium text-content-secondary">
+                      Table
+                    </th>
+                    <th className="px-4 py-3 text-left font-medium text-content-secondary">
+                      Status
+                    </th>
+                    <th className="px-4 py-3 text-left font-medium text-content-secondary">
+                      Notes
+                    </th>
+                    <th className="px-4 py-3 text-left font-medium text-content-secondary">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
                   {loading ? (
                     <tr>
-                      <td colSpan={7} className="px-4 py-8 text-center text-content-muted">
+                      <td
+                        colSpan={7}
+                        className="px-4 py-8 text-center text-content-muted"
+                      >
                         Loading...
                       </td>
                     </tr>
                   ) : reservations.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-4 py-8 text-center text-content-muted">
+                      <td
+                        colSpan={7}
+                        className="px-4 py-8 text-center text-content-muted"
+                      >
                         No reservations for this date
                       </td>
                     </tr>
                   ) : (
                     reservations.map((r) => {
-                      const cfg = statusConfig[r.status] || statusConfig.PENDING;
+                      const cfg =
+                        statusConfig[r.status] || statusConfig.PENDING;
                       const Icon = cfg.icon;
                       return (
                         <tr key={r.id} className="hover:bg-surface-sunken">
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-1.5">
                               <Clock className="w-3.5 h-3.5 text-content-muted" />
-                              {new Date(r.scheduled_at).toLocaleTimeString('en-IN', {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}
+                              {new Date(r.scheduled_at).toLocaleTimeString(
+                                'en-IN',
+                                {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                },
+                              )}
                             </div>
                           </td>
                           <td className="px-4 py-3">
@@ -354,7 +410,9 @@ export default function ReservationsPage() {
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={() => handleStatusChange(r.id, 'SEATED')}
+                                  onClick={() =>
+                                    handleStatusChange(r.id, 'SEATED')
+                                  }
                                 >
                                   Seat
                                 </Button>
@@ -364,7 +422,9 @@ export default function ReservationsPage() {
                                   size="sm"
                                   variant="outline"
                                   className="text-red-600 border-red-200 hover:bg-red-50"
-                                  onClick={() => handleStatusChange(r.id, 'CANCELLED')}
+                                  onClick={() =>
+                                    handleStatusChange(r.id, 'CANCELLED')
+                                  }
                                 >
                                   Cancel
                                 </Button>
@@ -373,7 +433,9 @@ export default function ReservationsPage() {
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={() => handleStatusChange(r.id, 'COMPLETED')}
+                                  onClick={() =>
+                                    handleStatusChange(r.id, 'COMPLETED')
+                                  }
                                 >
                                   Complete
                                 </Button>
@@ -401,14 +463,20 @@ export default function ReservationsPage() {
                   placeholder="Guest name"
                   value={waitlistForm.guestName}
                   onChange={(e) =>
-                    setWaitlistForm({ ...waitlistForm, guestName: e.target.value })
+                    setWaitlistForm({
+                      ...waitlistForm,
+                      guestName: e.target.value,
+                    })
                   }
                 />
                 <Input
                   placeholder="Phone number"
                   value={waitlistForm.guestPhone}
                   onChange={(e) =>
-                    setWaitlistForm({ ...waitlistForm, guestPhone: e.target.value })
+                    setWaitlistForm({
+                      ...waitlistForm,
+                      guestPhone: e.target.value,
+                    })
                   }
                 />
                 <div className="flex gap-2">
@@ -434,35 +502,59 @@ export default function ReservationsPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-surface-sunken border-b border-border">
-                      <th className="px-4 py-3 text-left font-medium text-content-secondary">#</th>
-                      <th className="px-4 py-3 text-left font-medium text-content-secondary">Guest</th>
-                      <th className="px-4 py-3 text-left font-medium text-content-secondary">Party</th>
-                      <th className="px-4 py-3 text-left font-medium text-content-secondary">Joined</th>
-                      <th className="px-4 py-3 text-left font-medium text-content-secondary">Est. Wait</th>
-                      <th className="px-4 py-3 text-left font-medium text-content-secondary">Actions</th>
+                      <th className="px-4 py-3 text-left font-medium text-content-secondary">
+                        #
+                      </th>
+                      <th className="px-4 py-3 text-left font-medium text-content-secondary">
+                        Guest
+                      </th>
+                      <th className="px-4 py-3 text-left font-medium text-content-secondary">
+                        Party
+                      </th>
+                      <th className="px-4 py-3 text-left font-medium text-content-secondary">
+                        Joined
+                      </th>
+                      <th className="px-4 py-3 text-left font-medium text-content-secondary">
+                        Est. Wait
+                      </th>
+                      <th className="px-4 py-3 text-left font-medium text-content-secondary">
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
                     {waitlist.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="px-4 py-8 text-center text-content-muted">
+                        <td
+                          colSpan={6}
+                          className="px-4 py-8 text-center text-content-muted"
+                        >
                           Waitlist is empty
                         </td>
                       </tr>
                     ) : (
                       waitlist.map((entry, idx) => (
                         <tr key={entry.id} className="hover:bg-surface-sunken">
-                          <td className="px-4 py-3 text-content-muted">{idx + 1}</td>
+                          <td className="px-4 py-3 text-content-muted">
+                            {idx + 1}
+                          </td>
                           <td className="px-4 py-3">
-                            <div className="font-medium">{entry.guest_name}</div>
-                            <div className="text-content-muted text-xs">{entry.guest_phone}</div>
+                            <div className="font-medium">
+                              {entry.guest_name}
+                            </div>
+                            <div className="text-content-muted text-xs">
+                              {entry.guest_phone}
+                            </div>
                           </td>
                           <td className="px-4 py-3">{entry.party_size}</td>
                           <td className="px-4 py-3 text-content-secondary">
-                            {new Date(entry.joined_at).toLocaleTimeString('en-IN', {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
+                            {new Date(entry.joined_at).toLocaleTimeString(
+                              'en-IN',
+                              {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              },
+                            )}
                           </td>
                           <td className="px-4 py-3">
                             <span className="text-orange-600 font-medium">

@@ -2,7 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { MonitorSmartphone, Copy, CheckCircle2, Zap, GraduationCap } from 'lucide-react';
+import {
+  MonitorSmartphone,
+  Copy,
+  CheckCircle2,
+  Zap,
+  GraduationCap,
+} from 'lucide-react';
 import { getAuthToken } from '@respos/utils';
 import { cn } from '@/lib/utils';
 
@@ -130,14 +136,17 @@ export default function TerminalsPage() {
                 const terminalId =
                   localStorage.getItem('terminal_id') || 'default-terminal';
                 const action = trainingMode ? 'end' : 'start';
-                fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1'}/training/${action}`, {
-                  method: 'POST',
-                  headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'application/json',
+                fetch(
+                  `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1'}/training/${action}`,
+                  {
+                    method: 'POST',
+                    headers: {
+                      Authorization: `Bearer ${token}`,
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ terminal_id: terminalId }),
                   },
-                  body: JSON.stringify({ terminal_id: terminalId }),
-                })
+                )
                   .then((res) => {
                     if (res.ok) {
                       setTrainingMode(!trainingMode);

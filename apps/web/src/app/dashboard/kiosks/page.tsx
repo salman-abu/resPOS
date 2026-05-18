@@ -2,11 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  getOwnerKiosks,
-  createKiosk,
-  updateKioskStatus,
-} from '@/lib/api';
+import { getOwnerKiosks, createKiosk, updateKioskStatus } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/Toast';
@@ -141,7 +137,9 @@ export default function KiosksPage() {
           ) : kiosks.length === 0 ? (
             <div className="col-span-full text-center py-12 bg-surface-card rounded-2xl border border-dashed border-border">
               <Monitor className="w-12 h-12 text-content-muted mx-auto mb-4" />
-              <p className="text-content-secondary font-medium">No kiosk terminals yet</p>
+              <p className="text-content-secondary font-medium">
+                No kiosk terminals yet
+              </p>
               <p className="text-sm text-content-muted mt-1">
                 Add your first kiosk to start self-service ordering
               </p>
@@ -156,12 +154,16 @@ export default function KiosksPage() {
                   <div className="flex items-center gap-3">
                     <div
                       className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                        kiosk.isOnline ? 'bg-success-light' : 'bg-surface-sunken'
+                        kiosk.isOnline
+                          ? 'bg-success-light'
+                          : 'bg-surface-sunken'
                       }`}
                     >
                       <Monitor
                         className={`w-5 h-5 ${
-                          kiosk.isOnline ? 'text-success-default' : 'text-content-muted'
+                          kiosk.isOnline
+                            ? 'text-success-default'
+                            : 'text-content-muted'
                         }`}
                       />
                     </div>
@@ -183,7 +185,9 @@ export default function KiosksPage() {
                             Online
                           </span>
                         ) : (
-                          <span className="text-xs text-content-muted">Offline</span>
+                          <span className="text-xs text-content-muted">
+                            Offline
+                          </span>
                         )}
                       </div>
                     </div>
@@ -216,9 +220,7 @@ export default function KiosksPage() {
                     size="sm"
                     variant="outline"
                     className="flex-1"
-                    onClick={() =>
-                      handleToggleStatus(kiosk.id, kiosk.status)
-                    }
+                    onClick={() => handleToggleStatus(kiosk.id, kiosk.status)}
                   >
                     {kiosk.status === 'ACTIVE' ? (
                       <>
@@ -235,9 +237,7 @@ export default function KiosksPage() {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() =>
-                      router.push(`/dashboard/kiosks/${kiosk.id}`)
-                    }
+                    onClick={() => router.push(`/dashboard/kiosks/${kiosk.id}`)}
                   >
                     <Settings className="w-3.5 h-3.5" />
                   </Button>

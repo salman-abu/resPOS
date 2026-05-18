@@ -296,11 +296,11 @@ export function DashboardSidebar({
           onClick={onClose}
         />
       )}
-      <aside 
+      <aside
         className={cn(
-          "flex flex-col w-60 h-screen bg-white border-r border-border flex-shrink-0 shadow-sm transition-transform duration-200 z-50",
-          "fixed inset-y-0 left-0 lg:static lg:translate-x-0",
-          isOpen ? "translate-x-0" : "-translate-x-full"
+          'flex flex-col w-60 h-screen bg-white border-r border-border flex-shrink-0 shadow-sm transition-transform duration-200 z-50',
+          'fixed inset-y-0 left-0 lg:static lg:translate-x-0',
+          isOpen ? 'translate-x-0' : '-translate-x-full',
         )}
       >
         {/* Brand */}
@@ -315,88 +315,91 @@ export function DashboardSidebar({
             <p className="text-content-muted text-xs">resPOS Dashboard</p>
           </div>
           {onClose && (
-            <button className="lg:hidden p-2 -mr-2 text-content-muted active:text-content-primary" onClick={onClose}>
+            <button
+              className="lg:hidden p-2 -mr-2 text-content-muted active:text-content-primary"
+              onClick={onClose}
+            >
               <X className="h-4 w-4" />
             </button>
           )}
         </div>
 
-      {/* Nav */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5 scrollbar-thin">
-        {Object.entries(grouped).map(([section, items]) => (
-          <div key={section}>
-            <p className="text-[10px] font-bold text-content-muted uppercase tracking-widest px-3 mb-2">
-              {SECTIONS[section]}
-            </p>
-            <div className="space-y-0.5">
-              {items.map((item) => {
-                const isActive = item.exact
-                  ? pathname === item.href
-                  : pathname.startsWith(item.href);
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={cn(
-                      'flex items-center gap-3 px-3 py-3 rounded-xl text-sm transition-all duration-150 group',
-                      isActive
-                        ? 'bg-brand-light text-brand-strong font-semibold border border-brand-light'
-                        : 'text-content-secondary hover:bg-surface-sunken hover:text-content-primary',
-                    )}
-                  >
-                    <span
+        {/* Nav */}
+        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5 scrollbar-thin">
+          {Object.entries(grouped).map(([section, items]) => (
+            <div key={section}>
+              <p className="text-[10px] font-bold text-content-muted uppercase tracking-widest px-3 mb-2">
+                {SECTIONS[section]}
+              </p>
+              <div className="space-y-0.5">
+                {items.map((item) => {
+                  const isActive = item.exact
+                    ? pathname === item.href
+                    : pathname.startsWith(item.href);
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
                       className={cn(
-                        'flex-shrink-0',
+                        'flex items-center gap-3 px-3 py-3 rounded-xl text-sm transition-all duration-150 group',
                         isActive
-                          ? 'text-brand-default'
-                          : 'text-content-muted group-hover:text-content-secondary',
+                          ? 'bg-brand-light text-brand-strong font-semibold border border-brand-light'
+                          : 'text-content-secondary hover:bg-surface-sunken hover:text-content-primary',
                       )}
                     >
-                      {item.icon}
-                    </span>
-                    <span className="flex-1 truncate">{item.label}</span>
-                    {item.badge && (
                       <span
                         className={cn(
-                          'text-[10px] font-bold px-1.5 py-0.5 rounded-full',
-                          item.badgeColor ??
-                            'bg-surface-sunken text-content-muted',
+                          'flex-shrink-0',
+                          isActive
+                            ? 'text-brand-default'
+                            : 'text-content-muted group-hover:text-content-secondary',
                         )}
                       >
-                        {item.badge}
+                        {item.icon}
                       </span>
-                    )}
-                    {isActive && (
-                      <ChevronRight className="h-3.5 w-3.5 text-brand-400 flex-shrink-0" />
-                    )}
-                  </Link>
-                );
-              })}
+                      <span className="flex-1 truncate">{item.label}</span>
+                      {item.badge && (
+                        <span
+                          className={cn(
+                            'text-[10px] font-bold px-1.5 py-0.5 rounded-full',
+                            item.badgeColor ??
+                              'bg-surface-sunken text-content-muted',
+                          )}
+                        >
+                          {item.badge}
+                        </span>
+                      )}
+                      {isActive && (
+                        <ChevronRight className="h-3.5 w-3.5 text-brand-400 flex-shrink-0" />
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        ))}
-      </nav>
+          ))}
+        </nav>
 
-      {/* User */}
-      <div className="p-3 border-t border-border">
-        <div
-          onClick={handleLogout}
-          className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-danger-light transition-colors cursor-pointer group"
-        >
-          <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-brand-default to-brand-strong flex items-center justify-center flex-shrink-0 text-xs font-bold text-content-inverse">
-            {userName.charAt(0)}
+        {/* User */}
+        <div className="p-3 border-t border-border">
+          <div
+            onClick={handleLogout}
+            className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-danger-light transition-colors cursor-pointer group"
+          >
+            <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-brand-default to-brand-strong flex items-center justify-center flex-shrink-0 text-xs font-bold text-content-inverse">
+              {userName.charAt(0)}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-content-primary text-sm font-semibold truncate group-hover:text-danger transition-colors">
+                {userName}
+              </p>
+              <p className="text-content-muted text-[10px] uppercase font-bold tracking-wider group-hover:text-danger/70 transition-colors">
+                Logout
+              </p>
+            </div>
+            <LogOut className="h-4 w-4 text-content-muted group-hover:text-danger transition-colors flex-shrink-0" />
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-content-primary text-sm font-semibold truncate group-hover:text-danger transition-colors">
-              {userName}
-            </p>
-            <p className="text-content-muted text-[10px] uppercase font-bold tracking-wider group-hover:text-danger/70 transition-colors">
-              Logout
-            </p>
-          </div>
-          <LogOut className="h-4 w-4 text-content-muted group-hover:text-danger transition-colors flex-shrink-0" />
         </div>
-      </div>
       </aside>
     </>
   );

@@ -117,10 +117,9 @@ export function CustomerModal({ open, onClose }: CustomerModalProps) {
   const fetchLoyaltyDetails = async (phone: string) => {
     setLoyaltyLoading(true);
     try {
-      const res = await fetch(
-        `${API}/loyalty/${encodeURIComponent(phone)}`,
-        { headers: getAuthHeader() },
-      );
+      const res = await fetch(`${API}/loyalty/${encodeURIComponent(phone)}`, {
+        headers: getAuthHeader(),
+      });
       if (res.ok) {
         const data = await res.json();
         setLoyaltyDetails(data);
@@ -316,7 +315,8 @@ export function CustomerModal({ open, onClose }: CustomerModalProps) {
                   </div>
                   {historyLoading ? (
                     <div className="flex items-center gap-2 text-slate-500 text-sm">
-                      <Loader2 className="h-4 w-4 animate-spin" /> Loading history...
+                      <Loader2 className="h-4 w-4 animate-spin" /> Loading
+                      history...
                     </div>
                   ) : orderHistory.length > 0 ? (
                     <div className="grid grid-cols-1 gap-2">
@@ -325,14 +325,17 @@ export function CustomerModal({ open, onClose }: CustomerModalProps) {
                           key={h.id}
                           onClick={async () => {
                             try {
-                              const res = await fetch(`${API}/orders/load-template`, {
-                                method: 'POST',
-                                headers: {
-                                  ...getAuthHeader(),
-                                  'Content-Type': 'application/json',
+                              const res = await fetch(
+                                `${API}/orders/load-template`,
+                                {
+                                  method: 'POST',
+                                  headers: {
+                                    ...getAuthHeader(),
+                                    'Content-Type': 'application/json',
+                                  },
+                                  body: JSON.stringify({ history_id: h.id }),
                                 },
-                                body: JSON.stringify({ history_id: h.id }),
-                              });
+                              );
                               if (res.ok) {
                                 const data = await res.json();
                                 if (data.items && data.items.length > 0) {
@@ -341,7 +344,7 @@ export function CustomerModal({ open, onClose }: CustomerModalProps) {
                                 }
                                 if (data.skipped && data.skipped.length > 0) {
                                   alert(
-                                    `Skipped unavailable items: ${data.skipped.join(', ')}`
+                                    `Skipped unavailable items: ${data.skipped.join(', ')}`,
                                   );
                                 }
                               }
@@ -387,7 +390,8 @@ export function CustomerModal({ open, onClose }: CustomerModalProps) {
                   </div>
                   {loyaltyLoading ? (
                     <div className="flex items-center gap-2 text-slate-500 text-sm">
-                      <Loader2 className="h-4 w-4 animate-spin" /> Loading stamps...
+                      <Loader2 className="h-4 w-4 animate-spin" /> Loading
+                      stamps...
                     </div>
                   ) : loyaltyDetails?.stampCards?.length > 0 ? (
                     <div className="space-y-3">

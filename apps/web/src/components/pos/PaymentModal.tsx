@@ -107,7 +107,9 @@ function Row({
       <span
         className={cn(
           'font-mono tracking-tight',
-          bold ? 'text-content-primary font-black' : 'text-content-primary font-bold',
+          bold
+            ? 'text-content-primary font-black'
+            : 'text-content-primary font-bold',
         )}
         style={{
           fontVariantNumeric: 'tabular-nums',
@@ -184,9 +186,7 @@ export default function PaymentModal({
               .filter((p: any) => p.status === 'SUCCESS')
               .reduce((s: any, p: any) => s + p.amount, 0);
             const rem = unpaidInvoice.total - alreadyPaid;
-            setLines([
-              { id: nid(), method: 'CASH', amount: fmt(rem) },
-            ]);
+            setLines([{ id: nid(), method: 'CASH', amount: fmt(rem) }]);
             setError(null);
           }
         }

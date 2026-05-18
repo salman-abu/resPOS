@@ -290,11 +290,13 @@ export default function FloorPlanManagerPage() {
                     const statusColors: Record<string, string> = {
                       AVAILABLE: 'bg-green-50 border-green-200 text-green-700',
                       OCCUPIED: 'bg-red-50 border-red-200 text-red-700',
-                      RESERVED: 'bg-purple-50 border-purple-200 text-purple-700',
+                      RESERVED:
+                        'bg-purple-50 border-purple-200 text-purple-700',
                       BILLED: 'bg-orange-50 border-orange-200 text-orange-700',
                       DIRTY: 'bg-gray-100 border-gray-300 text-gray-600',
                     };
-                    const statusCfg = statusColors[table.status] || statusColors.AVAILABLE;
+                    const statusCfg =
+                      statusColors[table.status] || statusColors.AVAILABLE;
                     return (
                       <div
                         key={table.id}

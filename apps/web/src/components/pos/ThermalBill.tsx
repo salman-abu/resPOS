@@ -34,7 +34,12 @@ interface Props {
     table_number?: string;
     items: InvoiceItem[];
   };
-  tenant: { name: string; address?: string; gstin?: string; fssaiLicenceNumber?: string };
+  tenant: {
+    name: string;
+    address?: string;
+    gstin?: string;
+    fssaiLicenceNumber?: string;
+  };
   onClose?: () => void;
 }
 

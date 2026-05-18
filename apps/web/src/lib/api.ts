@@ -171,7 +171,6 @@ export const getTrainingStatus = (terminalId: string) =>
     },
   });
 
-
 // ─── MOD-07: One-Tap Re-Order ─────────────────────────────────────────────────
 export const getCustomerOrderHistory = (phone: string) =>
   request<any[]>(`/customers/${encodeURIComponent(phone)}/order-history`);
@@ -182,8 +181,7 @@ export const loadOrderTemplate = (historyId: string) =>
   });
 
 // ─── MOD-10: FSSAI Compliance ───────────────────────────────────────────────
-export const getFssaiSettings = () =>
-  request<any>('/tenant/settings/fssai');
+export const getFssaiSettings = () => request<any>('/tenant/settings/fssai');
 export const updateFssaiSettings = (body: {
   licence_number: string;
   expiry_date: string;
@@ -234,7 +232,10 @@ export const toggleStampCard = (id: string) =>
 export const getUpsellSuggestions = (cartItemIds: string[]) =>
   request<any>(`/upsell/suggestions?cartItems=${cartItemIds.join(',')}`);
 export const acceptUpsell = (body: { itemId: string; cartItemIds: string[] }) =>
-  request<any>('/upsell/accepted', { method: 'POST', body: JSON.stringify(body) });
+  request<any>('/upsell/accepted', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
 
 // ─── MOD-01: WhatsApp Ordering ─────────────────────────────────────────────
 export const getTableQrToken = (tableId: string) =>
@@ -253,7 +254,9 @@ export const updateReservationStatus = (id: string, status: string) =>
     body: JSON.stringify({ status }),
   });
 export const getReservationAvailability = (date: string, partySize: number) =>
-  request<any>(`/reservations/availability?date=${date}&partySize=${partySize}`);
+  request<any>(
+    `/reservations/availability?date=${date}&partySize=${partySize}`,
+  );
 export const getWaitlist = () => request<any[]>('/waitlist');
 export const addToWaitlist = (body: any) =>
   request<any>('/waitlist', { method: 'POST', body: JSON.stringify(body) });
@@ -281,7 +284,9 @@ export const updateKioskCart = (sessionId: string, body: any) =>
     body: JSON.stringify(body),
   });
 export const getKioskUpsell = (sessionId: string, cartItemIds: string[]) =>
-  request<any>(`/kiosk/session/${sessionId}/upsell?cartItemIds=${cartItemIds.join(',')}`);
+  request<any>(
+    `/kiosk/session/${sessionId}/upsell?cartItemIds=${cartItemIds.join(',')}`,
+  );
 export const initiateKioskPayment = (sessionId: string, body: any) =>
   request<any>(`/kiosk/session/${sessionId}/payment/initiate`, {
     method: 'POST',

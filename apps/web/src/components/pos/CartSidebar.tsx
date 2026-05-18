@@ -29,7 +29,11 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { scheduleVoidItem, cancelVoidJob, getUpsellSuggestions } from '@/lib/api';
+import {
+  scheduleVoidItem,
+  cancelVoidJob,
+  getUpsellSuggestions,
+} from '@/lib/api';
 import { CustomerModal } from './CustomerModal';
 
 interface CartSidebarProps {

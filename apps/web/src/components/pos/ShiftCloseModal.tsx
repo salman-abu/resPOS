@@ -60,10 +60,13 @@ export function ShiftCloseModal({ open, onClose }: ShiftCloseModalProps) {
       // Generate shift report (MOD-09)
       const shiftId = shift.shiftId;
       if (shiftId) {
-        const reportRes = await fetch(`${API}/shifts/${shiftId}/close-and-report`, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${getAuthToken()}` },
-        });
+        const reportRes = await fetch(
+          `${API}/shifts/${shiftId}/close-and-report`,
+          {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${getAuthToken()}` },
+          },
+        );
         if (reportRes.ok) {
           const report = await reportRes.json();
           setReportPreview(report);
@@ -246,43 +249,59 @@ export function ShiftCloseModal({ open, onClose }: ShiftCloseModalProps) {
               <div className="p-4 space-y-3">
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div>
-                    <span className="text-slate-500 text-xs font-bold uppercase">Total Sales</span>
+                    <span className="text-slate-500 text-xs font-bold uppercase">
+                      Total Sales
+                    </span>
                     <p className="font-bold text-slate-100">
                       ₹{(reportPreview.total_sales_paise / 100).toFixed(2)}
                     </p>
                   </div>
                   <div>
-                    <span className="text-slate-500 text-xs font-bold uppercase">Orders</span>
-                    <p className="font-bold text-slate-100">{reportPreview.total_orders}</p>
-                  </div>
-                  <div>
-                    <span className="text-slate-500 text-xs font-bold uppercase">Void Count</span>
-                    <p className="font-bold text-rose-400">{reportPreview.void_count}</p>
-                  </div>
-                  <div>
-                    <span className="text-slate-500 text-xs font-bold uppercase">Cash / UPI / Card</span>
+                    <span className="text-slate-500 text-xs font-bold uppercase">
+                      Orders
+                    </span>
                     <p className="font-bold text-slate-100">
-                      ₹{(reportPreview.cash_paise / 100).toFixed(0)} /{' '}
-                      ₹{(reportPreview.upi_paise / 100).toFixed(0)} /{' '}
-                      ₹{(reportPreview.card_paise / 100).toFixed(0)}
+                      {reportPreview.total_orders}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 text-xs font-bold uppercase">
+                      Void Count
+                    </span>
+                    <p className="font-bold text-rose-400">
+                      {reportPreview.void_count}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 text-xs font-bold uppercase">
+                      Cash / UPI / Card
+                    </span>
+                    <p className="font-bold text-slate-100">
+                      ₹{(reportPreview.cash_paise / 100).toFixed(0)} / ₹
+                      {(reportPreview.upi_paise / 100).toFixed(0)} / ₹
+                      {(reportPreview.card_paise / 100).toFixed(0)}
                     </p>
                   </div>
                 </div>
-                {reportPreview.top_items && reportPreview.top_items.length > 0 && (
-                  <div>
-                    <span className="text-slate-500 text-xs font-bold uppercase block mb-1">Top Items</span>
-                    <div className="space-y-1">
-                      {reportPreview.top_items.map((item: any, i: number) => (
-                        <div key={i} className="flex justify-between text-sm">
-                          <span className="text-slate-300">{item.name}</span>
-                          <span className="font-mono text-slate-400">
-                            {item.count}x · ₹{(item.revenuePaise / 100).toFixed(0)}
-                          </span>
-                        </div>
-                      ))}
+                {reportPreview.top_items &&
+                  reportPreview.top_items.length > 0 && (
+                    <div>
+                      <span className="text-slate-500 text-xs font-bold uppercase block mb-1">
+                        Top Items
+                      </span>
+                      <div className="space-y-1">
+                        {reportPreview.top_items.map((item: any, i: number) => (
+                          <div key={i} className="flex justify-between text-sm">
+                            <span className="text-slate-300">{item.name}</span>
+                            <span className="font-mono text-slate-400">
+                              {item.count}x · ₹
+                              {(item.revenuePaise / 100).toFixed(0)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
                 <div className="flex items-center gap-2 text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 p-2 rounded">
                   <Send className="h-3 w-3" />
                   WhatsApp summary will be sent to owner

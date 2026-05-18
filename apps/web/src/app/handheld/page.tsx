@@ -23,7 +23,8 @@ const API_BASE =
 export default function HandheldPage() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const { items, addItem, updateQuantity, removeItem, clearCart } = useCartStore();
+  const { items, addItem, updateQuantity, removeItem, clearCart } =
+    useCartStore();
   const [tables, setTables] = useState<any[]>([]);
   const [selectedTable, setSelectedTable] = useState<any>(null);
   const [menuItems, setMenuItems] = useState<any[]>([]);
@@ -81,7 +82,9 @@ export default function HandheldPage() {
         })),
       });
 
-      alert(`Order & Payment recorded for Table ${selectedTable.table_number}! Total: ₹${(subtotal / 100).toFixed(0)}`);
+      alert(
+        `Order & Payment recorded for Table ${selectedTable.table_number}! Total: ₹${(subtotal / 100).toFixed(0)}`,
+      );
       clearCart();
       setSelectedTable(null);
     } catch (err: any) {
@@ -92,17 +95,26 @@ export default function HandheldPage() {
   };
 
   useEffect(() => {
-    if (!user || (user.role !== 'CASHIER' && user.role !== 'OWNER' && user.role !== 'MANAGER')) {
+    if (
+      !user ||
+      (user.role !== 'CASHIER' &&
+        user.role !== 'OWNER' &&
+        user.role !== 'MANAGER')
+    ) {
       router.replace('/login');
       return;
     }
 
     const token = getAuthToken();
     Promise.all([
-      fetch(`${API_BASE}/billing/tables`, { headers: { Authorization: `Bearer ${token}` } })
+      fetch(`${API_BASE}/billing/tables`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
         .then((r) => r.json())
         .catch(() => []),
-      fetch(`${API_BASE}/menu/items`, { headers: { Authorization: `Bearer ${token}` } })
+      fetch(`${API_BASE}/menu/items`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
         .then((r) => r.json())
         .catch(() => []),
     ]).then(([t, m]) => {
@@ -112,7 +124,12 @@ export default function HandheldPage() {
     });
   }, [user, router]);
 
-  const categories = ['all', ...Array.from(new Set(menuItems.map((i) => i.category?.name).filter(Boolean)))];
+  const categories = [
+    'all',
+    ...Array.from(
+      new Set(menuItems.map((i) => i.category?.name).filter(Boolean)),
+    ),
+  ];
   const filteredItems =
     activeCategory === 'all'
       ? menuItems
@@ -122,7 +139,9 @@ export default function HandheldPage() {
 
   const handleQrDecode = () => {
     // Simple QR token decode: token format is UUID, we just use it as table identifier
-    const table = tables.find((t) => t.id === qrInput || t.table_number === qrInput);
+    const table = tables.find(
+      (t) => t.id === qrInput || t.table_number === qrInput,
+    );
     if (table) {
       setSelectedTable(table);
       setShowQr(false);
@@ -143,7 +162,9 @@ export default function HandheldPage() {
     return (
       <div className="min-h-screen bg-slate-950 text-white p-4">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-xl font-black uppercase tracking-widest">Handheld POS</h1>
+          <h1 className="text-xl font-black uppercase tracking-widest">
+            Handheld POS
+          </h1>
           <button
             onClick={() => setShowQr(true)}
             className="h-12 w-12 bg-cyan-500 rounded-xl flex items-center justify-center active:scale-90 transition-transform"
@@ -223,7 +244,9 @@ export default function HandheldPage() {
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div>
-          <h1 className="text-lg font-black">Table {selectedTable.table_number}</h1>
+          <h1 className="text-lg font-black">
+            Table {selectedTable.table_number}
+          </h1>
           <p className="text-xs text-slate-400 font-bold uppercase">
             {items.length} items · ₹{(subtotal / 100).toFixed(0)}
           </p>
@@ -272,7 +295,9 @@ export default function HandheldPage() {
                 key={item.cartLineId}
                 className="flex items-center justify-between bg-slate-800 rounded-lg p-2"
               >
-                <span className="text-sm font-bold flex-1 truncate">{item.name}</span>
+                <span className="text-sm font-bold flex-1 truncate">
+                  {item.name}
+                </span>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => updateQuantity(item.cartLineId, -1)}

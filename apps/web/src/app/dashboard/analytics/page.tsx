@@ -820,8 +820,8 @@ export default function AnalyticsPage() {
                 </h3>
                 {menuEngineering?.period && (
                   <span className="text-xs text-content-muted">
-                    {new Date(menuEngineering.period.from).toLocaleDateString()} —{' '}
-                    {new Date(menuEngineering.period.to).toLocaleDateString()}
+                    {new Date(menuEngineering.period.from).toLocaleDateString()}{' '}
+                    — {new Date(menuEngineering.period.to).toLocaleDateString()}
                   </span>
                 )}
               </div>
@@ -867,21 +867,29 @@ export default function AnalyticsPage() {
                 <table className="w-full text-sm">
                   <thead className="bg-surface-2 border-b border-border">
                     <tr>
-                      {['Item', 'Category', 'Sold', 'Revenue', 'Margin %', 'Quadrant'].map(
-                        (h) => (
-                          <th
-                            key={h}
-                            className="text-left px-4 py-3 text-xs font-bold text-content-muted uppercase tracking-wide"
-                          >
-                            {h}
-                          </th>
-                        ),
-                      )}
+                      {[
+                        'Item',
+                        'Category',
+                        'Sold',
+                        'Revenue',
+                        'Margin %',
+                        'Quadrant',
+                      ].map((h) => (
+                        <th
+                          key={h}
+                          className="text-left px-4 py-3 text-xs font-bold text-content-muted uppercase tracking-wide"
+                        >
+                          {h}
+                        </th>
+                      ))}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
                     {menuEngineering?.items?.map((item: any) => (
-                      <tr key={item.id} className="hover:bg-surface-2 transition-colors">
+                      <tr
+                        key={item.id}
+                        className="hover:bg-surface-2 transition-colors"
+                      >
                         <td className="px-4 py-3 text-content-primary font-semibold">
                           {item.name}
                         </td>
@@ -889,7 +897,9 @@ export default function AnalyticsPage() {
                           {item.category}
                         </td>
                         <td className="px-4 py-3">{item.sold_count}</td>
-                        <td className="px-4 py-3 font-bold">{fmt(item.revenue)}</td>
+                        <td className="px-4 py-3 font-bold">
+                          {fmt(item.revenue)}
+                        </td>
                         <td className="px-4 py-3">{item.margin_pct}%</td>
                         <td className="px-4 py-3">
                           <span
@@ -940,10 +950,7 @@ function QuadrantCard({
       <p className="text-xs opacity-70 mb-3">{subtitle}</p>
       <div className="space-y-1">
         {items?.slice(0, 3).map((item) => (
-          <div
-            key={item.id}
-            className="text-xs font-medium truncate"
-          >
+          <div key={item.id} className="text-xs font-medium truncate">
             {item.name}
           </div>
         ))}

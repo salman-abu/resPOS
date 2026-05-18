@@ -55,13 +55,26 @@ export default function KioskAppPage() {
   const [paused, setPaused] = useState(false);
 
   const [screen, setScreen] = useState<
-    'IDLE' | 'LANGUAGE' | 'SERVICE_TYPE' | 'BROWSING' | 'ITEM_DETAIL' | 'CART' | 'UPSELL' | 'LOYALTY' | 'PAYMENT' | 'CONFIRMED'
+    | 'IDLE'
+    | 'LANGUAGE'
+    | 'SERVICE_TYPE'
+    | 'BROWSING'
+    | 'ITEM_DETAIL'
+    | 'CART'
+    | 'UPSELL'
+    | 'LOYALTY'
+    | 'PAYMENT'
+    | 'CONFIRMED'
   >('IDLE');
 
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [language, setLanguage] = useState('en');
-  const [serviceType, setServiceType] = useState<'DINE_IN' | 'TAKEAWAY' | null>(null);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [serviceType, setServiceType] = useState<'DINE_IN' | 'TAKEAWAY' | null>(
+    null,
+  );
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
+    null,
+  );
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [cart, setCart] = useState<any[]>([]);
   const [upsellSuggestions, setUpsellSuggestions] = useState<any[]>([]);
@@ -80,7 +93,9 @@ export default function KioskAppPage() {
 
   // WhatsApp states
   const [whatsappPhone, setWhatsappPhone] = useState('');
-  const [whatsappStatus, setWhatsappStatus] = useState<'IDLE' | 'SENDING' | 'SENT' | 'FAILED'>('IDLE');
+  const [whatsappStatus, setWhatsappStatus] = useState<
+    'IDLE' | 'SENDING' | 'SENT' | 'FAILED'
+  >('IDLE');
 
   // Fullscreen state
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -96,7 +111,8 @@ export default function KioskAppPage() {
 
   useEffect(() => {
     document.addEventListener('fullscreenchange', checkFullscreen);
-    return () => document.removeEventListener('fullscreenchange', checkFullscreen);
+    return () =>
+      document.removeEventListener('fullscreenchange', checkFullscreen);
   }, [checkFullscreen]);
 
   const requestFullscreen = async () => {
@@ -229,15 +245,27 @@ export default function KioskAppPage() {
 
   // Loyalty discount (1 point = ₹1 = 100 paise)
   const discountPaise = redeemPoints * 100;
-  const grandTotalPaise = Math.max(0, cartTotalPaise + taxTotalPaise - discountPaise);
+  const grandTotalPaise = Math.max(
+    0,
+    cartTotalPaise + taxTotalPaise - discountPaise,
+  );
 
-  const addToCart = (item: any, variantId?: string, modifiers?: any[], qty = 1) => {
+  const addToCart = (
+    item: any,
+    variantId?: string,
+    modifiers?: any[],
+    qty = 1,
+  ) => {
     const unitPrice =
       item.base_price +
       (variantId
-        ? item.variants?.find((v: any) => v.id === variantId)?.additional_price || 0
+        ? item.variants?.find((v: any) => v.id === variantId)
+            ?.additional_price || 0
         : 0) +
-      (modifiers?.reduce((s: number, m: any) => s + (m.price_adjustment || 0), 0) || 0);
+      (modifiers?.reduce(
+        (s: number, m: any) => s + (m.price_adjustment || 0),
+        0,
+      ) || 0);
 
     const existing = cart.find(
       (c) =>
@@ -340,11 +368,15 @@ export default function KioskAppPage() {
         setLoyaltyMessage(`Welcome back, ${data.customer?.name || 'Guest'}!`);
       } else {
         setLoyaltyAccount({ points: 0, newAccount: true });
-        setLoyaltyMessage('New account detected! You will earn points on this order.');
+        setLoyaltyMessage(
+          'New account detected! You will earn points on this order.',
+        );
       }
     } catch (err) {
       setLoyaltyAccount({ points: 0, newAccount: true });
-      setLoyaltyMessage('New account welcome! You will earn points on this order.');
+      setLoyaltyMessage(
+        'New account welcome! You will earn points on this order.',
+      );
     } finally {
       setLoyaltyLoading(false);
     }
@@ -357,7 +389,9 @@ export default function KioskAppPage() {
       Math.floor((cartTotalPaise + taxTotalPaise) / 100), // Max redeem up to subtotal value
     );
     setRedeemPoints(maxRedeem);
-    setLoyaltyMessage(`Successfully redeemed ${maxRedeem} points! (Discount of ₹${maxRedeem})`);
+    setLoyaltyMessage(
+      `Successfully redeemed ${maxRedeem} points! (Discount of ₹${maxRedeem})`,
+    );
   };
 
   // ─── Payment ──────────────────────────────────────────────────────────────
@@ -453,7 +487,9 @@ export default function KioskAppPage() {
         <Coffee className="w-20 h-20 mb-6 text-indigo-400" />
         <h1 className="text-4xl font-extrabold mb-3">Kiosk Maintenance</h1>
         <p className="text-slate-400 text-xl text-center max-w-md">
-          This self-service terminal is currently undergoing scheduled optimization. Please place your order with our host at the main counter.
+          This self-service terminal is currently undergoing scheduled
+          optimization. Please place your order with our host at the main
+          counter.
         </p>
       </div>
     );
@@ -491,8 +527,12 @@ export default function KioskAppPage() {
               <Utensils className="w-16 h-16 text-indigo-300" />
             </div>
           )}
-          <h1 className="text-6xl font-extrabold mb-4 tracking-tight drop-shadow-sm">{tenant?.name || 'resPOS'}</h1>
-          <p className="text-2xl text-indigo-200 mb-12 font-medium">Touch screen to begin your order</p>
+          <h1 className="text-6xl font-extrabold mb-4 tracking-tight drop-shadow-sm">
+            {tenant?.name || 'resPOS'}
+          </h1>
+          <p className="text-2xl text-indigo-200 mb-12 font-medium">
+            Touch screen to begin your order
+          </p>
 
           <button className="bg-white text-indigo-950 px-16 py-6 rounded-2xl text-3xl font-extrabold shadow-2xl hover:scale-105 transition-all duration-300 active:scale-95 animate-bounce">
             Get Started
@@ -518,8 +558,12 @@ export default function KioskAppPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="bg-white rounded-3xl p-8 w-96 text-gray-900 shadow-2xl">
-              <h3 className="font-extrabold text-2xl mb-2 text-center text-slate-800">Admin Mode Exit</h3>
-              <p className="text-sm text-slate-500 text-center mb-6">Enter 4-digit PIN to exit</p>
+              <h3 className="font-extrabold text-2xl mb-2 text-center text-slate-800">
+                Admin Mode Exit
+              </h3>
+              <p className="text-sm text-slate-500 text-center mb-6">
+                Enter 4-digit PIN to exit
+              </p>
               <Input
                 type="password"
                 maxLength={4}
@@ -530,27 +574,38 @@ export default function KioskAppPage() {
                 autoFocus
               />
               <div className="grid grid-cols-3 gap-3">
-                {['1', '2', '3', '4', '5', '6', '7', '8', '9', 'C', '0', 'OK'].map(
-                  (key) => (
-                    <button
-                      key={key}
-                      onClick={() => {
-                        if (key === 'C') setPinInput('');
-                        else if (key === 'OK') handleAdminExit();
-                        else if (pinInput.length < 4) setPinInput(pinInput + key);
-                      }}
-                      className={`h-16 rounded-xl text-2xl font-extrabold transition-all active:scale-95 ${
-                        key === 'OK'
-                          ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-md'
-                          : key === 'C'
+                {[
+                  '1',
+                  '2',
+                  '3',
+                  '4',
+                  '5',
+                  '6',
+                  '7',
+                  '8',
+                  '9',
+                  'C',
+                  '0',
+                  'OK',
+                ].map((key) => (
+                  <button
+                    key={key}
+                    onClick={() => {
+                      if (key === 'C') setPinInput('');
+                      else if (key === 'OK') handleAdminExit();
+                      else if (pinInput.length < 4) setPinInput(pinInput + key);
+                    }}
+                    className={`h-16 rounded-xl text-2xl font-extrabold transition-all active:scale-95 ${
+                      key === 'OK'
+                        ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-md'
+                        : key === 'C'
                           ? 'bg-red-50 text-red-600 hover:bg-red-100'
                           : 'bg-slate-100 hover:bg-slate-200 text-slate-800'
-                      }`}
-                    >
-                      {key}
-                    </button>
-                  ),
-                )}
+                    }`}
+                  >
+                    {key}
+                  </button>
+                ))}
               </div>
               <button
                 onClick={() => {
@@ -573,7 +628,9 @@ export default function KioskAppPage() {
     return (
       <div className="h-screen bg-[#F8FAFC] flex flex-col items-center justify-center p-8 text-[#0F172A]">
         <Languages className="w-20 h-20 text-indigo-600 mb-6" />
-        <h2 className="text-4xl font-extrabold mb-10 tracking-tight">Select Language / भाषा चुनें</h2>
+        <h2 className="text-4xl font-extrabold mb-10 tracking-tight">
+          Select Language / भाषा चुनें
+        </h2>
         <div className="grid grid-cols-2 gap-4 max-w-lg w-full">
           {(terminal?.displayLanguages || ['en']).map((lang: string) => {
             const labels: Record<string, string> = {
@@ -605,8 +662,12 @@ export default function KioskAppPage() {
   if (screen === 'SERVICE_TYPE') {
     return (
       <div className="h-screen bg-[#F8FAFC] flex flex-col items-center justify-center p-8 text-[#0F172A]">
-        <h2 className="text-4xl font-extrabold mb-2 tracking-tight">How will you enjoy your meal?</h2>
-        <p className="text-slate-500 text-lg mb-12">Please select dining option</p>
+        <h2 className="text-4xl font-extrabold mb-2 tracking-tight">
+          How will you enjoy your meal?
+        </h2>
+        <p className="text-slate-500 text-lg mb-12">
+          Please select dining option
+        </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-2xl w-full">
           {terminal?.allowDineIn && (
@@ -617,8 +678,12 @@ export default function KioskAppPage() {
               <div className="w-20 h-20 rounded-2xl bg-indigo-50 flex items-center justify-center">
                 <Utensils className="w-12 h-12 text-indigo-600" />
               </div>
-              <span className="text-3xl font-extrabold text-slate-800">Dine In</span>
-              <span className="text-slate-500 text-center text-base">Enjoy hot food brought directly to your table</span>
+              <span className="text-3xl font-extrabold text-slate-800">
+                Dine In
+              </span>
+              <span className="text-slate-500 text-center text-base">
+                Enjoy hot food brought directly to your table
+              </span>
             </button>
           )}
           {terminal?.allowTakeaway && (
@@ -629,8 +694,12 @@ export default function KioskAppPage() {
               <div className="w-20 h-20 rounded-2xl bg-indigo-50 flex items-center justify-center">
                 <Package className="w-12 h-12 text-indigo-600" />
               </div>
-              <span className="text-3xl font-extrabold text-slate-800">Takeaway</span>
-              <span className="text-slate-500 text-center text-base">Order is safely packed and ready to go</span>
+              <span className="text-3xl font-extrabold text-slate-800">
+                Takeaway
+              </span>
+              <span className="text-slate-500 text-center text-base">
+                Order is safely packed and ready to go
+              </span>
             </button>
           )}
         </div>
@@ -649,7 +718,9 @@ export default function KioskAppPage() {
         {!isFullscreen && (
           <div className="bg-amber-500 text-white font-bold px-4 py-2 text-center text-sm flex items-center justify-center gap-2 animate-bounce shrink-0">
             <ShieldAlert className="w-5 h-5" />
-            <span>Kiosk mode escape detected. Please Tap here to re-lock fullscreen</span>
+            <span>
+              Kiosk mode escape detected. Please Tap here to re-lock fullscreen
+            </span>
             <button
               onClick={requestFullscreen}
               className="bg-white text-slate-900 px-3 py-1 rounded font-extrabold text-xs ml-3 shadow-md"
@@ -669,7 +740,9 @@ export default function KioskAppPage() {
               <ChevronLeft className="w-8 h-8 text-slate-800" />
             </button>
             <div>
-              <h1 className="text-2xl font-extrabold tracking-tight text-slate-950">{tenant?.name}</h1>
+              <h1 className="text-2xl font-extrabold tracking-tight text-slate-950">
+                {tenant?.name}
+              </h1>
               <p className="text-sm font-semibold text-slate-400">
                 {serviceType === 'DINE_IN' ? '🍽️ Dine In' : '🛍️ Takeaway'}
               </p>
@@ -729,21 +802,25 @@ export default function KioskAppPage() {
                     <Utensils className="w-16 h-16 text-slate-200" />
                   </div>
                 )}
-                
+
                 {/* Shape-Coded Veg / Non-Veg badge */}
                 {item.item_type === 'VEG' ? (
                   <div className="flex items-center gap-1.5 mb-2 bg-green-50 border border-green-200 px-2 py-0.5 rounded-lg w-max shrink-0">
                     <span className="w-4 h-4 border-2 border-green-600 rounded flex items-center justify-center shrink-0">
                       <span className="w-2 h-2 rounded-full bg-green-600" />
                     </span>
-                    <span className="text-xs font-bold text-green-700">Veg</span>
+                    <span className="text-xs font-bold text-green-700">
+                      Veg
+                    </span>
                   </div>
                 ) : item.item_type === 'NON_VEG' ? (
                   <div className="flex items-center gap-1.5 mb-2 bg-red-50 border border-red-200 px-2 py-0.5 rounded-lg w-max shrink-0">
                     <span className="w-4 h-4 border-2 border-red-600 rounded flex items-center justify-center shrink-0">
                       <span className="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-b-[8px] border-b-red-600" />
                     </span>
-                    <span className="text-xs font-bold text-red-700">Non-Veg</span>
+                    <span className="text-xs font-bold text-red-700">
+                      Non-Veg
+                    </span>
                   </div>
                 ) : null}
 
@@ -751,7 +828,9 @@ export default function KioskAppPage() {
                   {item.name}
                 </h3>
                 {terminal?.showCalorieInfo && item.calories && (
-                  <p className="text-xs text-slate-400 font-semibold mb-2">{item.calories} kcal</p>
+                  <p className="text-xs text-slate-400 font-semibold mb-2">
+                    {item.calories} kcal
+                  </p>
                 )}
                 <div className="mt-auto flex items-center justify-between pt-2">
                   <span className="text-indigo-600 font-extrabold text-xl">
@@ -770,8 +849,12 @@ export default function KioskAppPage() {
         {cart.length > 0 && (
           <div className="bg-white border-t px-6 py-4 flex items-center justify-between shrink-0 shadow-lg z-10">
             <div>
-              <div className="text-sm font-bold text-slate-400">{cartItemCount} items in Tray</div>
-              <div className="text-2xl font-black text-slate-900">₹{(cartTotalPaise / 100).toFixed(0)}</div>
+              <div className="text-sm font-bold text-slate-400">
+                {cartItemCount} items in Tray
+              </div>
+              <div className="text-2xl font-black text-slate-900">
+                ₹{(cartTotalPaise / 100).toFixed(0)}
+              </div>
             </div>
             <Button
               onClick={() => setScreen('CART')}
@@ -797,7 +880,9 @@ export default function KioskAppPage() {
                       <span className="w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-b-[9px] border-b-red-600" />
                     </span>
                   ) : null}
-                  <h2 className="text-2xl font-black text-slate-800">{selectedItem.name}</h2>
+                  <h2 className="text-2xl font-black text-slate-800">
+                    {selectedItem.name}
+                  </h2>
                 </div>
                 <button
                   onClick={() => setScreen('BROWSING')}
@@ -817,7 +902,9 @@ export default function KioskAppPage() {
 
               <div className="flex-1 overflow-y-auto">
                 {selectedItem.description && (
-                  <p className="text-slate-500 text-lg leading-relaxed mb-6">{selectedItem.description}</p>
+                  <p className="text-slate-500 text-lg leading-relaxed mb-6">
+                    {selectedItem.description}
+                  </p>
                 )}
 
                 {/* Variants (Min height 56px touch target) */}
@@ -851,13 +938,20 @@ export default function KioskAppPage() {
 
                 {/* Modifier Groups with 56px Targets */}
                 {selectedItem.modifier_groups?.map((group: any) => (
-                  <div key={group.id} className="mb-6 border-b border-slate-100 pb-4">
+                  <div
+                    key={group.id}
+                    className="mb-6 border-b border-slate-100 pb-4"
+                  >
                     <label className="text-base font-extrabold text-slate-400 mb-3 block">
-                      {group.name} {group.is_required && <span className="text-red-500 font-bold">*</span>}
+                      {group.name}{' '}
+                      {group.is_required && (
+                        <span className="text-red-500 font-bold">*</span>
+                      )}
                     </label>
                     <div className="flex gap-3 flex-wrap">
                       {group.modifiers?.map((mod: any) => {
-                        const isSelected = selectedItem._selectedModifiers?.includes(mod.id);
+                        const isSelected =
+                          selectedItem._selectedModifiers?.includes(mod.id);
                         return (
                           <button
                             key={mod.id}
@@ -867,7 +961,8 @@ export default function KioskAppPage() {
                                 : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
                             }`}
                             onClick={() => {
-                              const current = selectedItem._selectedModifiers || [];
+                              const current =
+                                selectedItem._selectedModifiers || [];
                               const next = current.includes(mod.id)
                                 ? current.filter((id: string) => id !== mod.id)
                                 : [...current, mod.id];
@@ -878,7 +973,8 @@ export default function KioskAppPage() {
                             }}
                           >
                             {mod.name}
-                            {mod.price_adjustment > 0 && ` (+₹${(mod.price_adjustment / 100).toFixed(0)})`}
+                            {mod.price_adjustment > 0 &&
+                              ` (+₹${(mod.price_adjustment / 100).toFixed(0)})`}
                           </button>
                         );
                       })}
@@ -893,8 +989,9 @@ export default function KioskAppPage() {
                 onClick={() => {
                   const selectedMods =
                     selectedItem._selectedModifiers?.map((modId: string) => {
-                      const group = selectedItem.modifier_groups?.find((g: any) =>
-                        g.modifiers?.some((m: any) => m.id === modId),
+                      const group = selectedItem.modifier_groups?.find(
+                        (g: any) =>
+                          g.modifiers?.some((m: any) => m.id === modId),
                       );
                       const mod = group?.modifiers?.find(
                         (m: any) => m.id === modId,
@@ -920,8 +1017,9 @@ export default function KioskAppPage() {
                       : 0) +
                     (selectedItem._selectedModifiers || []).reduce(
                       (s: number, modId: string) => {
-                        const group = selectedItem.modifier_groups?.find((g: any) =>
-                          g.modifiers?.some((m: any) => m.id === modId),
+                        const group = selectedItem.modifier_groups?.find(
+                          (g: any) =>
+                            g.modifiers?.some((m: any) => m.id === modId),
                         );
                         const mod = group?.modifiers?.find(
                           (m: any) => m.id === modId,
@@ -958,7 +1056,9 @@ export default function KioskAppPage() {
           {cart.length === 0 ? (
             <div className="text-center py-20">
               <Utensils className="w-24 h-24 mx-auto text-slate-200 mb-6" />
-              <h2 className="text-2xl font-bold text-slate-400 mb-6">Your order tray is empty</h2>
+              <h2 className="text-2xl font-bold text-slate-400 mb-6">
+                Your order tray is empty
+              </h2>
               <Button
                 onClick={() => setScreen('BROWSING')}
                 className="bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold h-14 px-8 rounded-2xl text-lg shadow-md"
@@ -985,9 +1085,13 @@ export default function KioskAppPage() {
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-extrabold text-slate-800 text-lg leading-snug line-clamp-1">{item.name}</h3>
+                    <h3 className="font-extrabold text-slate-800 text-lg leading-snug line-clamp-1">
+                      {item.name}
+                    </h3>
                     {item.variantId && (
-                      <p className="text-sm font-semibold text-slate-400">Variant: Large</p>
+                      <p className="text-sm font-semibold text-slate-400">
+                        Variant: Large
+                      </p>
                     )}
                     {item.modifiers?.length > 0 && (
                       <p className="text-xs text-indigo-500 font-semibold truncate mt-0.5">
@@ -1033,21 +1137,33 @@ export default function KioskAppPage() {
           <div className="bg-white border-t px-6 py-6 shrink-0 shadow-2xl z-10">
             <div className="flex justify-between items-center mb-3">
               <span className="text-slate-500 font-bold text-lg">Subtotal</span>
-              <span className="font-extrabold text-slate-800 text-xl">₹{(cartTotalPaise / 100).toFixed(0)}</span>
+              <span className="font-extrabold text-slate-800 text-xl">
+                ₹{(cartTotalPaise / 100).toFixed(0)}
+              </span>
             </div>
-            
+
             {/* Split CGST and SGST details */}
             <div className="flex justify-between items-center mb-3">
-              <span className="text-slate-500 font-semibold text-base">CGST (2.5%)</span>
-              <span className="font-bold text-slate-700 text-base">₹{(cgstPaise / 100).toFixed(2)}</span>
+              <span className="text-slate-500 font-semibold text-base">
+                CGST (2.5%)
+              </span>
+              <span className="font-bold text-slate-700 text-base">
+                ₹{(cgstPaise / 100).toFixed(2)}
+              </span>
             </div>
             <div className="flex justify-between items-center mb-4">
-              <span className="text-slate-500 font-semibold text-base">SGST (2.5%)</span>
-              <span className="font-bold text-slate-700 text-base">₹{(sgstPaise / 100).toFixed(2)}</span>
+              <span className="text-slate-500 font-semibold text-base">
+                SGST (2.5%)
+              </span>
+              <span className="font-bold text-slate-700 text-base">
+                ₹{(sgstPaise / 100).toFixed(2)}
+              </span>
             </div>
 
             <div className="flex justify-between items-center mb-6 pt-3 border-t border-slate-100">
-              <span className="font-black text-slate-900 text-2xl">Total to Pay</span>
+              <span className="font-black text-slate-900 text-2xl">
+                Total to Pay
+              </span>
               <span className="font-black text-indigo-600 text-3xl">
                 ₹{((cartTotalPaise + taxTotalPaise) / 100).toFixed(0)}
               </span>
@@ -1078,8 +1194,12 @@ export default function KioskAppPage() {
         <div className="w-20 h-20 bg-indigo-50 rounded-3xl flex items-center justify-center mb-6 border border-indigo-100">
           <Sparkles className="w-12 h-12 text-indigo-600 animate-pulse" />
         </div>
-        <h2 className="text-4xl font-black mb-2 tracking-tight">Complete your meal</h2>
-        <p className="text-slate-500 text-xl mb-12">Guests also frequently added these</p>
+        <h2 className="text-4xl font-black mb-2 tracking-tight">
+          Complete your meal
+        </h2>
+        <p className="text-slate-500 text-xl mb-12">
+          Guests also frequently added these
+        </p>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl w-full mb-12">
           {upsellSuggestions.map((item: any) => (
@@ -1102,7 +1222,9 @@ export default function KioskAppPage() {
                   <Utensils className="w-16 h-16 text-slate-200" />
                 </div>
               )}
-              <h3 className="font-extrabold text-slate-800 text-lg line-clamp-1 mb-1">{item.name}</h3>
+              <h3 className="font-extrabold text-slate-800 text-lg line-clamp-1 mb-1">
+                {item.name}
+              </h3>
               <p className="text-indigo-600 font-extrabold text-lg mb-4">
                 ₹{(item.base_price / 100).toFixed(0)}
               </p>
@@ -1134,7 +1256,9 @@ export default function KioskAppPage() {
           >
             <ChevronLeft className="w-8 h-8 text-slate-800" />
           </button>
-          <h1 className="text-2xl font-black text-slate-900">Loyalty Rewards</h1>
+          <h1 className="text-2xl font-black text-slate-900">
+            Loyalty Rewards
+          </h1>
         </div>
 
         <div className="flex-1 flex flex-col md:flex-row p-6 gap-6 items-center justify-center max-w-5xl mx-auto w-full">
@@ -1142,7 +1266,9 @@ export default function KioskAppPage() {
           <div className="bg-white border border-slate-150 rounded-[36px] p-6 w-full max-w-md shadow-lg flex flex-col">
             <div className="flex items-center gap-2 mb-4 shrink-0">
               <Smartphone className="w-6 h-6 text-indigo-600" />
-              <h2 className="text-xl font-extrabold text-slate-800">Enter Mobile Number</h2>
+              <h2 className="text-xl font-extrabold text-slate-800">
+                Enter Mobile Number
+              </h2>
             </div>
             <Input
               type="text"
@@ -1152,25 +1278,27 @@ export default function KioskAppPage() {
               placeholder="98765 43210"
             />
             <div className="grid grid-cols-3 gap-3 flex-1">
-              {['1', '2', '3', '4', '5', '6', '7', '8', '9', 'C', '0', '⌫'].map((key) => (
-                <button
-                  key={key}
-                  onClick={() => {
-                    if (key === 'C') {
-                      setLoyaltyPhone('');
-                      setLoyaltyAccount(null);
-                      setRedeemPoints(0);
-                    } else if (key === '⌫') {
-                      setLoyaltyPhone(loyaltyPhone.slice(0, -1));
-                    } else if (loyaltyPhone.length < 10) {
-                      setLoyaltyPhone(loyaltyPhone + key);
-                    }
-                  }}
-                  className="h-14 rounded-xl text-2xl font-extrabold bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-800 transition-all flex items-center justify-center"
-                >
-                  {key}
-                </button>
-              ))}
+              {['1', '2', '3', '4', '5', '6', '7', '8', '9', 'C', '0', '⌫'].map(
+                (key) => (
+                  <button
+                    key={key}
+                    onClick={() => {
+                      if (key === 'C') {
+                        setLoyaltyPhone('');
+                        setLoyaltyAccount(null);
+                        setRedeemPoints(0);
+                      } else if (key === '⌫') {
+                        setLoyaltyPhone(loyaltyPhone.slice(0, -1));
+                      } else if (loyaltyPhone.length < 10) {
+                        setLoyaltyPhone(loyaltyPhone + key);
+                      }
+                    }}
+                    className="h-14 rounded-xl text-2xl font-extrabold bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-800 transition-all flex items-center justify-center"
+                  >
+                    {key}
+                  </button>
+                ),
+              )}
             </div>
             <button
               onClick={handleLoyaltyLookup}
@@ -1192,7 +1320,9 @@ export default function KioskAppPage() {
             <div>
               <div className="flex items-center gap-2 mb-6">
                 <Gift className="w-7 h-7 text-indigo-600 animate-bounce" />
-                <h2 className="text-2xl font-black text-slate-800">Your Rewards</h2>
+                <h2 className="text-2xl font-black text-slate-800">
+                  Your Rewards
+                </h2>
               </div>
 
               {loyaltyMessage && (
@@ -1205,8 +1335,12 @@ export default function KioskAppPage() {
                 <div className="space-y-6">
                   <div className="flex justify-between items-center bg-slate-50 border border-slate-100 p-4 rounded-2xl">
                     <div>
-                      <div className="text-sm font-bold text-slate-400">Available Points</div>
-                      <div className="text-3xl font-black text-indigo-600 mt-1">{loyaltyAccount.points}</div>
+                      <div className="text-sm font-bold text-slate-400">
+                        Available Points
+                      </div>
+                      <div className="text-3xl font-black text-indigo-600 mt-1">
+                        {loyaltyAccount.points}
+                      </div>
                     </div>
                     {loyaltyAccount.points > 0 && redeemPoints === 0 && (
                       <button
@@ -1222,7 +1356,9 @@ export default function KioskAppPage() {
                     <div className="bg-green-50 border border-green-200 p-4 rounded-2xl flex items-center gap-3">
                       <Smile className="w-8 h-8 text-green-600 shrink-0" />
                       <div>
-                        <div className="text-sm font-bold text-green-800">Points Applied!</div>
+                        <div className="text-sm font-bold text-green-800">
+                          Points Applied!
+                        </div>
                         <p className="text-xs text-green-600 font-semibold mt-0.5">
                           You saved ₹{redeemPoints} on this order.
                         </p>
@@ -1233,7 +1369,9 @@ export default function KioskAppPage() {
               ) : (
                 <div className="text-center py-8 text-slate-400">
                   <Smartphone className="w-16 h-16 mx-auto mb-4 text-slate-200" />
-                  <p className="font-extrabold text-lg">Enter phone number to earn points & check stamps!</p>
+                  <p className="font-extrabold text-lg">
+                    Enter phone number to earn points & check stamps!
+                  </p>
                 </div>
               )}
             </div>
@@ -1267,12 +1405,16 @@ export default function KioskAppPage() {
       <div className="h-screen bg-[#F8FAFC] flex flex-col text-[#0F172A]">
         <div className="bg-white border-b px-6 py-4 flex items-center gap-4 shrink-0 shadow-sm">
           <button
-            onClick={() => setScreen(terminal?.loyaltyLookupEnabled ? 'LOYALTY' : 'CART')}
+            onClick={() =>
+              setScreen(terminal?.loyaltyLookupEnabled ? 'LOYALTY' : 'CART')
+            }
             className="h-14 w-14 flex items-center justify-center hover:bg-slate-100 rounded-full active:scale-90"
           >
             <ChevronLeft className="w-8 h-8 text-slate-800" />
           </button>
-          <h1 className="text-2xl font-black text-slate-900">Select Payment Method</h1>
+          <h1 className="text-2xl font-black text-slate-900">
+            Select Payment Method
+          </h1>
         </div>
 
         <div className="flex-1 flex flex-col items-center justify-center p-8 max-w-md mx-auto w-full">
@@ -1298,18 +1440,25 @@ export default function KioskAppPage() {
               ) : (
                 <div className="bg-white p-8 border-2 border-indigo-200 rounded-[36px] shadow-xl text-center">
                   <Loader2 className="w-16 h-16 animate-spin text-indigo-600 mx-auto mb-4" />
-                  <h2 className="text-2xl font-black mb-2 text-slate-800">Processing Payment...</h2>
-                  <p className="text-slate-500 font-semibold">Please follow instructions on card terminal</p>
+                  <h2 className="text-2xl font-black mb-2 text-slate-800">
+                    Processing Payment...
+                  </h2>
+                  <p className="text-slate-500 font-semibold">
+                    Please follow instructions on card terminal
+                  </p>
                 </div>
               )}
             </div>
           ) : (
             <>
               <div className="text-center mb-10">
-                <div className="text-base font-extrabold text-slate-400 mb-1">Grand Total (incl. GST)</div>
+                <div className="text-base font-extrabold text-slate-400 mb-1">
+                  Grand Total (incl. GST)
+                </div>
                 {discountPaise > 0 && (
                   <div className="text-sm font-bold text-green-600 mb-1">
-                    Loyalty Discount Applied: -₹{(discountPaise / 100).toFixed(0)}
+                    Loyalty Discount Applied: -₹
+                    {(discountPaise / 100).toFixed(0)}
                   </div>
                 )}
                 <div className="text-6xl font-black text-slate-900 tracking-tight">
@@ -1327,8 +1476,12 @@ export default function KioskAppPage() {
                       <QrCode className="w-8 h-8 text-indigo-600" />
                     </div>
                     <div className="text-left">
-                      <div className="text-xl font-extrabold text-slate-800">Instant UPI QR Code</div>
-                      <div className="text-sm font-semibold text-slate-400">Scan & Pay via phone</div>
+                      <div className="text-xl font-extrabold text-slate-800">
+                        Instant UPI QR Code
+                      </div>
+                      <div className="text-sm font-semibold text-slate-400">
+                        Scan & Pay via phone
+                      </div>
                     </div>
                   </button>
                 )}
@@ -1341,8 +1494,12 @@ export default function KioskAppPage() {
                       <CreditCard className="w-8 h-8 text-indigo-600" />
                     </div>
                     <div className="text-left">
-                      <div className="text-xl font-extrabold text-slate-800">Card Tap / Insert</div>
-                      <div className="text-sm font-semibold text-slate-400">Credit, Debit, or Apple/Google Pay</div>
+                      <div className="text-xl font-extrabold text-slate-800">
+                        Card Tap / Insert
+                      </div>
+                      <div className="text-sm font-semibold text-slate-400">
+                        Credit, Debit, or Apple/Google Pay
+                      </div>
                     </div>
                   </button>
                 )}
@@ -1355,8 +1512,12 @@ export default function KioskAppPage() {
                       <Banknote className="w-8 h-8 text-indigo-600" />
                     </div>
                     <div className="text-left">
-                      <div className="text-xl font-extrabold text-slate-800">Pay Cash at Counter</div>
-                      <div className="text-sm font-semibold text-slate-400">Receive token, pay cashier</div>
+                      <div className="text-xl font-extrabold text-slate-800">
+                        Pay Cash at Counter
+                      </div>
+                      <div className="text-sm font-semibold text-slate-400">
+                        Receive token, pay cashier
+                      </div>
                     </div>
                   </button>
                 )}
@@ -1375,7 +1536,9 @@ export default function KioskAppPage() {
         <div className="w-28 h-28 bg-green-100 rounded-full flex items-center justify-center mb-6 border-4 border-white shadow-lg animate-bounce">
           <CheckCircle className="w-16 h-16 text-green-600" />
         </div>
-        <h1 className="text-5xl font-black text-slate-900 mb-3 tracking-tight">Order Confirmed!</h1>
+        <h1 className="text-5xl font-black text-slate-900 mb-3 tracking-tight">
+          Order Confirmed!
+        </h1>
         <p className="text-slate-600 text-xl mb-10 max-w-md">
           {serviceType === 'DINE_IN'
             ? 'Please proceed to your table. We will serve you shortly!'
@@ -1383,8 +1546,12 @@ export default function KioskAppPage() {
         </p>
 
         <div className="bg-white rounded-[36px] border-4 border-green-200 p-8 mb-8 shadow-xl max-w-sm w-full">
-          <div className="text-base font-extrabold text-slate-400 mb-1">Your Token Number</div>
-          <div className="text-7xl font-black text-green-700 tracking-tight">{kotNumber}</div>
+          <div className="text-base font-extrabold text-slate-400 mb-1">
+            Your Token Number
+          </div>
+          <div className="text-7xl font-black text-green-700 tracking-tight">
+            {kotNumber}
+          </div>
         </div>
 
         <div className="flex items-center gap-2 text-slate-600 mb-8 bg-white border border-slate-150 px-6 h-14 rounded-2xl shadow-sm">
@@ -1398,9 +1565,12 @@ export default function KioskAppPage() {
         {terminal?.whatsappReceiptEnabled && (
           <div className="bg-white border border-slate-150 rounded-[32px] p-6 max-w-md w-full shadow-lg mb-8 text-left">
             <h3 className="font-extrabold text-lg text-slate-800 flex items-center gap-2 mb-2">
-              <Smartphone className="w-5 h-5 text-indigo-600" /> Get Receipt on WhatsApp
+              <Smartphone className="w-5 h-5 text-indigo-600" /> Get Receipt on
+              WhatsApp
             </h3>
-            <p className="text-xs text-slate-400 font-semibold mb-4">Enter 10-digit number to receive details instantly</p>
+            <p className="text-xs text-slate-400 font-semibold mb-4">
+              Enter 10-digit number to receive details instantly
+            </p>
             {whatsappStatus === 'SENT' ? (
               <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-2xl font-bold text-center text-sm">
                 Receipt dispatched successfully! 📱 Check your phone.
@@ -1412,12 +1582,16 @@ export default function KioskAppPage() {
                   maxLength={10}
                   placeholder="98765 43210"
                   value={whatsappPhone}
-                  onChange={(e) => setWhatsappPhone(e.target.value.replace(/\D/g, ''))}
+                  onChange={(e) =>
+                    setWhatsappPhone(e.target.value.replace(/\D/g, ''))
+                  }
                   className="h-14 text-lg font-bold border-2 border-slate-200 rounded-xl flex-1 px-4 tracking-wider text-slate-800"
                 />
                 <button
                   onClick={sendWhatsAppReceipt}
-                  disabled={whatsappPhone.length !== 10 || whatsappStatus === 'SENDING'}
+                  disabled={
+                    whatsappPhone.length !== 10 || whatsappStatus === 'SENDING'
+                  }
                   className="h-14 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold px-6 rounded-xl shadow-md active:scale-95 disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
                 >
                   {whatsappStatus === 'SENDING' ? 'Sending...' : 'Send'}

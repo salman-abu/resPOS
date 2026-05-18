@@ -457,7 +457,9 @@ export default function MenuPage() {
                         <div
                           className={cn(
                             'h-2 w-2 rounded-full flex-shrink-0',
-                            item.item_type === 'VEG' ? 'bg-emerald-500' : 'bg-red-500',
+                            item.item_type === 'VEG'
+                              ? 'bg-emerald-500'
+                              : 'bg-red-500',
                           )}
                         />
                         <div>

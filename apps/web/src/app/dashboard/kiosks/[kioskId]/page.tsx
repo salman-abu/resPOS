@@ -6,13 +6,7 @@ import { getOwnerKiosks, updateKiosk, getKioskAnalytics } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/Toast';
-import {
-  ArrowLeft,
-  Monitor,
-  Save,
-  BarChart3,
-  Calendar,
-} from 'lucide-react';
+import { ArrowLeft, Monitor, Save, BarChart3, Calendar } from 'lucide-react';
 
 export default function KioskDetailPage() {
   const params = useParams();
@@ -26,7 +20,9 @@ export default function KioskDetailPage() {
   const [formData, setFormData] = useState<any>({});
   const [analytics, setAnalytics] = useState<any>(null);
   const [dateRange, setDateRange] = useState({
-    from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split('T')[0],
     to: new Date().toISOString().split('T')[0],
   });
 
@@ -67,7 +63,11 @@ export default function KioskDetailPage() {
 
   async function loadAnalytics() {
     try {
-      const data = await getKioskAnalytics(kioskId, dateRange.from, dateRange.to);
+      const data = await getKioskAnalytics(
+        kioskId,
+        dateRange.from,
+        dateRange.to,
+      );
       setAnalytics(data);
     } catch {
       // Analytics may not exist yet
@@ -125,12 +125,18 @@ export default function KioskDetailPage() {
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center gap-3 mb-6">
-          <Button variant="ghost" size="sm" onClick={() => router.push('/dashboard/kiosks')}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push('/dashboard/kiosks')}
+          >
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div>
             <h1 className="text-2xl font-bold">{kiosk.name}</h1>
-            <p className="text-sm text-content-secondary">Kiosk Configuration</p>
+            <p className="text-sm text-content-secondary">
+              Kiosk Configuration
+            </p>
           </div>
         </div>
 
@@ -165,7 +171,9 @@ export default function KioskDetailPage() {
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="bg-surface-sunken rounded-xl p-3">
-                <div className="text-xs text-content-secondary">Total Sessions</div>
+                <div className="text-xs text-content-secondary">
+                  Total Sessions
+                </div>
                 <div className="text-2xl font-bold">
                   {analytics.summary?.totalSessions || 0}
                 </div>
@@ -183,7 +191,9 @@ export default function KioskDetailPage() {
                 </div>
               </div>
               <div className="bg-surface-sunken rounded-xl p-3">
-                <div className="text-xs text-content-secondary">Completion Rate</div>
+                <div className="text-xs text-content-secondary">
+                  Completion Rate
+                </div>
                 <div className="text-2xl font-bold">
                   {analytics.summary?.completionRate || 0}%
                 </div>
