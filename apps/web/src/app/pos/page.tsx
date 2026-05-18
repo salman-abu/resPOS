@@ -513,7 +513,9 @@ export default function POSPage() {
 
       // 🛡️ SELF-HEALING: If the previous order was paid/closed, silently start a new order
       if (errMsg.includes('Cannot add items to a closed order')) {
-        console.warn('Stale closed order detected. Auto-restarting order for table...');
+        console.warn(
+          'Stale closed order detected. Auto-restarting order for table...',
+        );
         useCartStore.getState().setActiveOrderId(undefined);
         useCartStore.getState().hydrateCart(previousItems);
         return handleFireKOT(); // Recursive auto-retry
