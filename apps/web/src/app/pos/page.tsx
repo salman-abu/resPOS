@@ -42,6 +42,7 @@ import ThermalBill from '@/components/pos/ThermalBill';
 import { ItemCustomiserModal } from '@/components/pos/ItemCustomiserModal';
 import { ErrorBoundary } from '@/components/shared';
 import { useCartStore, calcCartTotals } from '@/store/cart';
+import { useMenuStore } from '@/store/menu';
 import { useToast } from '@/components/ui/Toast';
 import {
   isMenuCacheStale,
@@ -87,13 +88,11 @@ export default function POSPage() {
   const { success, error: toastError } = useToast();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [items, setItems] = useState<MenuItem[]>([]);
+  const { categories, items, loading, updateItemAvailability } = useMenuStore();
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
     null,
   );
   const [search, setSearch] = useState('');
-  const [loading, setLoading] = useState(true);
   const [isOnline, setIsOnline] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showOrderTypeMenu, setShowOrderTypeMenu] = useState(false);
@@ -290,18 +289,22 @@ export default function POSPage() {
   // Offline-first menu load
   const loadMenu = useCallback(
     async (force = false) => {
-      setLoading(true);
+      const { initialized, setMenu, setLoading } = useMenuStore.getState();
+      if (!initialized || force) setLoading(true);
       try {
         // Always ensure demo data exists so POS works without a backend
         await ensureDemoMenuSeeded();
 
-        if (!isMenuCacheStale() && !force) {
+        const loadFromCache = async () => {
           const [cats, its] = await Promise.all([
             getCachedCategories(),
             getCachedMenuItems(),
           ]);
-          setCategories(cats);
-          setItems(its);
+          setMenu(cats, its);
+        };
+
+        if (!isMenuCacheStale() && !force) {
+          await loadFromCache();
         } else if (isOnline) {
           try {
             const headers = {
@@ -315,38 +318,23 @@ export default function POSPage() {
             if (cRes.ok && iRes.ok) {
               const [cats, its] = await Promise.all([cRes.json(), iRes.json()]);
               await seedMenuCache(cats, its);
-              setCategories(cats);
-              setItems(its);
+              setMenu(cats, its);
             } else {
               // API online but error — fall back to cache (including demo data)
-              const [cats, its] = await Promise.all([
-                getCachedCategories(),
-                getCachedMenuItems(),
-              ]);
-              setCategories(cats);
-              setItems(its);
+              await loadFromCache();
             }
           } catch {
             // Network error — fall back to cache
-            const [cats, its] = await Promise.all([
-              getCachedCategories(),
-              getCachedMenuItems(),
-            ]);
-            setCategories(cats);
-            setItems(its);
+            await loadFromCache();
           }
         } else {
-          const [cats, its] = await Promise.all([
-            getCachedCategories(),
-            getCachedMenuItems(),
-          ]);
-          setCategories(cats);
-          setItems(its);
+          await loadFromCache();
         }
       } catch {
         /* silent */
       } finally {
-        setLoading(false);
+        const { initialized, setLoading } = useMenuStore.getState();
+        if (!initialized || force) setLoading(false);
         setRefreshing(false);
       }
     },
@@ -401,11 +389,7 @@ export default function POSPage() {
           });
           if (res.ok) {
             // Update local state and dexie cache
-            setItems((prev) =>
-              prev.map((i) =>
-                i.id === item.id ? { ...i, is_available: newStatus } : i,
-              ),
-            );
+            updateItemAvailability(item.id, newStatus);
             import('@/lib/db').then(({ updateItemAvailability }) => {
               updateItemAvailability(item.id, newStatus).catch(console.error);
             });
@@ -449,6 +433,9 @@ export default function POSPage() {
       return;
     }
 
+    // Save previous state for optimistic rollback (MUST be outside try block to be accessible in catch)
+    const previousItems = [...cartItems];
+
     try {
       let orderIdToFire = active_order_id;
       let itemIdsToFire: string[] = [];
@@ -469,6 +456,10 @@ export default function POSPage() {
           modifier_id: a.modifier_id,
         })),
       }));
+
+      // ⚡ OPTIMISTIC UI: Instantly clear UI so cashier can take the next order (0ms latency)
+      clearItems(); 
+      setKotOpen(false);
 
       if (!orderIdToFire) {
         const effectiveTableId = table_id || searchParams.get('table_id');
@@ -516,17 +507,28 @@ export default function POSPage() {
           throw new Error(`Failed to fire KOT: ${err}`);
         }
       }
-
-      clearItems(); // preserve active_order_id so Pay Bill still works
-      setKotOpen(false);
     } catch (error: any) {
       console.error('Fire KOT Error:', error);
       toastError(error.message || 'Failed to fire KOT. Please try again.');
+      
+      // 🔄 ROLLBACK: Restore items to cart if KOT failed to fire
+      useCartStore.getState().hydrateCart(previousItems);
+      setKotOpen(true);
     }
   };
 
   const handleFireHeld = async () => {
     if (!active_order_id) return;
+    
+    // Save previous state for optimistic rollback
+    const previousItems = [...cartItems];
+    
+    // ⚡ OPTIMISTIC UI: Instantly update all HELD items to FIRED
+    const optimisticItems = cartItems.map((i) => 
+      i.fire_status === 'HELD' ? { ...i, fire_status: 'FIRED' as const } : i
+    );
+    useCartStore.getState().hydrateCart(optimisticItems);
+
     try {
       const res = await fetch(
         `${API}/orders/${active_order_id}/items/fire-held`,
@@ -540,47 +542,10 @@ export default function POSPage() {
         const err = await res.text();
         throw new Error(`Failed to fire held items: ${err}`);
       }
-
-      // Re-hydrate cart from order to reflect updated statuses
-      if (active_order_id) {
-        const orderRes = await fetch(`${API}/orders/${active_order_id}`, {
-          headers: getAuthHeader(),
-        });
-        if (orderRes.ok) {
-          const order = await orderRes.json();
-          if (order?.order_items?.length) {
-            const mappedItems = order.order_items
-              .filter((oi: any) => oi.status !== 'VOID')
-              .map((oi: any) => ({
-                id: oi.id,
-                cartLineId: oi.variant_id
-                  ? `${oi.item_id}__${oi.variant_id}`
-                  : oi.item_id,
-                item_id: oi.item_id,
-                name: oi.item.name,
-                item_type: oi.item.item_type,
-                station_route: oi.item.station_route,
-                tax_slab: oi.item.tax_slab,
-                variant_id: oi.variant_id,
-                variant_name: oi.variant?.name,
-                unit_price: oi.unit_price,
-                quantity: oi.quantity,
-                notes: oi.notes,
-                course_number: oi.course_number,
-                fire_status: oi.fire_status,
-                seat_number: oi.seat_number,
-                addons: oi.addons || [],
-                addons_total: (oi.addons || []).reduce(
-                  (s: number, a: any) => s + a.price,
-                  0,
-                ),
-              }));
-            hydrateCart(mappedItems);
-          }
-        }
-      }
     } catch (error: any) {
       toastError(error.message);
+      // 🔄 ROLLBACK: Restore previous state if network failed
+      useCartStore.getState().hydrateCart(previousItems);
     }
   };
 
@@ -645,8 +610,12 @@ export default function POSPage() {
     const pendingItems = cartItems.filter((i) => i.fire_status === 'FIRED');
     if (!pendingItems.length) return;
 
+    // ⚡ OPTIMISTIC UI: Instantly toggle to HELD
+    const { toggleHold } = useCartStore.getState();
+    pendingItems.forEach((i) => toggleHold(i.cartLineId));
+
     if (active_order_id) {
-      // Items already saved to order — call backend
+      // Items already saved to order — call backend quietly
       try {
         const res = await fetch(`${API}/orders/${active_order_id}/items/hold`, {
           method: 'PATCH',
@@ -659,13 +628,10 @@ export default function POSPage() {
         if (!res.ok) throw new Error('Failed to hold items');
       } catch (e: any) {
         toastError(e.message);
-        return;
+        // 🔄 ROLLBACK: Re-toggle back to FIRED on failure
+        pendingItems.forEach((i) => toggleHold(i.cartLineId));
       }
     }
-
-    // Toggle local cart items to HELD
-    const { toggleHold } = useCartStore.getState();
-    pendingItems.forEach((i) => toggleHold(i.cartLineId));
   };
 
   // ─── Print Pre-Bill ─────────────────────────────────────────────────────────
