@@ -13,7 +13,7 @@ export declare class OrdersService {
     private auditService;
     constructor(prisma: PrismaService, kdsGateway: KdsGateway, floorPlanGateway: FloorPlanGateway, inventoryService: InventoryService, auditService: AuditService);
     private getDefaultOutlet;
-    createOrder(tenantId: string, userId: string, dto: CreateOrderDto): Promise<{
+    createOrder(tenantId: string, userId: string, dto: CreateOrderDto, trainingSessionId?: string): Promise<{
         table: {
             table_number: string;
         } | null;
@@ -54,13 +54,17 @@ export declare class OrdersService {
         customer_id: string | null;
         order_name: string | null;
         brand_id: string | null;
-        source: string | null;
+        source: $Enums.OrderSource;
+        kot_number: string | null;
+        training_session_id: string | null;
         aggregator_source: $Enums.AggregatorSource | null;
         aggregator_order_id: string | null;
         external_ref: string | null;
         is_tab_open: boolean;
         tab_name: string | null;
         queue_token_number: number | null;
+        kiosk_session_id: string | null;
+        kiosk_terminal_id: string | null;
         customer_phone: string | null;
         delivery_address: string | null;
         estimated_time: Date | null;
@@ -115,13 +119,17 @@ export declare class OrdersService {
         customer_id: string | null;
         order_name: string | null;
         brand_id: string | null;
-        source: string | null;
+        source: $Enums.OrderSource;
+        kot_number: string | null;
+        training_session_id: string | null;
         aggregator_source: $Enums.AggregatorSource | null;
         aggregator_order_id: string | null;
         external_ref: string | null;
         is_tab_open: boolean;
         tab_name: string | null;
         queue_token_number: number | null;
+        kiosk_session_id: string | null;
+        kiosk_terminal_id: string | null;
         customer_phone: string | null;
         delivery_address: string | null;
         estimated_time: Date | null;
@@ -166,6 +174,7 @@ export declare class OrdersService {
             kot_number: string;
             printed_at: Date | null;
             fired_by_id: string;
+            training_session_id: string | null;
         })[];
         invoices: ({
             payments: {
@@ -185,6 +194,7 @@ export declare class OrdersService {
             total: number;
             order_id: string;
             printed_at: Date | null;
+            training_session_id: string | null;
             invoice_number: string;
             subtotal: number;
             cgst: number;
@@ -243,13 +253,17 @@ export declare class OrdersService {
         customer_id: string | null;
         order_name: string | null;
         brand_id: string | null;
-        source: string | null;
+        source: $Enums.OrderSource;
+        kot_number: string | null;
+        training_session_id: string | null;
         aggregator_source: $Enums.AggregatorSource | null;
         aggregator_order_id: string | null;
         external_ref: string | null;
         is_tab_open: boolean;
         tab_name: string | null;
         queue_token_number: number | null;
+        kiosk_session_id: string | null;
+        kiosk_terminal_id: string | null;
         customer_phone: string | null;
         delivery_address: string | null;
         estimated_time: Date | null;
@@ -326,13 +340,17 @@ export declare class OrdersService {
         customer_id: string | null;
         order_name: string | null;
         brand_id: string | null;
-        source: string | null;
+        source: $Enums.OrderSource;
+        kot_number: string | null;
+        training_session_id: string | null;
         aggregator_source: $Enums.AggregatorSource | null;
         aggregator_order_id: string | null;
         external_ref: string | null;
         is_tab_open: boolean;
         tab_name: string | null;
         queue_token_number: number | null;
+        kiosk_session_id: string | null;
+        kiosk_terminal_id: string | null;
         customer_phone: string | null;
         delivery_address: string | null;
         estimated_time: Date | null;
@@ -342,7 +360,7 @@ export declare class OrdersService {
         waiter_id: string | null;
         captain_id: string | null;
     })[]>;
-    getActiveOrderByTable(tenantId: string, tableId: string): Promise<({
+    getActiveOrderByTable(tenantId: string, tableId: string, trainingSessionId?: string): Promise<({
         table: {
             table_number: string;
         } | null;
@@ -394,13 +412,17 @@ export declare class OrdersService {
         customer_id: string | null;
         order_name: string | null;
         brand_id: string | null;
-        source: string | null;
+        source: $Enums.OrderSource;
+        kot_number: string | null;
+        training_session_id: string | null;
         aggregator_source: $Enums.AggregatorSource | null;
         aggregator_order_id: string | null;
         external_ref: string | null;
         is_tab_open: boolean;
         tab_name: string | null;
         queue_token_number: number | null;
+        kiosk_session_id: string | null;
+        kiosk_terminal_id: string | null;
         customer_phone: string | null;
         delivery_address: string | null;
         estimated_time: Date | null;
@@ -410,7 +432,7 @@ export declare class OrdersService {
         waiter_id: string | null;
         captain_id: string | null;
     }) | null>;
-    getActiveOrders(tenantId: string): Promise<({
+    getActiveOrders(tenantId: string, trainingSessionId?: string): Promise<({
         table: {
             table_number: string;
         } | null;
@@ -434,13 +456,17 @@ export declare class OrdersService {
         customer_id: string | null;
         order_name: string | null;
         brand_id: string | null;
-        source: string | null;
+        source: $Enums.OrderSource;
+        kot_number: string | null;
+        training_session_id: string | null;
         aggregator_source: $Enums.AggregatorSource | null;
         aggregator_order_id: string | null;
         external_ref: string | null;
         is_tab_open: boolean;
         tab_name: string | null;
         queue_token_number: number | null;
+        kiosk_session_id: string | null;
+        kiosk_terminal_id: string | null;
         customer_phone: string | null;
         delivery_address: string | null;
         estimated_time: Date | null;
@@ -476,13 +502,17 @@ export declare class OrdersService {
         customer_id: string | null;
         order_name: string | null;
         brand_id: string | null;
-        source: string | null;
+        source: $Enums.OrderSource;
+        kot_number: string | null;
+        training_session_id: string | null;
         aggregator_source: $Enums.AggregatorSource | null;
         aggregator_order_id: string | null;
         external_ref: string | null;
         is_tab_open: boolean;
         tab_name: string | null;
         queue_token_number: number | null;
+        kiosk_session_id: string | null;
+        kiosk_terminal_id: string | null;
         customer_phone: string | null;
         delivery_address: string | null;
         estimated_time: Date | null;
@@ -552,13 +582,17 @@ export declare class OrdersService {
         customer_id: string | null;
         order_name: string | null;
         brand_id: string | null;
-        source: string | null;
+        source: $Enums.OrderSource;
+        kot_number: string | null;
+        training_session_id: string | null;
         aggregator_source: $Enums.AggregatorSource | null;
         aggregator_order_id: string | null;
         external_ref: string | null;
         is_tab_open: boolean;
         tab_name: string | null;
         queue_token_number: number | null;
+        kiosk_session_id: string | null;
+        kiosk_terminal_id: string | null;
         customer_phone: string | null;
         delivery_address: string | null;
         estimated_time: Date | null;
@@ -618,5 +652,10 @@ export declare class OrdersService {
         success: boolean;
         order_id: string;
         new_table_id: string;
+    }>;
+    loadTemplate(tenantId: string, historyId: string): Promise<{
+        items: any[];
+        skipped: string[];
+        original_total: any;
     }>;
 }

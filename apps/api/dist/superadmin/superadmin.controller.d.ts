@@ -37,6 +37,11 @@ export declare class SuperAdminController {
         subscription_ends_at: Date | null;
         settings: import("@prisma/client/runtime/library").JsonValue | null;
         is_active: boolean;
+        fssai_licence_number: string | null;
+        fssai_expiry_date: Date | null;
+        fssai_alert_sent_at_60: Date | null;
+        fssai_alert_sent_at_30: Date | null;
+        fssai_alert_sent_at_7: Date | null;
     })[]>;
     toggleTenantStatus(id: string, is_active: boolean): Promise<{
         id: string;
@@ -52,6 +57,11 @@ export declare class SuperAdminController {
         subscription_ends_at: Date | null;
         settings: import("@prisma/client/runtime/library").JsonValue | null;
         is_active: boolean;
+        fssai_licence_number: string | null;
+        fssai_expiry_date: Date | null;
+        fssai_alert_sent_at_60: Date | null;
+        fssai_alert_sent_at_30: Date | null;
+        fssai_alert_sent_at_7: Date | null;
     }>;
     impersonateTenant(id: string): Promise<{
         access_token: string;
@@ -71,5 +81,10 @@ export declare class SuperAdminController {
         subscription_ends_at: Date | null;
         settings: import("@prisma/client/runtime/library").JsonValue | null;
         is_active: boolean;
+        fssai_licence_number: string | null;
+        fssai_expiry_date: Date | null;
+        fssai_alert_sent_at_60: Date | null;
+        fssai_alert_sent_at_30: Date | null;
+        fssai_alert_sent_at_7: Date | null;
     }>;
 }

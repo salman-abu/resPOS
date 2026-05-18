@@ -11,6 +11,8 @@ import {
   History,
   Loader2,
   Check,
+  ShoppingBag,
+  Ticket,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCartStore } from '@/store/cart';
@@ -40,11 +42,16 @@ export function CustomerModal({ open, onClose }: CustomerModalProps) {
     mobile: '',
     email: '',
   });
+  const [orderHistory, setOrderHistory] = useState<any[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [loyaltyDetails, setLoyaltyDetails] = useState<any>(null);
+  const [loyaltyLoading, setLoyaltyLoading] = useState(false);
 
   const {
     customer: selectedCustomer,
     setCustomer,
     setRupeesPerPoint,
+    hydrateCart,
   } = useCartStore();
 
   const fetchLoyaltyConfig = async () => {
@@ -86,6 +93,42 @@ export function CustomerModal({ open, onClose }: CustomerModalProps) {
       console.error(e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchOrderHistory = async (phone: string) => {
+    setHistoryLoading(true);
+    try {
+      const res = await fetch(
+        `${API}/customers/${encodeURIComponent(phone)}/order-history`,
+        { headers: getAuthHeader() },
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setOrderHistory(data.slice(0, 3));
+      }
+    } catch (e) {
+      console.error('Failed to fetch order history', e);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const fetchLoyaltyDetails = async (phone: string) => {
+    setLoyaltyLoading(true);
+    try {
+      const res = await fetch(
+        `${API}/loyalty/${encodeURIComponent(phone)}`,
+        { headers: getAuthHeader() },
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setLoyaltyDetails(data);
+      }
+    } catch (e) {
+      console.error('Failed to fetch loyalty details', e);
+    } finally {
+      setLoyaltyLoading(false);
     }
   };
 
@@ -194,7 +237,8 @@ export function CustomerModal({ open, onClose }: CustomerModalProps) {
                         });
                         await fetchLoyaltyConfig();
                         await syncCustomerWithOrder(c.id);
-                        onClose();
+                        await fetchOrderHistory(c.mobile);
+                        await fetchLoyaltyDetails(c.mobile);
                       }}
                       className={cn(
                         'w-full flex items-center justify-between p-4 border-2 active:scale-[0.98] transition-transform duration-75',
@@ -262,6 +306,146 @@ export function CustomerModal({ open, onClose }: CustomerModalProps) {
                   </div>
                 )}
               </div>
+
+              {/* MOD-07: One-Tap Re-Order */}
+              {selectedCustomer && (
+                <div className="mt-4 space-y-3">
+                  <div className="flex items-center gap-2 text-xs font-black text-slate-500 uppercase tracking-[0.2em]">
+                    <History className="h-4 w-4" />
+                    Re-order
+                  </div>
+                  {historyLoading ? (
+                    <div className="flex items-center gap-2 text-slate-500 text-sm">
+                      <Loader2 className="h-4 w-4 animate-spin" /> Loading history...
+                    </div>
+                  ) : orderHistory.length > 0 ? (
+                    <div className="grid grid-cols-1 gap-2">
+                      {orderHistory.map((h) => (
+                        <button
+                          key={h.id}
+                          onClick={async () => {
+                            try {
+                              const res = await fetch(`${API}/orders/load-template`, {
+                                method: 'POST',
+                                headers: {
+                                  ...getAuthHeader(),
+                                  'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({ history_id: h.id }),
+                              });
+                              if (res.ok) {
+                                const data = await res.json();
+                                if (data.items && data.items.length > 0) {
+                                  hydrateCart(data.items);
+                                  onClose();
+                                }
+                                if (data.skipped && data.skipped.length > 0) {
+                                  alert(
+                                    `Skipped unavailable items: ${data.skipped.join(', ')}`
+                                  );
+                                }
+                              }
+                            } catch (e) {
+                              console.error('Failed to load template', e);
+                            }
+                          }}
+                          className="flex items-center justify-between p-3 border-2 border-slate-700 bg-slate-800 active:border-cyan-500 active:bg-slate-700 transition-all text-left"
+                        >
+                          <div className="flex items-center gap-3">
+                            <ShoppingBag className="h-4 w-4 text-cyan-400" />
+                            <div>
+                              <p className="text-sm font-bold text-slate-100">
+                                {h.snapshot?.items?.length || 0} items
+                              </p>
+                              <p className="text-xs text-slate-500">
+                                {new Date(h.settledAt).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-bold text-cyan-400">
+                              ₹{Math.round((h.snapshot?.total || 0) / 100)}
+                            </p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-500">
+                      No recent settled orders found.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* MOD-02: Digital Stamp Cards */}
+              {selectedCustomer && (
+                <div className="mt-4 space-y-3">
+                  <div className="flex items-center gap-2 text-xs font-black text-slate-500 uppercase tracking-[0.2em]">
+                    <Ticket className="h-4 w-4" />
+                    Stamp Cards
+                  </div>
+                  {loyaltyLoading ? (
+                    <div className="flex items-center gap-2 text-slate-500 text-sm">
+                      <Loader2 className="h-4 w-4 animate-spin" /> Loading stamps...
+                    </div>
+                  ) : loyaltyDetails?.stampCards?.length > 0 ? (
+                    <div className="space-y-3">
+                      {loyaltyDetails.stampCards.map((sc: any) => (
+                        <div
+                          key={sc.id}
+                          className="p-3 border-2 border-slate-700 bg-slate-800"
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-bold text-slate-100">
+                              {sc.name}
+                            </span>
+                            <span className="text-xs font-bold text-cyan-400">
+                              {sc.count}/{sc.goal}
+                            </span>
+                          </div>
+                          <div className="flex gap-1.5 flex-wrap">
+                            {Array.from({ length: sc.goal }).map((_, i) => (
+                              <div
+                                key={i}
+                                className={`h-6 w-6 rounded-full border-2 flex items-center justify-center ${
+                                  i < sc.count
+                                    ? 'bg-cyan-500 border-cyan-400'
+                                    : 'border-slate-600 bg-slate-900'
+                                }`}
+                              >
+                                {i < sc.count && (
+                                  <Check className="h-3 w-3 text-slate-900" />
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                          {sc.completed && (
+                            <div className="mt-2 text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 p-1.5 rounded text-center">
+                              Reward unlocked: {sc.rewardDescription}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-500">
+                      No active stamp cards.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {selectedCustomer && (
+                <div className="pt-4 flex gap-3">
+                  <button
+                    onClick={() => onClose()}
+                    className="flex-1 px-4 py-3 border-2 border-cyan-400 bg-cyan-500 text-slate-900 font-black active:bg-cyan-400 active:scale-[0.97] transition-all uppercase tracking-wider text-xs"
+                  >
+                    Done
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             /* Add New Form */

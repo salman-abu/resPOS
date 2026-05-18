@@ -18,6 +18,7 @@ import {
   Smartphone,
   FileText,
   Loader2,
+  LayoutGrid,
 } from 'lucide-react';
 
 const API_BASE =
@@ -388,7 +389,7 @@ function ZReport({
 }
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
-type Tab = 'overview' | 'zreport' | 'items';
+type Tab = 'overview' | 'zreport' | 'items' | 'engineering';
 
 export default function AnalyticsPage() {
   const [range, setRange] = useState<Range>('today');
@@ -403,6 +404,7 @@ export default function AnalyticsPage() {
   });
   const [topItems, setTopItems] = useState<DashboardStats['top_sellers']>([]);
   const [tableTurn, setTableTurn] = useState<TableTurnData | null>(null);
+  const [menuEngineering, setMenuEngineering] = useState<any>(null);
 
   const days = range === 'today' ? 1 : range === 'week' ? 7 : 30;
 
@@ -449,6 +451,31 @@ export default function AnalyticsPage() {
     };
   }, [range, days]);
 
+  // Load menu engineering data when tab is active
+  useEffect(() => {
+    if (tab !== 'engineering') return;
+    let cancelled = false;
+    setLoading(true);
+
+    async function loadEngineering() {
+      try {
+        const data = await fetchJSON<any>(
+          `${API_BASE}/analytics/menu-engineering`,
+        );
+        if (!cancelled) setMenuEngineering(data);
+      } catch (e) {
+        console.error('Menu engineering fetch failed', e);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    loadEngineering();
+    return () => {
+      cancelled = true;
+    };
+  }, [tab]);
+
   const revenue = stats?.revenue_today ?? 0;
   const orders = stats?.orders_today ?? 0;
   const avgCheck = stats?.avg_check ?? 0;
@@ -492,6 +519,11 @@ export default function AnalyticsPage() {
       key: 'items',
       label: 'Top Items',
       icon: <TrendingUp className="h-3.5 w-3.5" />,
+    },
+    {
+      key: 'engineering',
+      label: 'Menu Engineering',
+      icon: <LayoutGrid className="h-3.5 w-3.5" />,
     },
   ];
 
@@ -776,6 +808,147 @@ export default function AnalyticsPage() {
               </tbody>
             </table>
           </div>
+        )}
+
+        {/* ── Menu Engineering (MOD-05) ─────────────────────────────────────── */}
+        {tab === 'engineering' && !loading && (
+          <div className="space-y-6">
+            <div className="card p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-content-primary">
+                  Boston Matrix — Menu Engineering
+                </h3>
+                {menuEngineering?.period && (
+                  <span className="text-xs text-content-muted">
+                    {new Date(menuEngineering.period.from).toLocaleDateString()} —{' '}
+                    {new Date(menuEngineering.period.to).toLocaleDateString()}
+                  </span>
+                )}
+              </div>
+
+              {/* Quadrant Grid */}
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <QuadrantCard
+                  title="Star"
+                  subtitle="High Popularity · High Margin"
+                  color="bg-emerald-50 border-emerald-200"
+                  items={menuEngineering?.items?.filter(
+                    (i: any) => i.quadrant === 'STAR',
+                  )}
+                />
+                <QuadrantCard
+                  title="Puzzle"
+                  subtitle="Low Popularity · High Margin"
+                  color="bg-blue-50 border-blue-200"
+                  items={menuEngineering?.items?.filter(
+                    (i: any) => i.quadrant === 'PUZZLE',
+                  )}
+                />
+                <QuadrantCard
+                  title="Plow-Horse"
+                  subtitle="High Popularity · Low Margin"
+                  color="bg-amber-50 border-amber-200"
+                  items={menuEngineering?.items?.filter(
+                    (i: any) => i.quadrant === 'PLOW_HORSE',
+                  )}
+                />
+                <QuadrantCard
+                  title="Dog"
+                  subtitle="Low Popularity · Low Margin"
+                  color="bg-red-50 border-red-200"
+                  items={menuEngineering?.items?.filter(
+                    (i: any) => i.quadrant === 'DOG',
+                  )}
+                />
+              </div>
+
+              {/* Data Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-surface-2 border-b border-border">
+                    <tr>
+                      {['Item', 'Category', 'Sold', 'Revenue', 'Margin %', 'Quadrant'].map(
+                        (h) => (
+                          <th
+                            key={h}
+                            className="text-left px-4 py-3 text-xs font-bold text-content-muted uppercase tracking-wide"
+                          >
+                            {h}
+                          </th>
+                        ),
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {menuEngineering?.items?.map((item: any) => (
+                      <tr key={item.id} className="hover:bg-surface-2 transition-colors">
+                        <td className="px-4 py-3 text-content-primary font-semibold">
+                          {item.name}
+                        </td>
+                        <td className="px-4 py-3 text-content-secondary">
+                          {item.category}
+                        </td>
+                        <td className="px-4 py-3">{item.sold_count}</td>
+                        <td className="px-4 py-3 font-bold">{fmt(item.revenue)}</td>
+                        <td className="px-4 py-3">{item.margin_pct}%</td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={cn(
+                              'px-2 py-1 rounded-md text-xs font-bold uppercase',
+                              item.quadrant === 'STAR'
+                                ? 'bg-emerald-100 text-emerald-700'
+                                : item.quadrant === 'PUZZLE'
+                                  ? 'bg-blue-100 text-blue-700'
+                                  : item.quadrant === 'PLOW_HORSE'
+                                    ? 'bg-amber-100 text-amber-700'
+                                    : 'bg-red-100 text-red-700',
+                            )}
+                          >
+                            {item.quadrant}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function QuadrantCard({
+  title,
+  subtitle,
+  color,
+  items,
+}: {
+  title: string;
+  subtitle: string;
+  color: string;
+  items?: any[];
+}) {
+  return (
+    <div className={cn('rounded-2xl border p-4', color)}>
+      <div className="flex items-center justify-between mb-2">
+        <h4 className="font-bold text-sm">{title}</h4>
+        <span className="text-xs font-bold">{items?.length ?? 0}</span>
+      </div>
+      <p className="text-xs opacity-70 mb-3">{subtitle}</p>
+      <div className="space-y-1">
+        {items?.slice(0, 3).map((item) => (
+          <div
+            key={item.id}
+            className="text-xs font-medium truncate"
+          >
+            {item.name}
+          </div>
+        ))}
+        {(items?.length ?? 0) > 3 && (
+          <div className="text-xs opacity-60">+{items!.length - 3} more</div>
         )}
       </div>
     </div>

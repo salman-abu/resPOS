@@ -22,10 +22,10 @@ let AuthController = class AuthController {
         this.authService = authService;
     }
     async loginStaff(body) {
-        return this.authService.loginWithPin(body.tenantId, body.userId, body.pin);
+        return this.authService.loginWithPin(body.tenantId, body.userId, body.pin, body.mode);
     }
     async loginOwner(body) {
-        return this.authService.loginOwner(body.email, body.pin);
+        return this.authService.loginOwner(body.email, body.pin, body.mode);
     }
     async getTerminalInfo(tenantId) {
         if (!tenantId)

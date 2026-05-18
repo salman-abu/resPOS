@@ -38,7 +38,7 @@ let OrdersService = class OrdersService {
             throw new common_1.BadRequestException('No outlet configured for this tenant.');
         return outlet.id;
     }
-    async createOrder(tenantId, userId, dto) {
+    async createOrder(tenantId, userId, dto, trainingSessionId) {
         const outletId = await this.getDefaultOutlet(tenantId);
         let queue_token_number;
         if (dto.order_type === 'TAKEAWAY' || dto.order_type === 'AGGREGATOR') {
@@ -61,6 +61,7 @@ let OrdersService = class OrdersService {
                 queue_token_number,
                 waiter_id: userId,
                 status: 'DRAFT',
+                training_session_id: trainingSessionId || null,
                 order_items: {
                     create: dto.items.map((i) => ({
                         item_id: i.item_id,
@@ -324,12 +325,13 @@ let OrdersService = class OrdersService {
             orderBy: { created_at: 'desc' },
         });
     }
-    async getActiveOrderByTable(tenantId, tableId) {
+    async getActiveOrderByTable(tenantId, tableId, trainingSessionId) {
         return this.prisma.order.findFirst({
             where: {
                 tenant_id: tenantId,
                 table_id: tableId,
                 status: { notIn: ['SETTLED', 'VOID'] },
+                training_session_id: trainingSessionId ? trainingSessionId : null,
             },
             include: {
                 order_items: {
@@ -352,11 +354,12 @@ let OrdersService = class OrdersService {
             orderBy: { created_at: 'desc' },
         });
     }
-    async getActiveOrders(tenantId) {
+    async getActiveOrders(tenantId, trainingSessionId) {
         return this.prisma.order.findMany({
             where: {
                 tenant_id: tenantId,
                 status: { notIn: ['SETTLED', 'VOID'] },
+                training_session_id: trainingSessionId ? trainingSessionId : null,
             },
             include: {
                 table: { select: { table_number: true } },
@@ -568,6 +571,68 @@ let OrdersService = class OrdersService {
             status: 'OCCUPIED',
         });
         return { success: true, order_id: orderId, new_table_id: newTableId };
+    }
+    async loadTemplate(tenantId, historyId) {
+        const history = await this.prisma.customerOrderHistory.findFirst({
+            where: { id: historyId, tenant_id: tenantId },
+        });
+        if (!history) {
+            throw new common_1.NotFoundException('Order template not found');
+        }
+        const snapshot = history.order_snapshot;
+        const validItems = [];
+        const skippedItems = [];
+        if (snapshot?.items && Array.isArray(snapshot.items)) {
+            for (const item of snapshot.items) {
+                const existingItem = await this.prisma.item.findUnique({
+                    where: { id: item.item_id },
+                    include: {
+                        variants: true,
+                        addons: true,
+                        modifier_groups: { include: { modifiers: true } },
+                    },
+                });
+                if (!existingItem || !existingItem.is_available) {
+                    skippedItems.push(item.name || item.item_id);
+                    continue;
+                }
+                let variant = undefined;
+                if (item.variant_id) {
+                    variant = existingItem.variants.find((v) => v.id === item.variant_id);
+                }
+                const validAddons = [];
+                if (item.addons && Array.isArray(item.addons)) {
+                    for (const addon of item.addons) {
+                        const existingAddon = existingItem.addons.find((a) => a.id === addon.id);
+                        if (existingAddon && existingAddon.is_available) {
+                            validAddons.push({
+                                id: existingAddon.id,
+                                name: existingAddon.name,
+                                price: existingAddon.price,
+                            });
+                        }
+                    }
+                }
+                validItems.push({
+                    item_id: existingItem.id,
+                    name: existingItem.name,
+                    unit_price: existingItem.base_price + (variant?.additional_price ?? 0),
+                    quantity: item.quantity ?? 1,
+                    variant_id: variant?.id ?? null,
+                    variant_name: variant?.name ?? null,
+                    notes: item.notes ?? '',
+                    course_number: item.course_number ?? 1,
+                    seat_number: item.seat_number ?? null,
+                    addons: validAddons,
+                    addons_total: validAddons.reduce((s, a) => s + a.price, 0),
+                });
+            }
+        }
+        return {
+            items: validItems,
+            skipped: skippedItems,
+            original_total: snapshot?.total ?? 0,
+        };
     }
 };
 exports.OrdersService = OrdersService;

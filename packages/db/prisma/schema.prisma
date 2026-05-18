@@ -68,6 +68,14 @@ enum OrderType {
   ONLINE
 }
 
+enum OrderSource {
+  COUNTER
+  WHATSAPP
+  AGGREGATOR
+  ONLINE
+  KIOSK
+}
+
 enum OrderStatus {
   DRAFT
   PLACED
@@ -175,6 +183,7 @@ enum LoyaltyTxType {
   EARN
   REDEEM
   EXPIRE
+  MANUAL_ADJUST
 }
 
 
@@ -208,6 +217,13 @@ model Tenant {
   is_active             Boolean            @default(true)
   created_at            DateTime           @default(now())
 
+  // FSSAI Compliance fields (MOD-10)
+  fssai_licence_number String?
+  fssai_expiry_date    DateTime?
+  fssai_alert_sent_at_60 DateTime?
+  fssai_alert_sent_at_30 DateTime?
+  fssai_alert_sent_at_7  DateTime?
+
   users            User[]
   outlets          Outlet[]
   categories       Category[]
@@ -230,6 +246,21 @@ model Tenant {
   composite_items  CompositeItem[]
   bookings         Booking[]
   invoices         Invoice[]
+  training_sessions TrainingSession[]
+  customer_order_histories CustomerOrderHistory[]
+  shift_reports      ShiftReport[]
+  loyalty_accounts LoyaltyAccount[]
+  loyalty_ledgers    LoyaltyLedger[]
+  stamp_cards        StampCard[]
+  stamp_progresses   StampProgress[]
+  whatsapp_sessions  WhatsappSession[]
+  table_qr_tokens    TableQrToken[]
+   reservations       Reservation[]
+   waitlist_entries   WaitlistEntry[]
+   reservation_settings ReservationSettings?
+   kiosk_terminals    KioskTerminal[]
+   kiosk_sessions     KioskSession[]
+   kiosk_analytics    KioskAnalytics[]
 }
 
 enum BookingStatus {
@@ -376,7 +407,8 @@ model Zone {
   tenant    Tenant @relation(fields: [tenant_id], references: [id])
   name      String
 
-  tables Table[]
+  tables         Table[]
+  kiosk_terminals KioskTerminal[]
 }
 
 model Table {
@@ -390,7 +422,8 @@ model Table {
   status           TableStatus @default(AVAILABLE)
   current_order_id String?
 
-  orders Order[]
+  orders        Order[]
+  reservations  Reservation[]
 
   @@index([tenant_id, status], map: "idx_table_tenant_status")
   @@index([zone_id], map: "idx_table_zone")
@@ -421,13 +454,22 @@ model Order {
   queue_token_number  Int?
   order_name          String?
   brand_id            String?
-  source              String? // For Cloud Kitchen unified streams
+  source              OrderSource @default(COUNTER) // Order origin tracking
+
+  // Kiosk order fields (MOD-12)
+  kiosk_session_id    String?
+  kiosk_terminal_id   String?
+  kot_number          String? // Human-readable KOT number for kiosk confirmation
 
   // Online Order specific fields
   customer_phone   String?
   delivery_address String?
   estimated_time   DateTime?
   tracking_status  OnlineTrackingStatus?
+
+  // Training mode (MOD-06)
+  training_session_id String?
+  training_session    TrainingSession? @relation(fields: [training_session_id], references: [id])
 
   created_at DateTime  @default(now())
   settled_at DateTime?
@@ -436,12 +478,16 @@ model Order {
   kots        KOT[]
   invoices    Invoice[]
   loyalty_txs LoyaltyTransaction[]
+  loyalty_ledgers LoyaltyLedger[]
   booking     Booking?
+  kiosk_sessions KioskSession[]
 
   @@index([tenant_id, status], map: "idx_order_tenant_status")
   @@index([tenant_id, table_id, status], map: "idx_order_tenant_table_status")
   @@index([tenant_id, created_at], map: "idx_order_tenant_created")
   @@index([outlet_id, status], map: "idx_order_outlet_status")
+  @@index([training_session_id], map: "idx_order_training_session")
+  @@index([kiosk_session_id], map: "idx_order_kiosk_session")
 }
 
 model OrderItem {
@@ -524,9 +570,13 @@ model KOT {
   fired_by_id String
   fired_by    User         @relation("kot_fired_by", fields: [fired_by_id], references: [id])
 
+  // Training mode (MOD-06)
+  training_session_id String?
+
   items OrderItem[]
 
   @@index([tenant_id, station, status], map: "idx_kot_tenant_station_status")
+  @@index([training_session_id], map: "idx_kot_training_session")
 }
 
 model Invoice {
@@ -547,6 +597,9 @@ model Invoice {
   total                Int
   printed_at           DateTime?
 
+  // Training mode (MOD-06)
+  training_session_id String?
+
   payments    Payment[]
   order_items OrderItem[]
 
@@ -554,6 +607,7 @@ model Invoice {
   updated_at DateTime @updatedAt
 
   @@index([tenant_id, order_id], map: "idx_invoice_tenant_order")
+  @@index([training_session_id], map: "idx_invoice_training_session")
 }
 
 model Payment {
@@ -732,6 +786,71 @@ model LoyaltyConfig {
   updated_at       DateTime @updatedAt
 }
 
+// ─── MOD-02: Loyalty Account + Ledger ───────────────────────────────────────
+
+model LoyaltyAccount {
+  id              String   @id @default(uuid())
+  tenant_id       String
+  tenant          Tenant   @relation(fields: [tenant_id], references: [id])
+  customer_phone  String
+  points_balance  Int      @default(0)
+  lifetime_points Int      @default(0)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  ledgers LoyaltyLedger[]
+
+  @@unique([tenant_id, customer_phone], map: "idx_loyalty_account_unique")
+}
+
+model LoyaltyLedger {
+  id          String        @id @default(uuid())
+  tenant_id   String
+  tenant      Tenant        @relation(fields: [tenant_id], references: [id])
+  account_id  String
+  account     LoyaltyAccount @relation(fields: [account_id], references: [id])
+  order_id    String?
+  order       Order?        @relation(fields: [order_id], references: [id])
+  type        LoyaltyTxType
+  points      Int
+  note        String?
+  created_at  DateTime      @default(now())
+
+  @@index([tenant_id, account_id, created_at], map: "idx_ledger_account_date")
+}
+
+// ─── MOD-02: Digital Stamp Cards ──────────────────────────────────────────────
+
+model StampCard {
+  id                String   @id @default(uuid())
+  tenant_id         String
+  tenant            Tenant   @relation(fields: [tenant_id], references: [id])
+  name              String
+  trigger_menu_item_id String?
+  goal_count        Int
+  reward_description String
+  reward_menu_item_id String?
+  is_active         Boolean  @default(true)
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  progresses StampProgress[]
+}
+
+model StampProgress {
+  id           String    @id @default(uuid())
+  tenant_id    String
+  tenant       Tenant    @relation(fields: [tenant_id], references: [id])
+  stamp_card_id String
+  stamp_card   StampCard @relation(fields: [stamp_card_id], references: [id])
+  customer_phone String
+  count        Int       @default(0)
+  completed_at DateTime?
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+
+  @@unique([tenant_id, stamp_card_id, customer_phone], map: "idx_stamp_progress_unique")
+}
 
 model StaffSchedule {
   id         String              @id @default(uuid())
@@ -776,6 +895,271 @@ model OnlineMenu {
   delivery_zones  Json?    // Array of { label, fee, minOrder }
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
+}
+
+// ─── MOD-06: Training Session ─────────────────────────────────────────────────
+
+model TrainingSession {
+  id          String    @id @default(uuid())
+  tenant_id   String
+  tenant      Tenant    @relation(fields: [tenant_id], references: [id])
+  terminal_id String
+  started_by  String
+  started_at  DateTime  @default(now())
+  ended_at    DateTime?
+  is_active   Boolean   @default(true)
+
+  orders Order[]
+
+  @@index([tenant_id, terminal_id, is_active], map: "idx_training_session_active")
+  @@index([started_at], map: "idx_training_session_started_at")
+}
+
+// ─── MOD-07: Customer Order History (One-Tap Re-Order) ───────────────────────
+
+model CustomerOrderHistory {
+  id              String   @id @default(uuid())
+  tenant_id       String
+  tenant          Tenant   @relation(fields: [tenant_id], references: [id])
+  customer_phone  String
+  order_snapshot  Json     // full cart: items, modifiers, seat assignments, total
+  settled_at      DateTime
+  created_at      DateTime @default(now())
+
+  @@index([tenant_id, customer_phone, settled_at], map: "idx_cust_order_history_lookup")
+}
+
+// ─── MOD-01: WhatsApp Ordering ────────────────────────────────────────────
+
+enum WhatsappBotState {
+  GREETING
+  BROWSING
+  CART
+  CONFIRMED
+  COMPLETED
+}
+
+model WhatsappSession {
+  id            String          @id @default(uuid())
+  tenant_id     String
+  tenant        Tenant            @relation(fields: [tenant_id], references: [id])
+  table_id      String
+  phone_number  String
+  state         WhatsappBotState  @default(GREETING)
+  cart_snapshot Json?
+  expires_at    DateTime
+  created_at    DateTime          @default(now())
+
+  @@index([tenant_id, table_id, state], map: "idx_whatsapp_session_lookup")
+  @@index([phone_number], map: "idx_whatsapp_session_phone")
+}
+
+model TableQrToken {
+  id          String   @id @default(uuid())
+  tenant_id   String
+  tenant      Tenant   @relation(fields: [tenant_id], references: [id])
+  table_id    String   @unique
+  token       String   @unique
+  rotates_at  DateTime
+  wa_url      String
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@index([tenant_id, table_id], map: "idx_qr_token_table")
+}
+
+// ─── MOD-03: Reservation + Waitlist ──────────────────────────────────────────
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  SEATED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum ReservationSource {
+  WALK_IN
+  WEBSITE
+  GOOGLE
+  WHATSAPP
+  STAFF
+}
+
+enum WaitlistStatus {
+  WAITING
+  SEATED
+  LEFT
+}
+
+model Reservation {
+  id             String             @id @default(uuid())
+  tenant_id      String
+  tenant         Tenant             @relation(fields: [tenant_id], references: [id])
+  guest_name     String
+  guest_phone    String
+  party_size     Int
+  scheduled_at   DateTime
+  table_id       String?
+  table          Table?             @relation(fields: [table_id], references: [id])
+  status         ReservationStatus  @default(PENDING)
+  notes          String?
+  source         ReservationSource  @default(WALK_IN)
+  created_at     DateTime           @default(now())
+  updated_at     DateTime           @updatedAt
+
+  @@index([tenant_id, scheduled_at, status], map: "idx_reservation_date_status")
+  @@index([tenant_id, table_id], map: "idx_reservation_table")
+}
+
+model WaitlistEntry {
+  id                 String         @id @default(uuid())
+  tenant_id          String
+  tenant             Tenant         @relation(fields: [tenant_id], references: [id])
+  guest_name         String
+  guest_phone        String
+  party_size         Int
+  quoted_wait_minutes Int
+  joined_at          DateTime       @default(now())
+  seated_at          DateTime?
+  status             WaitlistStatus @default(WAITING)
+
+  @@index([tenant_id, status, joined_at], map: "idx_waitlist_status_date")
+}
+
+model ReservationSettings {
+  tenant_id               String   @id
+  tenant                  Tenant   @relation(fields: [tenant_id], references: [id])
+  avg_turn_minutes        Int      @default(90)
+  max_advance_days        Int      @default(30)
+  opening_time            String   @default("11:00")
+  closing_time            String   @default("23:00")
+  slot_interval_minutes   Int      @default(15)
+  reminder_hours_before   Int      @default(2)
+  created_at              DateTime @default(now())
+  updated_at              DateTime @updatedAt
+}
+
+// ─── MOD-09: Shift Report ───────────────────────────────────────────────────
+
+model ShiftReport {
+  id                 String   @id @default(uuid())
+  tenant_id          String
+  tenant             Tenant   @relation(fields: [tenant_id], references: [id])
+  shift_session_id   String   @unique
+  total_sales_paise  Int
+  total_orders       Int
+  void_count         Int
+  cash_paise         Int
+  upi_paise          Int
+  card_paise         Int
+  opening_float_paise Int
+  closing_float_paise Int
+  top_items          Json
+  whatsapp_sent_at   DateTime?
+  generated_at       DateTime @default(now())
+
+  @@index([tenant_id, generated_at], map: "idx_shift_report_tenant_date")
+}
+
+// ─── MOD-12: Kiosk Ordering System ───────────────────────────────────────────
+
+enum KioskStatus {
+  ACTIVE
+  PAUSED
+  OFFLINE
+  MAINTENANCE
+}
+
+enum KioskPaymentMode {
+  UPI_QR
+  CARD_TAP
+  PAY_AT_COUNTER
+}
+
+enum KioskSessionStatus {
+  BROWSING
+  CART
+  UPSELL
+  PAYMENT
+  CONFIRMED
+  ABANDONED
+  TIMEOUT
+}
+
+model KioskTerminal {
+  id                    String          @id @default(cuid())
+  tenant_id             String
+  tenant                Tenant          @relation(fields: [tenant_id], references: [id])
+  name                  String
+  zone_id               String?
+  zone                  Zone?           @relation(fields: [zone_id], references: [id])
+  status                KioskStatus     @default(ACTIVE)
+  display_languages     String[]        @default(["en"])
+  default_language      String          @default("en")
+  idle_timeout_seconds  Int             @default(90)
+  attract_loop_enabled  Boolean         @default(true)
+  show_calorie_info     Boolean         @default(false)
+  allow_takeaway        Boolean         @default(true)
+  allow_dine_in         Boolean         @default(true)
+  payment_modes         KioskPaymentMode[] @default([UPI_QR, PAY_AT_COUNTER])
+  admin_pin_hash        String
+  upsell_enabled        Boolean         @default(true)
+  loyalty_lookup_enabled Boolean        @default(true)
+  whatsapp_receipt_enabled Boolean       @default(true)
+  last_heartbeat_at     DateTime?
+  created_at            DateTime        @default(now())
+  updated_at            DateTime        @updatedAt
+  is_deleted            Boolean         @default(false)
+
+  sessions              KioskSession[]
+  analytics             KioskAnalytics[]
+
+  @@index([tenant_id, status])
+  @@index([tenant_id, last_heartbeat_at])
+}
+
+model KioskSession {
+  id                  String              @id @default(cuid())
+  tenant_id           String
+  tenant              Tenant              @relation(fields: [tenant_id], references: [id])
+  kiosk_terminal_id   String
+  kiosk_terminal      KioskTerminal       @relation(fields: [kiosk_terminal_id], references: [id])
+  service_type        String // DINE_IN or TAKEAWAY
+  language            String
+  cart_snapshot       Json?
+  customer_phone      String?
+  kot_number          String?
+  status              KioskSessionStatus  @default(BROWSING)
+  payment_method      KioskPaymentMode?
+  payment_ref         String?
+  order_id            String?
+  order               Order?              @relation(fields: [order_id], references: [id])
+  started_at          DateTime            @default(now())
+  completed_at        DateTime?
+  abandoned_at        DateTime?
+
+  @@index([tenant_id, kiosk_terminal_id, started_at])
+}
+
+model KioskAnalytics {
+  id                      String          @id @default(cuid())
+  tenant_id               String
+  tenant                  Tenant          @relation(fields: [tenant_id], references: [id])
+  kiosk_terminal_id       String
+  kiosk_terminal          KioskTerminal   @relation(fields: [kiosk_terminal_id], references: [id])
+  date                    DateTime        @db.Date
+  total_sessions          Int             @default(0)
+  completed_orders        Int             @default(0)
+  abandoned_sessions      Int             @default(0)
+  avg_order_value_paise   Int             @default(0)
+  upsell_acceptance_rate  Float           @default(0)
+  top_item_ids            String[]
+  revenue_by_payment_mode Json
+
+  @@unique([tenant_id, kiosk_terminal_id, date])
+  @@index([tenant_id, kiosk_terminal_id, date])
 }
 
 // ─── Performance Indexes ──────────────────────────────────────────────────────

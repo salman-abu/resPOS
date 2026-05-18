@@ -34,7 +34,7 @@ interface Props {
     table_number?: string;
     items: InvoiceItem[];
   };
-  tenant: { name: string; address?: string; gstin?: string };
+  tenant: { name: string; address?: string; gstin?: string; fssaiLicenceNumber?: string };
   onClose?: () => void;
 }
 
@@ -148,6 +148,11 @@ export default function ThermalBill({
               )}
               {tenant.gstin && (
                 <div style={{ fontSize: 10 }}>GSTIN: {tenant.gstin}</div>
+              )}
+              {tenant.fssaiLicenceNumber && (
+                <div style={{ fontSize: 10 }}>
+                  FSSAI Lic. No: {tenant.fssaiLicenceNumber}
+                </div>
               )}
             </div>
 

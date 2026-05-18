@@ -47,4 +47,10 @@ export class CustomersController {
   async getUsualOrder(@Req() req: any, @Param('id') id: string) {
     return this.customersService.getUsualOrder(req.tenantId, id);
   }
+
+  @Roles(Role.OWNER, Role.MANAGER, Role.CASHIER)
+  @Get(':phone/order-history')
+  async getOrderHistoryByPhone(@Req() req: any, @Param('phone') phone: string) {
+    return this.customersService.getOrderHistoryByPhone(req.tenantId, phone);
+  }
 }

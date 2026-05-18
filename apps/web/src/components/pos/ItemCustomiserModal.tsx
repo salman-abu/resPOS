@@ -135,17 +135,17 @@ export function ItemCustomiserModal({ item, onConfirm, onClose }: Props) {
     >
       {/* Modal */}
       <div
-        className="relative w-full sm:max-w-md bg-slate-900 border-2 border-slate-700 shadow-2xl overflow-hidden"
+        className="relative w-full sm:max-w-md bg-surface-card border-2 border-border-subtle shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-start gap-3 p-5 border-b-2 border-slate-800 bg-slate-950">
+        <div className="flex items-start gap-3 p-5 border-b-2 border-border-strong bg-surface-base">
           <div className="flex-1">
-            <h2 className="font-black text-lg text-slate-100 leading-tight tracking-tight uppercase">
+            <h2 className="font-black text-lg text-content-primary leading-tight tracking-tight uppercase">
               {item.name}
             </h2>
             {item.description && (
-              <p className="text-sm text-slate-500 mt-0.5 line-clamp-2 font-medium uppercase tracking-wide">
+              <p className="text-sm text-content-muted mt-0.5 line-clamp-2 font-medium uppercase tracking-wide">
                 {item.description}
               </p>
             )}
@@ -158,7 +158,7 @@ export function ItemCustomiserModal({ item, onConfirm, onClose }: Props) {
           </div>
           <button
             onClick={onClose}
-            className="h-8 w-8 bg-slate-800 flex items-center justify-center text-slate-400 active:text-slate-100 active:bg-slate-700 active:scale-[0.92] transition-all flex-shrink-0 border-2 border-slate-700"
+            className="h-8 w-8 bg-surface-sunken flex items-center justify-center text-content-secondary active:text-content-primary active:bg-slate-700 active:scale-[0.92] transition-all flex-shrink-0 border-2 border-border-subtle"
           >
             <X className="h-4 w-4" />
           </button>
@@ -169,7 +169,7 @@ export function ItemCustomiserModal({ item, onConfirm, onClose }: Props) {
           {hasVariants && (
             <section>
               <div className="flex items-center gap-2 mb-3">
-                <p className="font-bold text-sm text-slate-100 uppercase tracking-wider">
+                <p className="font-bold text-sm text-content-primary uppercase tracking-wider">
                   Choose Size / Variant
                 </p>
                 <span className="text-[10px] px-1.5 py-0.5 bg-rose-500/10 text-rose-400 font-black border border-rose-500/30 uppercase tracking-wider">
@@ -185,7 +185,7 @@ export function ItemCustomiserModal({ item, onConfirm, onClose }: Props) {
                       'w-full flex items-center justify-between px-4 py-3 border-2 text-sm active:scale-[0.98] transition-transform duration-75',
                       selectedVariant?.id === v.id
                         ? 'border-cyan-500 bg-cyan-500/10 text-cyan-400'
-                        : 'border-slate-700 bg-slate-800 text-slate-100 active:border-slate-600 active:bg-slate-700',
+                        : 'border-border-subtle bg-surface-sunken text-content-primary active:border-border-strong active:bg-slate-700',
                     )}
                   >
                     <div className="flex items-center gap-3">
@@ -194,11 +194,11 @@ export function ItemCustomiserModal({ item, onConfirm, onClose }: Props) {
                           'h-4 w-4 border-2 flex items-center justify-center flex-shrink-0',
                           selectedVariant?.id === v.id
                             ? 'border-cyan-500 bg-cyan-500'
-                            : 'border-slate-600',
+                            : 'border-border-strong',
                         )}
                       >
                         {selectedVariant?.id === v.id && (
-                          <div className="h-1.5 w-1.5 bg-slate-900" />
+                          <div className="h-1.5 w-1.5 bg-surface-card" />
                         )}
                       </div>
                       <span className="font-bold tracking-tight">{v.name}</span>
@@ -208,7 +208,7 @@ export function ItemCustomiserModal({ item, onConfirm, onClose }: Props) {
                         'font-black text-xs font-mono tracking-tight',
                         v.additional_price > 0
                           ? 'text-cyan-400'
-                          : 'text-slate-500',
+                          : 'text-content-muted',
                       )}
                     >
                       {v.additional_price > 0
@@ -226,7 +226,7 @@ export function ItemCustomiserModal({ item, onConfirm, onClose }: Props) {
             item.modifier_groups!.map((group) => (
               <section key={group.id}>
                 <div className="flex items-center gap-2 mb-3">
-                  <p className="font-bold text-sm text-slate-100 uppercase tracking-wider">
+                  <p className="font-bold text-sm text-content-primary uppercase tracking-wider">
                     {group.name}
                   </p>
                   {group.is_required ? (
@@ -239,7 +239,7 @@ export function ItemCustomiserModal({ item, onConfirm, onClose }: Props) {
                     </span>
                   )}
                   {group.max_select > 1 && (
-                    <span className="text-[10px] text-slate-500 font-black uppercase tracking-wider">
+                    <span className="text-[10px] text-content-muted font-black uppercase tracking-wider">
                       Max {group.max_select}
                     </span>
                   )}
@@ -265,7 +265,7 @@ export function ItemCustomiserModal({ item, onConfirm, onClose }: Props) {
                             'w-full flex items-center justify-between px-4 py-3 border-2 text-sm active:scale-[0.98] transition-transform duration-75',
                             checked
                               ? 'border-cyan-500 bg-cyan-500/10 text-cyan-400'
-                              : 'border-slate-700 bg-slate-800 text-slate-100 active:border-slate-600 active:bg-slate-700',
+                              : 'border-border-subtle bg-surface-sunken text-content-primary active:border-border-strong active:bg-slate-700',
                           )}
                         >
                           <div className="flex items-center gap-3">
@@ -278,14 +278,14 @@ export function ItemCustomiserModal({ item, onConfirm, onClose }: Props) {
                                   ? group.max_select === 1
                                     ? 'border-cyan-500 bg-cyan-500'
                                     : 'border-lime-500 bg-lime-500'
-                                  : 'border-slate-600',
+                                  : 'border-border-strong',
                               )}
                             >
                               {checked && group.max_select === 1 && (
-                                <div className="h-1.5 w-1.5 bg-slate-900" />
+                                <div className="h-1.5 w-1.5 bg-surface-card" />
                               )}
                               {checked && group.max_select > 1 && (
-                                <Check className="h-2.5 w-2.5 text-slate-900 stroke-[3]" />
+                                <Check className="h-2.5 w-2.5 text-content-inverse stroke-[3]" />
                               )}
                             </div>
                             <span className="font-bold tracking-tight">
@@ -297,7 +297,7 @@ export function ItemCustomiserModal({ item, onConfirm, onClose }: Props) {
                               'font-black text-xs font-mono tracking-tight',
                               m.price_adjustment > 0
                                 ? 'text-cyan-400'
-                                : 'text-slate-500',
+                                : 'text-content-muted',
                             )}
                           >
                             {m.price_adjustment > 0
@@ -315,7 +315,7 @@ export function ItemCustomiserModal({ item, onConfirm, onClose }: Props) {
           {hasAddons && (
             <section>
               <div className="flex items-center gap-2 mb-3">
-                <p className="font-bold text-sm text-slate-100 uppercase tracking-wider">
+                <p className="font-bold text-sm text-content-primary uppercase tracking-wider">
                   Add-ons
                 </p>
                 <span className="text-[10px] px-1.5 py-0.5 bg-lime-500/10 text-lime-400 font-black border border-lime-500/30 uppercase tracking-wider">
@@ -335,7 +335,7 @@ export function ItemCustomiserModal({ item, onConfirm, onClose }: Props) {
                           'w-full flex items-center justify-between px-4 py-3 border-2 text-sm active:scale-[0.98] transition-transform duration-75',
                           checked
                             ? 'border-lime-500 bg-lime-500/10 text-lime-400'
-                            : 'border-slate-700 bg-slate-800 text-slate-100 active:border-slate-600 active:bg-slate-700',
+                            : 'border-border-subtle bg-surface-sunken text-content-primary active:border-border-strong active:bg-slate-700',
                         )}
                       >
                         <div className="flex items-center gap-3">
@@ -344,11 +344,11 @@ export function ItemCustomiserModal({ item, onConfirm, onClose }: Props) {
                               'h-4 w-4 border-2 flex items-center justify-center flex-shrink-0',
                               checked
                                 ? 'border-lime-500 bg-lime-500'
-                                : 'border-slate-600',
+                                : 'border-border-strong',
                             )}
                           >
                             {checked && (
-                              <Check className="h-2.5 w-2.5 text-slate-900 stroke-[3]" />
+                              <Check className="h-2.5 w-2.5 text-content-inverse stroke-[3]" />
                             )}
                           </div>
                           <span className="font-bold tracking-tight">
@@ -367,10 +367,10 @@ export function ItemCustomiserModal({ item, onConfirm, onClose }: Props) {
         </div>
 
         {/* Footer */}
-        <div className="p-5 border-t-2 border-slate-800 space-y-3 bg-slate-950">
+        <div className="p-5 border-t-2 border-border-strong space-y-3 bg-surface-base">
           {/* Quantity picker */}
           <div className="flex items-center justify-between">
-            <p className="text-sm font-bold text-slate-300 uppercase tracking-wider">
+            <p className="text-sm font-bold text-content-primary uppercase tracking-wider">
               Quantity
             </p>
             <div className="flex items-center gap-3">
@@ -383,15 +383,15 @@ export function ItemCustomiserModal({ item, onConfirm, onClose }: Props) {
                     ),
                   )
                 }
-                className="h-8 w-8 border-2 border-slate-700 bg-slate-800 flex items-center justify-center text-slate-300 active:bg-slate-700 active:text-slate-100 active:scale-[0.92] transition-all duration-75"
+                className="h-11 w-11 border-2 border-border-subtle bg-surface-sunken flex items-center justify-center text-content-primary active:bg-slate-700 active:text-content-primary active:scale-[0.92] transition-all duration-75"
               >
-                <Minus className="h-3.5 w-3.5" />
+                <Minus className="h-5 w-5" />
               </button>
               <input
                 type="number"
                 value={qty}
                 onChange={(e) => setQty(e.target.value)}
-                className="text-lg font-black text-slate-100 w-12 text-center bg-transparent border-b-2 border-slate-700 outline-none focus:border-cyan-500 font-mono"
+                className="text-lg font-black text-content-primary w-16 text-center bg-transparent border-b-2 border-border-subtle outline-none focus:border-cyan-500 font-mono"
                 style={{ fontVariantNumeric: 'tabular-nums' }}
               />
               <button
@@ -400,9 +400,9 @@ export function ItemCustomiserModal({ item, onConfirm, onClose }: Props) {
                     (q) => (typeof q === 'number' ? q : parseFloat(q) || 1) + 1,
                   )
                 }
-                className="h-8 w-8 border-2 border-cyan-500/40 bg-cyan-500/10 flex items-center justify-center text-cyan-400 active:bg-cyan-500/20 active:scale-[0.92] transition-all duration-75"
+                className="h-11 w-11 border-2 border-cyan-500/40 bg-cyan-500/10 flex items-center justify-center text-cyan-400 active:bg-cyan-500/20 active:scale-[0.92] transition-all duration-75"
               >
-                <Plus className="h-3.5 w-3.5" />
+                <Plus className="h-5 w-5" />
               </button>
             </div>
           </div>
@@ -411,7 +411,7 @@ export function ItemCustomiserModal({ item, onConfirm, onClose }: Props) {
           <button
             onClick={handleConfirm}
             disabled={!isFormValid()}
-            className="w-full flex items-center justify-between px-5 py-3.5 border-2 border-cyan-400 bg-cyan-500 text-slate-900 font-black text-sm active:bg-cyan-400 active:scale-[0.98] transition-all duration-75 disabled:opacity-40 disabled:cursor-not-allowed uppercase tracking-widest"
+            className="w-full flex items-center justify-between px-5 py-3.5 border-2 border-cyan-400 bg-cyan-500 text-content-inverse font-black text-sm active:bg-cyan-400 active:scale-[0.98] transition-all duration-75 disabled:opacity-40 disabled:cursor-not-allowed uppercase tracking-widest"
           >
             <span>Add to Order</span>
             <div className="flex items-center gap-2">

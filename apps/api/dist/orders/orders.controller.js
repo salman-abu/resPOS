@@ -30,7 +30,7 @@ let OrdersController = class OrdersController {
     }
     async createOrder(req, dto) {
         try {
-            return await this.ordersService.createOrder(req.tenantId, req.user.sub, dto);
+            return await this.ordersService.createOrder(req.tenantId, req.user.sub, dto, req.trainingSessionId);
         }
         catch (e) {
             throw new common_1.HttpException(e.message || String(e), 400);
@@ -38,9 +38,9 @@ let OrdersController = class OrdersController {
     }
     getActiveOrders(req, tableId) {
         if (tableId) {
-            return this.ordersService.getActiveOrderByTable(req.tenantId, tableId);
+            return this.ordersService.getActiveOrderByTable(req.tenantId, tableId, req.trainingSessionId);
         }
-        return this.ordersService.getActiveOrders(req.tenantId);
+        return this.ordersService.getActiveOrders(req.tenantId, req.trainingSessionId);
     }
     getOpenTabs(req) {
         return this.ordersService.getOpenTabs(req.tenantId);
@@ -82,6 +82,9 @@ let OrdersController = class OrdersController {
     }
     voidItem(req, id, itemId) {
         return this.ordersService.voidItem(req.tenantId, id, itemId, req.user.sub);
+    }
+    async loadTemplate(req, body) {
+        return this.ordersService.loadTemplate(req.tenantId, body.history_id);
     }
 };
 exports.OrdersController = OrdersController;
@@ -213,6 +216,14 @@ __decorate([
     __metadata("design:paramtypes", [Object, String, String]),
     __metadata("design:returntype", void 0)
 ], OrdersController.prototype, "voidItem", null);
+__decorate([
+    (0, common_1.Post)('load-template'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], OrdersController.prototype, "loadTemplate", null);
 exports.OrdersController = OrdersController = __decorate([
     (0, common_1.Controller)('orders'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),

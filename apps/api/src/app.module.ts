@@ -23,9 +23,18 @@ import { CustomersModule } from './customers/customers.module';
 import { AuditModule } from './audit/audit.module';
 import { BookingsModule } from './bookings/bookings.module';
 import { SyncModule } from './sync/sync.module';
+import { TrainingModule } from './training/training.module';
+import { TrainingInterceptor } from './training/training.interceptor';
+import { CronModule } from './cron/cron.module';
+import { ShiftReportModule } from './shift-report/shift-report.module';
+import { DisplayModule } from './display/display.module';
+import { UpsellModule } from './upsell/upsell.module';
+import { WhatsappModule } from './whatsapp/whatsapp.module';
+import { ReservationModule } from './reservation/reservation.module';
+import { KioskModule } from './kiosk/kiosk.module';
 
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -55,9 +64,21 @@ import { APP_GUARD } from '@nestjs/core';
     CustomersModule,
     BookingsModule,
     SyncModule,
+    TrainingModule,
+    CronModule,
+    ShiftReportModule,
+    DisplayModule,
+    UpsellModule,
+    WhatsappModule,
+    ReservationModule,
+    KioskModule,
   ],
   controllers: [AppController],
-  providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],
+  providers: [
+    AppService,
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_INTERCEPTOR, useClass: TrainingInterceptor },
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

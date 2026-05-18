@@ -16,14 +16,27 @@ export class AuthController {
 
   @Post('staff/login')
   async loginStaff(
-    @Body() body: { tenantId: string; userId: string; pin: string },
+    @Body()
+    body: {
+      tenantId: string;
+      userId: string;
+      pin: string;
+      mode?: 'LIVE' | 'TRAINING';
+    },
   ) {
-    return this.authService.loginWithPin(body.tenantId, body.userId, body.pin);
+    return this.authService.loginWithPin(
+      body.tenantId,
+      body.userId,
+      body.pin,
+      body.mode,
+    );
   }
 
   @Post('owner/login')
-  async loginOwner(@Body() body: { email: string; pin: string }) {
-    return this.authService.loginOwner(body.email, body.pin);
+  async loginOwner(
+    @Body() body: { email: string; pin: string; mode?: 'LIVE' | 'TRAINING' },
+  ) {
+    return this.authService.loginOwner(body.email, body.pin, body.mode);
   }
 
   @UseGuards(JwtAuthGuard)

@@ -86,4 +86,49 @@ export class CustomersService {
       .slice(0, 4)
       .map((entry) => entry.item);
   }
+
+  async getOrderHistoryByPhone(tenantId: string, phone: string) {
+    const histories = await this.prisma.customerOrderHistory.findMany({
+      where: { tenant_id: tenantId, customer_phone: phone },
+      orderBy: { settled_at: 'desc' },
+      take: 5,
+    });
+
+    return histories.map((h) => ({
+      id: h.id,
+      settledAt: h.settled_at,
+      snapshot: h.order_snapshot,
+    }));
+  }
+
+  async saveOrderSnapshot(
+    tenantId: string,
+    phone: string,
+    snapshot: any,
+    settledAt: Date,
+  ) {
+    // Cap at 10 entries per customer per tenant
+    const existing = await this.prisma.customerOrderHistory.findMany({
+      where: { tenant_id: tenantId, customer_phone: phone },
+      orderBy: { settled_at: 'desc' },
+    });
+
+    if (existing.length >= 10) {
+      const toDelete = existing.slice(10 - 1);
+      await this.prisma.customerOrderHistory.deleteMany({
+        where: {
+          id: { in: toDelete.map((e) => e.id) },
+        },
+      });
+    }
+
+    return this.prisma.customerOrderHistory.create({
+      data: {
+        tenant_id: tenantId,
+        customer_phone: phone,
+        order_snapshot: snapshot,
+        settled_at: settledAt,
+      },
+    });
+  }
 }

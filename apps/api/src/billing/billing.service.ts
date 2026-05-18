@@ -294,10 +294,30 @@ export class BillingService {
       where: { id: invoiceId, order: { tenant_id: tenantId } },
       include: {
         payments: true,
-        order: { select: { table_id: true, id: true } },
+        order: { select: { table_id: true, id: true, customer_id: true } },
       },
     });
     if (!invoice) throw new NotFoundException('Invoice not found.');
+
+    const customerId = dto.customer_id || invoice.order.customer_id;
+    let pointDeductionPaise = 0;
+
+    if (dto.redeem_points && dto.redeem_points > 0 && customerId) {
+      const config = await this.prisma.loyaltyConfig.findUnique({
+        where: { tenant_id: tenantId },
+      });
+      if (config) {
+        pointDeductionPaise = Math.round(
+          dto.redeem_points * config.rupees_per_point * 100,
+        );
+      }
+
+      // Deduct loyalty points from the customer
+      await this.loyaltyService.redeemPoints(tenantId, {
+        customerId,
+        points: dto.redeem_points,
+      });
+    }
 
     const alreadyPaid = invoice.payments
       .filter((p) => p.status === 'SUCCESS')
@@ -305,15 +325,15 @@ export class BillingService {
 
     const newTotal = dto.payments.reduce((s, p) => s + p.amount, 0);
 
-    if (alreadyPaid + newTotal < invoice.total) {
+    if (alreadyPaid + newTotal + pointDeductionPaise < invoice.total) {
       throw new BadRequestException(
-        `Payment short by ₹${((invoice.total - alreadyPaid - newTotal) / 100).toFixed(2)}`,
+        `Payment short by ₹${((invoice.total - alreadyPaid - newTotal - pointDeductionPaise) / 100).toFixed(2)}`,
       );
     }
 
     // Record all payments
-    await this.prisma.$transaction(
-      dto.payments.map((p) =>
+    await this.prisma.$transaction([
+      ...dto.payments.map((p) =>
         this.prisma.payment.create({
           data: {
             invoice_id: invoiceId,
@@ -325,7 +345,20 @@ export class BillingService {
           },
         }),
       ),
-    );
+      ...(pointDeductionPaise > 0
+        ? [
+            this.prisma.payment.create({
+              data: {
+                invoice_id: invoiceId,
+                amount: pointDeductionPaise,
+                method: 'COMPLIMENTARY',
+                upi_ref: `Redeemed ${dto.redeem_points} points`,
+                status: 'SUCCESS',
+              },
+            }),
+          ]
+        : []),
+    ]);
 
     // Settle order + free table
     const updatedOrder = await this.prisma.order.update({
@@ -336,11 +369,32 @@ export class BillingService {
 
     // Credit Loyalty Points if customer exists
     if (updatedOrder.customer_id) {
+      const customer = await this.prisma.customer.findUnique({
+        where: { id: updatedOrder.customer_id },
+        select: { mobile: true },
+      });
+
       await this.loyaltyService.triggerEarnPoints(tenantId, {
         customerId: updatedOrder.customer_id,
         orderId: updatedOrder.id,
         amountSpent: invoice.total,
       });
+
+      // MOD-02: Award digital stamps
+      if (customer?.mobile) {
+        const orderItems = await this.prisma.orderItem.findMany({
+          where: { order_id: updatedOrder.id, status: { not: 'VOID' } },
+          select: { item_id: true, quantity: true },
+        });
+        await this.loyaltyService.awardStamps(
+          tenantId,
+          customer.mobile,
+          orderItems.map((oi) => ({
+            item_id: oi.item_id,
+            quantity: oi.quantity,
+          })),
+        );
+      }
     }
 
     if (invoice.order.table_id) {
@@ -363,15 +417,18 @@ export class BillingService {
       performedBy: userId,
       newValue: {
         total: invoice.total,
-        paid: alreadyPaid + newTotal,
-        methods: dto.payments.map((p) => p.method),
+        paid: alreadyPaid + newTotal + pointDeductionPaise,
+        methods: [
+          ...dto.payments.map((p) => p.method),
+          ...(pointDeductionPaise > 0 ? ['LOYALTY_REDEEM'] : []),
+        ],
       },
     });
 
     return {
       success: true,
       invoice_id: invoiceId,
-      total_paid: alreadyPaid + newTotal,
+      total_paid: alreadyPaid + newTotal + pointDeductionPaise,
     };
   }
 

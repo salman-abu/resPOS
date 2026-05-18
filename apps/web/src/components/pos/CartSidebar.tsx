@@ -28,8 +28,8 @@ import {
   Wine,
   RotateCcw,
 } from 'lucide-react';
-import { useState } from 'react';
-import { scheduleVoidItem, cancelVoidJob } from '@/lib/api';
+import { useState, useEffect } from 'react';
+import { scheduleVoidItem, cancelVoidJob, getUpsellSuggestions } from '@/lib/api';
 import { CustomerModal } from './CustomerModal';
 
 interface CartSidebarProps {
@@ -130,7 +130,7 @@ function CartLineItem({ item }: { item: CartItem }) {
         </div>
         <button
           onClick={handleUndoVoid}
-          className="text-[10px] font-black text-success-default px-2 py-1 bg-surface-sunken border border-success-default uppercase tracking-wider active:scale-[0.97] transition-transform duration-75"
+          className="text-xs font-black text-success-default px-3 py-2.5 bg-surface-sunken border border-success-default uppercase tracking-wider active:scale-[0.97] transition-transform duration-75 min-h-[44px] min-w-[44px]"
         >
           UNDO
         </button>
@@ -183,7 +183,8 @@ function CartLineItem({ item }: { item: CartItem }) {
         <div className="flex items-center gap-1">
           <button
             onClick={() => updateQuantity(item.cartLineId, -1)}
-            className="h-7 w-7 bg-surface-sunken text-content-secondary flex items-center justify-center border border-border-strong active:bg-border-strong active:text-content-inverse active:scale-[0.92] transition-all duration-75"
+            aria-label="Decrease quantity"
+            className="h-11 w-11 bg-surface-sunken text-content-secondary flex items-center justify-center border border-border-strong active:bg-border-strong active:text-content-inverse active:scale-[0.92] transition-all duration-75"
           >
             <Minus className="h-3 w-3" />
           </button>
@@ -195,13 +196,14 @@ function CartLineItem({ item }: { item: CartItem }) {
           </span>
           <button
             onClick={() => updateQuantity(item.cartLineId, +1)}
-            className="h-7 w-7 bg-surface-sunken text-content-secondary flex items-center justify-center border border-border-strong active:bg-border-strong active:text-content-inverse active:scale-[0.92] transition-all duration-75"
+            aria-label="Increase quantity"
+            className="h-11 w-11 bg-surface-sunken text-content-secondary flex items-center justify-center border border-border-strong active:bg-border-strong active:text-content-inverse active:scale-[0.92] transition-all duration-75"
           >
-            <Plus className="h-3 w-3" />
+            <Plus className="h-4 w-4" />
           </button>
         </div>
 
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-1 transition-opacity">
           {order_type === 'DINE_IN' && (
             <div className="flex items-center gap-1 mr-1 px-1.5 py-0.5 bg-surface-sunken border border-border-subtle">
               <User className="h-2.5 w-2.5 text-content-muted" />
@@ -226,8 +228,9 @@ function CartLineItem({ item }: { item: CartItem }) {
           )}
           <button
             onClick={() => toggleHold(item.cartLineId)}
+            aria-label={item.fire_status === 'HELD' ? 'Fire Item' : 'Hold Item'}
             className={cn(
-              'h-7 w-7 flex items-center justify-center border active:scale-[0.92] transition-all duration-75',
+              'h-11 w-11 flex items-center justify-center border active:scale-[0.92] transition-all duration-75',
               item.fire_status === 'HELD'
                 ? 'bg-warning-default text-content-inverse border-warning-default'
                 : 'bg-surface-sunken text-content-muted border-border-subtle active:bg-warning-light active:text-warning-default',
@@ -235,22 +238,24 @@ function CartLineItem({ item }: { item: CartItem }) {
             title={item.fire_status === 'HELD' ? 'Fire Item' : 'Hold Item'}
           >
             {item.fire_status === 'HELD' ? (
-              <Play className="h-3 w-3" />
+              <Play className="h-4 w-4" />
             ) : (
-              <Pause className="h-3 w-3" />
+              <Pause className="h-4 w-4" />
             )}
           </button>
           <button
             onClick={() => setEditingNote((v) => !v)}
-            className="h-7 w-7 bg-surface-sunken text-content-muted flex items-center justify-center border border-border-subtle active:bg-border-strong active:text-content-inverse active:scale-[0.92] transition-all duration-75"
+            aria-label="Edit Note"
+            className="h-11 w-11 bg-surface-sunken text-content-muted flex items-center justify-center border border-border-subtle active:bg-border-strong active:text-content-inverse active:scale-[0.92] transition-all duration-75"
           >
-            <StickyNote className="h-3 w-3" />
+            <StickyNote className="h-4 w-4" />
           </button>
           <button
             onClick={handleRemove}
-            className="h-7 w-7 bg-surface-sunken text-content-muted flex items-center justify-center border border-border-subtle active:bg-danger-light active:text-danger-default active:scale-[0.92] transition-all duration-75"
+            aria-label="Remove Item"
+            className="h-11 w-11 bg-surface-sunken text-content-muted flex items-center justify-center border border-border-subtle active:bg-danger-light active:text-danger-default active:scale-[0.92] transition-all duration-75"
           >
-            <Trash2 className="h-3 w-3" />
+            <Trash2 className="h-4 w-4" />
           </button>
         </div>
       </div>
@@ -298,7 +303,7 @@ function IconBtn({
       disabled={disabled}
       title={label}
       className={cn(
-        'flex flex-col items-center justify-center gap-0.5 flex-1 py-2 border-r border-border-subtle last:border-r-0 text-[9px] font-black uppercase tracking-wider active:scale-[0.94] transition-all duration-75',
+        'flex flex-col items-center justify-center gap-0.5 flex-1 py-3 border-r border-border-subtle last:border-r-0 text-[9px] font-black uppercase tracking-wider active:scale-[0.94] transition-all duration-75',
         active
           ? 'bg-warning-light text-warning-default'
           : danger
@@ -346,6 +351,26 @@ export function CartSidebar({
   );
   const [customerModalOpen, setCustomerModalOpen] = useState(false);
   const [shiftCloseOpen, setShiftCloseOpen] = useState(false);
+  const [upsells, setUpsells] = useState<any[]>([]);
+  const [upsellDismissed, setUpsellDismissed] = useState(false);
+
+  // MOD-08: Smart Upsell
+  useEffect(() => {
+    if (items.length === 0 || upsellDismissed) {
+      setUpsells([]);
+      return;
+    }
+    const itemIds = items.map((i) => i.item_id);
+    let cancelled = false;
+    getUpsellSuggestions(itemIds)
+      .then((data) => {
+        if (!cancelled) setUpsells(data || []);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [items.map((i) => i.item_id).join(','), upsellDismissed]);
 
   const hasItems = items.length > 0;
   const hasActiveOrder = !!active_order_id;
@@ -459,6 +484,47 @@ export function CartSidebar({
               }}
               className="h-4 w-4 border border-info-default bg-surface-base text-info-default focus:ring-info-default cursor-pointer rounded-none"
             />
+          </div>
+        </div>
+      )}
+
+      {/* ── MOD-08: Smart Upsell ───────────────────────────────────────────── */}
+      {upsells.length > 0 && !upsellDismissed && (
+        <div className="flex-shrink-0 px-4 py-2 bg-surface-base border-b border-border-subtle">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[10px] font-black text-content-muted uppercase tracking-widest">
+              Customers also add
+            </span>
+            <button
+              onClick={() => setUpsellDismissed(true)}
+              className="text-[10px] text-content-muted hover:text-content-secondary"
+            >
+              Dismiss
+            </button>
+          </div>
+          <div className="flex gap-2 overflow-x-auto scrollbar-thin pb-1">
+            {upsells.map((u) => (
+              <button
+                key={u.id}
+                onClick={() => {
+                  // Add to cart via cart store - parent component handles this
+                  // We'll dispatch a custom event for the POS page to handle
+                  window.dispatchEvent(
+                    new CustomEvent('add-upsell-item', {
+                      detail: { itemId: u.id },
+                    }),
+                  );
+                }}
+                className="flex-shrink-0 px-3 py-1.5 bg-info-light border border-info-default rounded-lg text-left active:scale-[0.97] transition-transform"
+              >
+                <p className="text-xs font-bold text-content-primary truncate max-w-[140px]">
+                  {u.name}
+                </p>
+                <p className="text-[10px] font-bold text-info-default">
+                  +{formatPrice(u.price)}
+                </p>
+              </button>
+            ))}
           </div>
         </div>
       )}

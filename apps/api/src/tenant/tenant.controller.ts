@@ -21,4 +21,23 @@ export class TenantController {
   async updateSettings(@Req() req: any, @Body() body: any) {
     return this.tenantService.updateSettings(req.tenantId, body);
   }
+
+  @Roles(Role.OWNER, Role.MANAGER, Role.CASHIER)
+  @Get('settings/fssai')
+  async getFssaiSettings(@Req() req: any) {
+    return this.tenantService.getFssaiSettings(req.tenantId);
+  }
+
+  @Roles(Role.OWNER)
+  @Patch('settings/fssai')
+  async updateFssaiSettings(
+    @Req() req: any,
+    @Body() body: { licence_number: string; expiry_date: string },
+  ) {
+    return this.tenantService.updateFssaiSettings(
+      req.tenantId,
+      body.licence_number,
+      body.expiry_date,
+    );
+  }
 }

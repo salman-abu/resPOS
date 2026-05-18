@@ -26,9 +26,9 @@ interface MenuItem {
   id: string;
   name: string;
   description?: string;
-  price: number;
+  base_price: number;
   is_available: boolean;
-  is_veg?: boolean;
+  item_type?: 'VEG' | 'NON_VEG' | 'EGG' | 'VEGAN';
   is_spicy?: boolean;
   is_bestseller?: boolean;
   category_id: string;
@@ -57,9 +57,7 @@ const EMPTY_FORM = {
   description: '',
   price: '',
   category_id: '',
-  is_veg: true,
-  is_spicy: false,
-  is_bestseller: false,
+  item_type: 'VEG',
 };
 
 export default function MenuPage() {
@@ -121,11 +119,9 @@ export default function MenuPage() {
     setForm({
       name: item.name,
       description: item.description ?? '',
-      price: String(item.price / 100),
+      price: String(item.base_price / 100),
       category_id: item.category_id,
-      is_veg: item.is_veg ?? true,
-      is_spicy: item.is_spicy ?? false,
-      is_bestseller: item.is_bestseller ?? false,
+      item_type: item.item_type ?? 'VEG',
     });
     setFormError('');
     setShowItemForm(true);
@@ -144,9 +140,7 @@ export default function MenuPage() {
         description: form.description.trim(),
         price: Math.round(parseFloat(form.price) * 100),
         category_id: form.category_id,
-        is_veg: form.is_veg,
-        is_spicy: form.is_spicy,
-        is_bestseller: form.is_bestseller,
+        item_type: form.item_type,
       };
       const url = editItem
         ? `${API_BASE}/menu/items/${editItem.id}`
@@ -463,7 +457,7 @@ export default function MenuPage() {
                         <div
                           className={cn(
                             'h-2 w-2 rounded-full flex-shrink-0',
-                            item.is_veg ? 'bg-emerald-500' : 'bg-red-500',
+                            item.item_type === 'VEG' ? 'bg-emerald-500' : 'bg-red-500',
                           )}
                         />
                         <div>
@@ -485,26 +479,20 @@ export default function MenuPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3.5 font-bold text-content-primary">
-                      ₹{(item.price / 100).toFixed(0)}
+                      ₹{(item.base_price / 100).toFixed(0)}
                     </td>
                     <td className="px-4 py-3.5">
                       <div className="flex items-center gap-1">
-                        {item.is_veg && (
+                        {item.item_type === 'VEG' && (
                           <span className="flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-600 border border-emerald-200 font-semibold">
                             <Leaf className="h-2.5 w-2.5" />
                             VEG
                           </span>
                         )}
-                        {item.is_spicy && (
+                        {item.item_type !== 'VEG' && (
                           <span className="flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-md bg-red-50 text-red-500 border border-red-200 font-semibold">
                             <Flame className="h-2.5 w-2.5" />
-                            HOT
-                          </span>
-                        )}
-                        {item.is_bestseller && (
-                          <span className="flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-600 border border-amber-200 font-semibold">
-                            <Star className="h-2.5 w-2.5" />
-                            BEST
+                            NON-VEG
                           </span>
                         )}
                       </div>
@@ -694,29 +682,37 @@ export default function MenuPage() {
                   className="w-full px-3 py-2 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 resize-none"
                 />
               </div>
-              <div className="flex items-center gap-4 text-sm">
-                {(
-                  [
-                    ['is_veg', 'Vegetarian'],
-                    ['is_spicy', 'Spicy'],
-                    ['is_bestseller', 'Bestseller'],
-                  ] as const
-                ).map(([key, label]) => (
-                  <label
-                    key={key}
-                    className="flex items-center gap-2 cursor-pointer"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={form[key] as boolean}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, [key]: e.target.checked }))
-                      }
-                      className="rounded"
-                    />
-                    <span className="text-content-secondary">{label}</span>
-                  </label>
-                ))}
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-content-secondary block">
+                  Dietary Preference
+                </label>
+                <div className="flex items-center gap-4 text-sm">
+                  {(
+                    [
+                      ['VEG', 'Vegetarian'],
+                      ['NON_VEG', 'Non-Vegetarian'],
+                      ['EGG', 'Egg'],
+                      ['VEGAN', 'Vegan'],
+                    ] as const
+                  ).map(([value, label]) => (
+                    <label
+                      key={value}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <input
+                        type="radio"
+                        name="item_type"
+                        value={value}
+                        checked={form.item_type === value}
+                        onChange={(e) =>
+                          setForm((f) => ({ ...f, item_type: e.target.value }))
+                        }
+                        className="rounded-full text-brand-600 focus:ring-brand-500"
+                      />
+                      <span className="text-content-secondary">{label}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
               {formError && (
                 <p className="text-xs text-red-500 bg-red-50 rounded-lg px-3 py-2">

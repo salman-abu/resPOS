@@ -22,6 +22,7 @@ export declare class BillingController {
             total: number;
             order_id: string;
             printed_at: Date | null;
+            training_session_id: string | null;
             invoice_number: string;
             subtotal: number;
             cgst: number;
@@ -93,13 +94,17 @@ export declare class BillingController {
             customer_id: string | null;
             order_name: string | null;
             brand_id: string | null;
-            source: string | null;
+            source: import("@prisma/client").$Enums.OrderSource;
+            kot_number: string | null;
+            training_session_id: string | null;
             aggregator_source: import("@prisma/client").$Enums.AggregatorSource | null;
             aggregator_order_id: string | null;
             external_ref: string | null;
             is_tab_open: boolean;
             tab_name: string | null;
             queue_token_number: number | null;
+            kiosk_session_id: string | null;
+            kiosk_terminal_id: string | null;
             customer_phone: string | null;
             delivery_address: string | null;
             estimated_time: Date | null;
@@ -126,6 +131,7 @@ export declare class BillingController {
         total: number;
         order_id: string;
         printed_at: Date | null;
+        training_session_id: string | null;
         invoice_number: string;
         subtotal: number;
         cgst: number;

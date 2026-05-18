@@ -240,39 +240,82 @@ let BillingService = class BillingService {
             where: { id: invoiceId, order: { tenant_id: tenantId } },
             include: {
                 payments: true,
-                order: { select: { table_id: true, id: true } },
+                order: { select: { table_id: true, id: true, customer_id: true } },
             },
         });
         if (!invoice)
             throw new common_1.NotFoundException('Invoice not found.');
+        const customerId = dto.customer_id || invoice.order.customer_id;
+        let pointDeductionPaise = 0;
+        if (dto.redeem_points && dto.redeem_points > 0 && customerId) {
+            const config = await this.prisma.loyaltyConfig.findUnique({
+                where: { tenant_id: tenantId },
+            });
+            if (config) {
+                pointDeductionPaise = Math.round(dto.redeem_points * config.rupees_per_point * 100);
+            }
+            await this.loyaltyService.redeemPoints(tenantId, {
+                customerId,
+                points: dto.redeem_points,
+            });
+        }
         const alreadyPaid = invoice.payments
             .filter((p) => p.status === 'SUCCESS')
             .reduce((sum, p) => sum + p.amount, 0);
         const newTotal = dto.payments.reduce((s, p) => s + p.amount, 0);
-        if (alreadyPaid + newTotal < invoice.total) {
-            throw new common_1.BadRequestException(`Payment short by ₹${((invoice.total - alreadyPaid - newTotal) / 100).toFixed(2)}`);
+        if (alreadyPaid + newTotal + pointDeductionPaise < invoice.total) {
+            throw new common_1.BadRequestException(`Payment short by ₹${((invoice.total - alreadyPaid - newTotal - pointDeductionPaise) / 100).toFixed(2)}`);
         }
-        await this.prisma.$transaction(dto.payments.map((p) => this.prisma.payment.create({
-            data: {
-                invoice_id: invoiceId,
-                amount: p.amount,
-                method: p.method,
-                upi_ref: p.upi_ref,
-                transaction_id: p.transaction_id,
-                status: 'SUCCESS',
-            },
-        })));
+        await this.prisma.$transaction([
+            ...dto.payments.map((p) => this.prisma.payment.create({
+                data: {
+                    invoice_id: invoiceId,
+                    amount: p.amount,
+                    method: p.method,
+                    upi_ref: p.upi_ref,
+                    transaction_id: p.transaction_id,
+                    status: 'SUCCESS',
+                },
+            })),
+            ...(pointDeductionPaise > 0
+                ? [
+                    this.prisma.payment.create({
+                        data: {
+                            invoice_id: invoiceId,
+                            amount: pointDeductionPaise,
+                            method: 'COMPLIMENTARY',
+                            upi_ref: `Redeemed ${dto.redeem_points} points`,
+                            status: 'SUCCESS',
+                        },
+                    }),
+                ]
+                : []),
+        ]);
         const updatedOrder = await this.prisma.order.update({
             where: { id: invoice.order.id },
             data: { status: 'SETTLED', settled_at: new Date() },
             select: { id: true, customer_id: true },
         });
         if (updatedOrder.customer_id) {
+            const customer = await this.prisma.customer.findUnique({
+                where: { id: updatedOrder.customer_id },
+                select: { mobile: true },
+            });
             await this.loyaltyService.triggerEarnPoints(tenantId, {
                 customerId: updatedOrder.customer_id,
                 orderId: updatedOrder.id,
                 amountSpent: invoice.total,
             });
+            if (customer?.mobile) {
+                const orderItems = await this.prisma.orderItem.findMany({
+                    where: { order_id: updatedOrder.id, status: { not: 'VOID' } },
+                    select: { item_id: true, quantity: true },
+                });
+                await this.loyaltyService.awardStamps(tenantId, customer.mobile, orderItems.map((oi) => ({
+                    item_id: oi.item_id,
+                    quantity: oi.quantity,
+                })));
+            }
         }
         if (invoice.order.table_id) {
             await this.prisma.table.update({
@@ -292,14 +335,17 @@ let BillingService = class BillingService {
             performedBy: userId,
             newValue: {
                 total: invoice.total,
-                paid: alreadyPaid + newTotal,
-                methods: dto.payments.map((p) => p.method),
+                paid: alreadyPaid + newTotal + pointDeductionPaise,
+                methods: [
+                    ...dto.payments.map((p) => p.method),
+                    ...(pointDeductionPaise > 0 ? ['LOYALTY_REDEEM'] : []),
+                ],
             },
         });
         return {
             success: true,
             invoice_id: invoiceId,
-            total_paid: alreadyPaid + newTotal,
+            total_paid: alreadyPaid + newTotal + pointDeductionPaise,
         };
     }
     async openShift(tenantId, cashierId, dto) {

@@ -2,6 +2,7 @@ import {
   Controller,
   Post,
   Get,
+  Patch,
   Body,
   Param,
   Req,
@@ -57,5 +58,39 @@ export class LoyaltyController {
   async getCustomerLoyalty(@Req() req: any, @Param('id') customerId: string) {
     const tenantId = req.tenantId;
     return this.loyaltyService.getCustomerLoyalty(tenantId, customerId);
+  }
+
+  // ─── MOD-02: Fetch balance + stamps by phone ───────────────────────────
+  @Roles(Role.OWNER, Role.MANAGER, Role.CASHIER)
+  @Get('loyalty/:phone')
+  async getLoyaltyByPhone(@Req() req: any, @Param('phone') phone: string) {
+    const tenantId = req.tenantId;
+    return this.loyaltyService.getAccountByPhone(tenantId, phone);
+  }
+
+  // ─── MOD-02: Stamp Card CRUD ────────────────────────────────────────────
+  @Roles(Role.OWNER)
+  @Post('stamp-cards')
+  async createStampCard(@Req() req: any, @Body() body: any) {
+    return this.loyaltyService.createStampCard(req.tenantId, body);
+  }
+
+  @Roles(Role.OWNER, Role.MANAGER)
+  @Get('stamp-cards')
+  async listStampCards(@Req() req: any) {
+    return this.loyaltyService.listStampCards(req.tenantId);
+  }
+
+  @Roles(Role.OWNER)
+  @Patch('stamp-cards/:id/toggle')
+  async toggleStampCard(@Req() req: any, @Param('id') id: string) {
+    return this.loyaltyService.toggleStampCard(req.tenantId, id);
+  }
+
+  // ─── MOD-02: Get loyalty config (read-only for cashier) ─────────────────
+  @Roles(Role.OWNER, Role.MANAGER, Role.CASHIER)
+  @Get('loyalty/config')
+  async getConfig(@Req() req: any) {
+    return this.loyaltyService.getConfig(req.tenantId);
   }
 }

@@ -27,6 +27,7 @@ import {
   CreditCard,
   CalendarCheck2,
   Megaphone,
+  X,
 } from 'lucide-react';
 
 interface NavItem {
@@ -37,6 +38,7 @@ interface NavItem {
   badgeColor?: string;
   section: string;
   roles?: string[];
+  exact?: boolean;
 }
 
 const NAV: NavItem[] = [
@@ -47,6 +49,7 @@ const NAV: NavItem[] = [
     icon: <LayoutDashboard className="h-4 w-4" />,
     section: 'overview',
     roles: ['OWNER', 'MANAGER'],
+    exact: true,
   },
   {
     label: 'AI Insights',
@@ -97,6 +100,15 @@ const NAV: NavItem[] = [
     roles: ['OWNER', 'MANAGER'],
   },
   {
+    label: 'Kiosk Terminals',
+    href: '/dashboard/kiosks',
+    icon: <MonitorSmartphone className="h-4 w-4" />,
+    section: 'operations',
+    roles: ['OWNER', 'MANAGER'],
+    badge: 'NEW',
+    badgeColor: 'bg-info-light text-info-default',
+  },
+  {
     label: 'Kitchen (KDS)',
     href: '/kds',
     icon: <ChefHat className="h-4 w-4" />,
@@ -118,6 +130,13 @@ const NAV: NavItem[] = [
     roles: ['OWNER', 'MANAGER', 'CAPTAIN'],
     badge: 'PREMIUM',
     badgeColor: 'bg-warning-light text-warning-default',
+  },
+  {
+    label: 'Reservations & Waitlist',
+    href: '/dashboard/reservations',
+    icon: <CalendarCheck2 className="h-4 w-4" />,
+    section: 'operations',
+    roles: ['OWNER', 'MANAGER', 'CAPTAIN'],
   },
   {
     label: 'Inventory',
@@ -177,6 +196,7 @@ const NAV: NavItem[] = [
     icon: <Users className="h-4 w-4" />,
     section: 'people',
     roles: ['OWNER', 'MANAGER'],
+    exact: true,
   },
   {
     label: 'Clock-In Console',
@@ -238,12 +258,16 @@ interface Props {
   tenantName?: string;
   userName?: string;
   role?: string;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
 export function DashboardSidebar({
   tenantName = 'My Restaurant',
   userName = 'Owner',
   role = 'OWNER',
+  isOpen = false,
+  onClose,
 }: Props) {
   const pathname = usePathname();
   const router = useRouter();
@@ -265,19 +289,37 @@ export function DashboardSidebar({
   }, {});
 
   return (
-    <aside className="flex flex-col w-60 h-screen bg-white border-r border-border flex-shrink-0 shadow-sm">
-      {/* Brand */}
-      <div className="flex items-center gap-3 px-5 py-4 border-b border-border">
-        <div className="h-9 w-9 rounded-xl bg-brand-600 flex items-center justify-center shadow-sm flex-shrink-0">
-          <Zap className="h-5 w-5 text-white" />
+    <>
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
+          onClick={onClose}
+        />
+      )}
+      <aside 
+        className={cn(
+          "flex flex-col w-60 h-screen bg-white border-r border-border flex-shrink-0 shadow-sm transition-transform duration-200 z-50",
+          "fixed inset-y-0 left-0 lg:static lg:translate-x-0",
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        {/* Brand */}
+        <div className="flex items-center gap-3 px-5 py-4 border-b border-border">
+          <div className="h-9 w-9 rounded-xl bg-brand-default flex items-center justify-center shadow-sm flex-shrink-0">
+            <Zap className="h-5 w-5 text-white" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-content-primary font-bold text-sm truncate">
+              {tenantName}
+            </p>
+            <p className="text-content-muted text-xs">resPOS Dashboard</p>
+          </div>
+          {onClose && (
+            <button className="lg:hidden p-2 -mr-2 text-content-muted active:text-content-primary" onClick={onClose}>
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
-        <div className="min-w-0">
-          <p className="text-content-primary font-bold text-sm truncate">
-            {tenantName}
-          </p>
-          <p className="text-content-muted text-xs">resPOS Dashboard</p>
-        </div>
-      </div>
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5 scrollbar-thin">
@@ -288,16 +330,15 @@ export function DashboardSidebar({
             </p>
             <div className="space-y-0.5">
               {items.map((item) => {
-                const isActive =
-                  item.href === '/dashboard'
-                    ? pathname === '/dashboard'
-                    : pathname.startsWith(item.href);
+                const isActive = item.exact
+                  ? pathname === item.href
+                  : pathname.startsWith(item.href);
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
                     className={cn(
-                      'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-150 group',
+                      'flex items-center gap-3 px-3 py-3 rounded-xl text-sm transition-all duration-150 group',
                       isActive
                         ? 'bg-brand-light text-brand-strong font-semibold border border-brand-light'
                         : 'text-content-secondary hover:bg-surface-sunken hover:text-content-primary',
@@ -340,7 +381,7 @@ export function DashboardSidebar({
       <div className="p-3 border-t border-border">
         <div
           onClick={handleLogout}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-surface-sunken hover:bg-danger/5 transition-colors cursor-pointer group"
+          className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-danger-light transition-colors cursor-pointer group"
         >
           <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-brand-default to-brand-strong flex items-center justify-center flex-shrink-0 text-xs font-bold text-content-inverse">
             {userName.charAt(0)}
@@ -356,6 +397,7 @@ export function DashboardSidebar({
           <LogOut className="h-4 w-4 text-content-muted group-hover:text-danger transition-colors flex-shrink-0" />
         </div>
       </div>
-    </aside>
+      </aside>
+    </>
   );
 }

@@ -6,6 +6,7 @@ export declare class AuthController {
         tenantId: string;
         userId: string;
         pin: string;
+        mode?: 'LIVE' | 'TRAINING';
     }): Promise<{
         access_token: string;
         user: {
@@ -13,11 +14,13 @@ export declare class AuthController {
             name: string;
             role: import("@prisma/client").$Enums.Role;
             tenant_id: string;
+            mode: "LIVE" | "TRAINING";
         };
     }>;
     loginOwner(body: {
         email: string;
         pin: string;
+        mode?: 'LIVE' | 'TRAINING';
     }): Promise<{
         access_token: string;
         user: {
@@ -25,6 +28,7 @@ export declare class AuthController {
             name: string;
             role: "OWNER";
             tenant_id: string;
+            mode: "LIVE" | "TRAINING";
         };
     }>;
     getTerminalInfo(tenantId: string): Promise<{

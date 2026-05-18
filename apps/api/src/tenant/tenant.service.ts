@@ -65,4 +65,56 @@ export class TenantService {
       },
     });
   }
+
+  async getFssaiSettings(tenantId: string) {
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: {
+        fssai_licence_number: true,
+        fssai_expiry_date: true,
+        fssai_alert_sent_at_60: true,
+        fssai_alert_sent_at_30: true,
+        fssai_alert_sent_at_7: true,
+      },
+    });
+    if (!tenant) throw new NotFoundException('Tenant not found');
+
+    const now = new Date();
+    const daysUntilExpiry = tenant.fssai_expiry_date
+      ? Math.ceil(
+          (tenant.fssai_expiry_date.getTime() - now.getTime()) /
+            (1000 * 60 * 60 * 24),
+        )
+      : null;
+
+    return {
+      licenceNumber: tenant.fssai_licence_number,
+      expiryDate: tenant.fssai_expiry_date?.toISOString() ?? null,
+      daysUntilExpiry,
+      alertSentAt60: tenant.fssai_alert_sent_at_60?.toISOString() ?? null,
+      alertSentAt30: tenant.fssai_alert_sent_at_30?.toISOString() ?? null,
+      alertSentAt7: tenant.fssai_alert_sent_at_7?.toISOString() ?? null,
+    };
+  }
+
+  async updateFssaiSettings(
+    tenantId: string,
+    licenceNumber: string,
+    expiryDate: string,
+  ) {
+    return this.prisma.tenant.update({
+      where: { id: tenantId },
+      data: {
+        fssai_licence_number: licenceNumber,
+        fssai_expiry_date: new Date(expiryDate),
+        fssai_alert_sent_at_60: null,
+        fssai_alert_sent_at_30: null,
+        fssai_alert_sent_at_7: null,
+      },
+      select: {
+        fssai_licence_number: true,
+        fssai_expiry_date: true,
+      },
+    });
+  }
 }

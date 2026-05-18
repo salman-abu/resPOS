@@ -81,4 +81,18 @@ export class AnalyticsController {
       days ? parseInt(days) : 1,
     );
   }
+
+  @Roles(Role.OWNER, Role.MANAGER)
+  @Get('menu-engineering')
+  async getMenuEngineering(
+    @Req() req: any,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    return this.analyticsService.getMenuEngineering(
+      req.tenantId,
+      from ? new Date(from) : undefined,
+      to ? new Date(to) : undefined,
+    );
+  }
 }

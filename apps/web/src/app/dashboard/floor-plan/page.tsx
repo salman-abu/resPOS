@@ -11,6 +11,7 @@ import {
   Users,
   Loader2,
   AlertCircle,
+  Clock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -285,30 +286,44 @@ export default function FloorPlanManagerPage() {
                     No tables in this zone.
                   </p>
                 ) : (
-                  zone.tables.map((table) => (
-                    <div
-                      key={table.id}
-                      className="relative group border border-border rounded-xl p-4 flex flex-col items-center justify-center gap-2 hover:border-brand-300 transition-colors bg-white"
-                    >
-                      <div className="h-10 w-10 rounded-full bg-surface-2 flex items-center justify-center">
-                        <TableProperties className="h-5 w-5 text-content-secondary" />
-                      </div>
-                      <span className="font-bold text-content-primary">
-                        {table.table_number}
-                      </span>
-                      <div className="flex items-center gap-1 text-[10px] font-bold text-content-muted bg-surface-2 px-2 py-0.5 rounded-full">
-                        <Users className="h-3 w-3" /> {table.capacity}
-                      </div>
-
-                      {/* Delete Overlay */}
-                      <button
-                        onClick={() => handleDeleteTable(table.id)}
-                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-danger text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                  zone.tables.map((table) => {
+                    const statusColors: Record<string, string> = {
+                      AVAILABLE: 'bg-green-50 border-green-200 text-green-700',
+                      OCCUPIED: 'bg-red-50 border-red-200 text-red-700',
+                      RESERVED: 'bg-purple-50 border-purple-200 text-purple-700',
+                      BILLED: 'bg-orange-50 border-orange-200 text-orange-700',
+                      DIRTY: 'bg-gray-100 border-gray-300 text-gray-600',
+                    };
+                    const statusCfg = statusColors[table.status] || statusColors.AVAILABLE;
+                    return (
+                      <div
+                        key={table.id}
+                        className={`relative group border rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-colors ${statusCfg}`}
                       >
-                        <Trash2 className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))
+                        <div className="h-10 w-10 rounded-full bg-white/70 flex items-center justify-center">
+                          <TableProperties className="h-5 w-5" />
+                        </div>
+                        <span className="font-bold">{table.table_number}</span>
+                        <div className="flex items-center gap-1 text-[10px] font-bold bg-white/70 px-2 py-0.5 rounded-full">
+                          <Users className="h-3 w-3" /> {table.capacity}
+                        </div>
+                        {table.status === 'RESERVED' && (
+                          <div className="flex items-center gap-0.5 text-[10px] bg-purple-100 px-1.5 py-0.5 rounded-full">
+                            <Clock className="h-2.5 w-2.5" />
+                            Reserved
+                          </div>
+                        )}
+
+                        {/* Delete Overlay */}
+                        <button
+                          onClick={() => handleDeleteTable(table.id)}
+                          className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-danger text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </div>
+                    );
+                  })
                 )}
               </div>
             </div>

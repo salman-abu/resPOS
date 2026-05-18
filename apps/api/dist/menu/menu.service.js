@@ -94,7 +94,7 @@ let MenuService = class MenuService {
                 category_id: data.category_id,
                 is_available: true,
                 sort_order: maxOrder + 1,
-                item_type: 'VEG',
+                item_type: data.item_type || 'VEG',
                 tax_slab: 'GST_5',
                 station_route: 'HOT_KITCHEN',
                 modifier_groups: data.modifier_groups

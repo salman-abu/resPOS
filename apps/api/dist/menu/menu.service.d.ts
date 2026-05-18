@@ -99,6 +99,7 @@ export declare class MenuService {
         description?: string;
         price: number;
         category_id: string;
+        item_type?: string;
         is_veg?: boolean;
         is_spicy?: boolean;
         is_bestseller?: boolean;
@@ -132,6 +133,7 @@ export declare class MenuService {
         description?: string;
         price?: number;
         category_id?: string;
+        item_type?: string;
         is_veg?: boolean;
         is_spicy?: boolean;
         is_bestseller?: boolean;

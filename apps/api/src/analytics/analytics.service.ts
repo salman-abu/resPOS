@@ -677,4 +677,82 @@ export class AnalyticsService {
 
     return mix;
   }
+
+  // ─── MOD-05: Menu Engineering (Boston Matrix) ─────────────────────────────
+  async getMenuEngineering(tenantId: string, from?: Date, to?: Date) {
+    const startDate = from ?? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const endDate = to ?? new Date();
+
+    const items = await this.prisma.item.findMany({
+      where: { tenant_id: tenantId, is_available: true },
+      include: {
+        recipes: { include: { ingredient: true } },
+        category: { select: { name: true } },
+        order_items: {
+          where: {
+            order: { created_at: { gte: startDate, lte: endDate } },
+          },
+          select: { quantity: true, unit_price: true },
+        },
+      },
+    });
+
+    const results = items.map((item) => {
+      const soldCount = item.order_items.reduce((s, oi) => s + oi.quantity, 0);
+      const revenue = item.order_items.reduce(
+        (s, oi) => s + oi.unit_price * oi.quantity,
+        0,
+      );
+
+      // Calculate ingredient cost
+      let ingredientCost = 0;
+      for (const recipe of item.recipes) {
+        ingredientCost +=
+          recipe.quantity_used * recipe.ingredient.cost_per_unit;
+      }
+
+      const marginPct =
+        item.base_price > 0
+          ? ((item.base_price - ingredientCost) / item.base_price) * 100
+          : 0;
+
+      return {
+        id: item.id,
+        name: item.name,
+        category: item.category?.name ?? 'Uncategorized',
+        sold_count: soldCount,
+        revenue,
+        ingredient_cost: ingredientCost,
+        margin_pct: Math.round(marginPct * 100) / 100,
+      };
+    });
+
+    // Compute medians for quadrant classification
+    const soldCounts = results.map((r) => r.sold_count).sort((a, b) => a - b);
+    const margins = results.map((r) => r.margin_pct).sort((a, b) => a - b);
+
+    const medianSold =
+      soldCounts.length > 0 ? soldCounts[Math.floor(soldCounts.length / 2)] : 0;
+    const medianMargin =
+      margins.length > 0 ? margins[Math.floor(margins.length / 2)] : 0;
+
+    const withQuadrants = results.map((r) => {
+      const highPop = r.sold_count >= medianSold;
+      const highMargin = r.margin_pct >= medianMargin;
+
+      let quadrant: string;
+      if (highPop && highMargin) quadrant = 'STAR';
+      else if (highPop && !highMargin) quadrant = 'PLOW_HORSE';
+      else if (!highPop && highMargin) quadrant = 'PUZZLE';
+      else quadrant = 'DOG';
+
+      return { ...r, quadrant };
+    });
+
+    return {
+      items: withQuadrants,
+      thresholds: { median_sold: medianSold, median_margin: medianMargin },
+      period: { from: startDate.toISOString(), to: endDate.toISOString() },
+    };
+  }
 }

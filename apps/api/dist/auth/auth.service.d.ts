@@ -15,22 +15,24 @@ export declare class AuthService {
             role: import("@prisma/client").$Enums.Role;
         }[];
     }>;
-    loginWithPin(tenantId: string, userId: string, pin: string): Promise<{
+    loginWithPin(tenantId: string, userId: string, pin: string, mode?: 'LIVE' | 'TRAINING'): Promise<{
         access_token: string;
         user: {
             id: string;
             name: string;
             role: import("@prisma/client").$Enums.Role;
             tenant_id: string;
+            mode: "LIVE" | "TRAINING";
         };
     }>;
-    loginOwner(email: string, pin: string): Promise<{
+    loginOwner(email: string, pin: string, mode?: 'LIVE' | 'TRAINING'): Promise<{
         access_token: string;
         user: {
             id: string;
             name: string;
             role: "OWNER";
             tenant_id: string;
+            mode: "LIVE" | "TRAINING";
         };
     }>;
     verifyManagerPin(tenantId: string, managerId: string, pin: string): Promise<{

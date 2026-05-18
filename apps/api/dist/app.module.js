@@ -32,6 +32,15 @@ const customers_module_1 = require("./customers/customers.module");
 const audit_module_1 = require("./audit/audit.module");
 const bookings_module_1 = require("./bookings/bookings.module");
 const sync_module_1 = require("./sync/sync.module");
+const training_module_1 = require("./training/training.module");
+const training_interceptor_1 = require("./training/training.interceptor");
+const cron_module_1 = require("./cron/cron.module");
+const shift_report_module_1 = require("./shift-report/shift-report.module");
+const display_module_1 = require("./display/display.module");
+const upsell_module_1 = require("./upsell/upsell.module");
+const whatsapp_module_1 = require("./whatsapp/whatsapp.module");
+const reservation_module_1 = require("./reservation/reservation.module");
+const kiosk_module_1 = require("./kiosk/kiosk.module");
 const throttler_1 = require("@nestjs/throttler");
 const core_1 = require("@nestjs/core");
 let AppModule = class AppModule {
@@ -69,9 +78,21 @@ exports.AppModule = AppModule = __decorate([
             customers_module_1.CustomersModule,
             bookings_module_1.BookingsModule,
             sync_module_1.SyncModule,
+            training_module_1.TrainingModule,
+            cron_module_1.CronModule,
+            shift_report_module_1.ShiftReportModule,
+            display_module_1.DisplayModule,
+            upsell_module_1.UpsellModule,
+            whatsapp_module_1.WhatsappModule,
+            reservation_module_1.ReservationModule,
+            kiosk_module_1.KioskModule,
         ],
         controllers: [app_controller_1.AppController],
-        providers: [app_service_1.AppService, { provide: core_1.APP_GUARD, useClass: throttler_1.ThrottlerGuard }],
+        providers: [
+            app_service_1.AppService,
+            { provide: core_1.APP_GUARD, useClass: throttler_1.ThrottlerGuard },
+            { provide: core_1.APP_INTERCEPTOR, useClass: training_interceptor_1.TrainingInterceptor },
+        ],
     })
 ], AppModule);
 //# sourceMappingURL=app.module.js.map

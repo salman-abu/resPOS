@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import localFont from 'next/font/local';
 import './globals.css';
 import { NavigationProgress } from '@/components/NavigationProgress';
+import { ToastProvider } from '@/components/ui/Toast';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -56,7 +57,24 @@ export default function RootLayout({
         className={`${inter.variable} ${geistMono.variable} font-sans antialiased bg-surface-base text-content-primary`}
       >
         <NavigationProgress />
-        {children}
+        <ToastProvider>
+          {children}
+        </ToastProvider>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js').then(function(reg) {
+                    console.log('ServiceWorker registration successful with scope: ', reg.scope);
+                  }, function(err) {
+                    console.log('ServiceWorker registration failed: ', err);
+                  });
+                });
+              }
+            `,
+          }}
+        />
       </body>
     </html>
   );

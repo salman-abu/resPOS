@@ -50,13 +50,17 @@ export declare class OrdersController {
         customer_id: string | null;
         order_name: string | null;
         brand_id: string | null;
-        source: string | null;
+        source: import("@prisma/client").$Enums.OrderSource;
+        kot_number: string | null;
+        training_session_id: string | null;
         aggregator_source: import("@prisma/client").$Enums.AggregatorSource | null;
         aggregator_order_id: string | null;
         external_ref: string | null;
         is_tab_open: boolean;
         tab_name: string | null;
         queue_token_number: number | null;
+        kiosk_session_id: string | null;
+        kiosk_terminal_id: string | null;
         customer_phone: string | null;
         delivery_address: string | null;
         estimated_time: Date | null;
@@ -118,13 +122,17 @@ export declare class OrdersController {
         customer_id: string | null;
         order_name: string | null;
         brand_id: string | null;
-        source: string | null;
+        source: import("@prisma/client").$Enums.OrderSource;
+        kot_number: string | null;
+        training_session_id: string | null;
         aggregator_source: import("@prisma/client").$Enums.AggregatorSource | null;
         aggregator_order_id: string | null;
         external_ref: string | null;
         is_tab_open: boolean;
         tab_name: string | null;
         queue_token_number: number | null;
+        kiosk_session_id: string | null;
+        kiosk_terminal_id: string | null;
         customer_phone: string | null;
         delivery_address: string | null;
         estimated_time: Date | null;
@@ -157,13 +165,17 @@ export declare class OrdersController {
         customer_id: string | null;
         order_name: string | null;
         brand_id: string | null;
-        source: string | null;
+        source: import("@prisma/client").$Enums.OrderSource;
+        kot_number: string | null;
+        training_session_id: string | null;
         aggregator_source: import("@prisma/client").$Enums.AggregatorSource | null;
         aggregator_order_id: string | null;
         external_ref: string | null;
         is_tab_open: boolean;
         tab_name: string | null;
         queue_token_number: number | null;
+        kiosk_session_id: string | null;
+        kiosk_terminal_id: string | null;
         customer_phone: string | null;
         delivery_address: string | null;
         estimated_time: Date | null;
@@ -233,13 +245,17 @@ export declare class OrdersController {
         customer_id: string | null;
         order_name: string | null;
         brand_id: string | null;
-        source: string | null;
+        source: import("@prisma/client").$Enums.OrderSource;
+        kot_number: string | null;
+        training_session_id: string | null;
         aggregator_source: import("@prisma/client").$Enums.AggregatorSource | null;
         aggregator_order_id: string | null;
         external_ref: string | null;
         is_tab_open: boolean;
         tab_name: string | null;
         queue_token_number: number | null;
+        kiosk_session_id: string | null;
+        kiosk_terminal_id: string | null;
         customer_phone: string | null;
         delivery_address: string | null;
         estimated_time: Date | null;
@@ -284,6 +300,7 @@ export declare class OrdersController {
             kot_number: string;
             printed_at: Date | null;
             fired_by_id: string;
+            training_session_id: string | null;
         })[];
         invoices: ({
             payments: {
@@ -303,6 +320,7 @@ export declare class OrdersController {
             total: number;
             order_id: string;
             printed_at: Date | null;
+            training_session_id: string | null;
             invoice_number: string;
             subtotal: number;
             cgst: number;
@@ -361,13 +379,17 @@ export declare class OrdersController {
         customer_id: string | null;
         order_name: string | null;
         brand_id: string | null;
-        source: string | null;
+        source: import("@prisma/client").$Enums.OrderSource;
+        kot_number: string | null;
+        training_session_id: string | null;
         aggregator_source: import("@prisma/client").$Enums.AggregatorSource | null;
         aggregator_order_id: string | null;
         external_ref: string | null;
         is_tab_open: boolean;
         tab_name: string | null;
         queue_token_number: number | null;
+        kiosk_session_id: string | null;
+        kiosk_terminal_id: string | null;
         customer_phone: string | null;
         delivery_address: string | null;
         estimated_time: Date | null;
@@ -480,13 +502,17 @@ export declare class OrdersController {
         customer_id: string | null;
         order_name: string | null;
         brand_id: string | null;
-        source: string | null;
+        source: import("@prisma/client").$Enums.OrderSource;
+        kot_number: string | null;
+        training_session_id: string | null;
         aggregator_source: import("@prisma/client").$Enums.AggregatorSource | null;
         aggregator_order_id: string | null;
         external_ref: string | null;
         is_tab_open: boolean;
         tab_name: string | null;
         queue_token_number: number | null;
+        kiosk_session_id: string | null;
+        kiosk_terminal_id: string | null;
         customer_phone: string | null;
         delivery_address: string | null;
         estimated_time: Date | null;
@@ -507,13 +533,17 @@ export declare class OrdersController {
         customer_id: string | null;
         order_name: string | null;
         brand_id: string | null;
-        source: string | null;
+        source: import("@prisma/client").$Enums.OrderSource;
+        kot_number: string | null;
+        training_session_id: string | null;
         aggregator_source: import("@prisma/client").$Enums.AggregatorSource | null;
         aggregator_order_id: string | null;
         external_ref: string | null;
         is_tab_open: boolean;
         tab_name: string | null;
         queue_token_number: number | null;
+        kiosk_session_id: string | null;
+        kiosk_terminal_id: string | null;
         customer_phone: string | null;
         delivery_address: string | null;
         estimated_time: Date | null;
@@ -531,6 +561,13 @@ export declare class OrdersController {
     voidItem(req: any, id: string, itemId: string): Promise<{
         job_id: string;
         undo_window_ms: number;
+    }>;
+    loadTemplate(req: any, body: {
+        history_id: string;
+    }): Promise<{
+        items: any[];
+        skipped: string[];
+        original_total: any;
     }>;
 }
 export declare class VoidJobController {

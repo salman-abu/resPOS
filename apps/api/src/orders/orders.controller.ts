@@ -38,6 +38,7 @@ export class OrdersController {
         req.tenantId,
         req.user.sub,
         dto,
+        req.trainingSessionId,
       );
     } catch (e: any) {
       throw new HttpException(e.message || String(e), 400);
@@ -48,9 +49,16 @@ export class OrdersController {
   @Get('active')
   getActiveOrders(@Req() req: any, @Query('table_id') tableId?: string) {
     if (tableId) {
-      return this.ordersService.getActiveOrderByTable(req.tenantId, tableId);
+      return this.ordersService.getActiveOrderByTable(
+        req.tenantId,
+        tableId,
+        req.trainingSessionId,
+      );
     }
-    return this.ordersService.getActiveOrders(req.tenantId);
+    return this.ordersService.getActiveOrders(
+      req.tenantId,
+      req.trainingSessionId,
+    );
   }
 
   /** GET /orders/tabs — Get all open bar tabs */
@@ -172,6 +180,12 @@ export class OrdersController {
     @Body('item_id') itemId: string,
   ) {
     return this.ordersService.voidItem(req.tenantId, id, itemId, req.user.sub);
+  }
+
+  /** POST /orders/load-template — Load a previous order snapshot into a new cart */
+  @Post('load-template')
+  async loadTemplate(@Req() req: any, @Body() body: { history_id: string }) {
+    return this.ordersService.loadTemplate(req.tenantId, body.history_id);
   }
 }
 

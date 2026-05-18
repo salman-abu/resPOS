@@ -153,6 +153,39 @@ export class LoyaltyService {
             points: pointsEarned,
           },
         });
+
+        // MOD-02: Also update LoyaltyAccount + Ledger
+        if (customer.mobile) {
+          const account = await tx.loyaltyAccount.upsert({
+            where: {
+              tenant_id_customer_phone: {
+                tenant_id: tenantId,
+                customer_phone: customer.mobile,
+              },
+            },
+            update: {
+              points_balance: { increment: pointsEarned },
+              lifetime_points: { increment: pointsEarned },
+            },
+            create: {
+              tenant_id: tenantId,
+              customer_phone: customer.mobile,
+              points_balance: pointsEarned,
+              lifetime_points: pointsEarned,
+            },
+          });
+
+          await tx.loyaltyLedger.create({
+            data: {
+              tenant_id: tenantId,
+              account_id: account.id,
+              order_id: orderId,
+              type: LoyaltyTxType.EARN,
+              points: pointsEarned,
+              note: `Earned from order ${orderId}`,
+            },
+          });
+        }
       });
     }
   }
@@ -194,11 +227,208 @@ export class LoyaltyService {
         },
       });
 
+      // Also update LoyaltyAccount and create Ledger entry (MOD-02)
+      if (customer.mobile) {
+        const account = await tx.loyaltyAccount.findUnique({
+          where: {
+            tenant_id_customer_phone: {
+              tenant_id: tenantId,
+              customer_phone: customer.mobile,
+            },
+          },
+        });
+        if (account) {
+          await tx.loyaltyAccount.update({
+            where: { id: account.id },
+            data: { points_balance: { decrement: dto.points } },
+          });
+          await tx.loyaltyLedger.create({
+            data: {
+              tenant_id: tenantId,
+              account_id: account.id,
+              type: LoyaltyTxType.REDEEM,
+              points: -dto.points,
+              note: 'Redeemed at POS',
+            },
+          });
+        }
+      }
+
       return {
         success: true,
         balance: updatedCustomer.loyalty_points,
         transaction: txRecord,
       };
+    });
+  }
+
+  // ─── MOD-02: Loyalty Account by Phone ───────────────────────────────────
+  async getAccountByPhone(tenantId: string, phone: string) {
+    const customer = await this.prisma.customer.findFirst({
+      where: { tenant_id: tenantId, mobile: phone },
+    });
+
+    const account = await this.prisma.loyaltyAccount.findUnique({
+      where: {
+        tenant_id_customer_phone: {
+          tenant_id: tenantId,
+          customer_phone: phone,
+        },
+      },
+      include: {
+        ledgers: { orderBy: { created_at: 'desc' }, take: 10 },
+      },
+    });
+
+    const stampProgress = await this.prisma.stampProgress.findMany({
+      where: { tenant_id: tenantId, customer_phone: phone },
+      include: { stamp_card: true },
+    });
+
+    return {
+      customer: customer
+        ? {
+            id: customer.id,
+            name: customer.name,
+            mobile: customer.mobile,
+            tier: customer.tier,
+          }
+        : null,
+      balance: account?.points_balance ?? customer?.loyalty_points ?? 0,
+      lifetimePoints: account?.lifetime_points ?? 0,
+      ledgers: account?.ledgers ?? [],
+      stampCards: stampProgress.map((sp) => ({
+        id: sp.stamp_card.id,
+        name: sp.stamp_card.name,
+        goal: sp.stamp_card.goal_count,
+        count: sp.count,
+        completed: !!sp.completed_at,
+        rewardDescription: sp.stamp_card.reward_description,
+      })),
+    };
+  }
+
+  // ─── MOD-02: Stamp Card CRUD ────────────────────────────────────────────
+  async createStampCard(
+    tenantId: string,
+    data: {
+      name: string;
+      goalCount: number;
+      rewardDescription: string;
+      triggerMenuItemId?: string;
+      rewardMenuItemId?: string;
+    },
+  ) {
+    return this.prisma.stampCard.create({
+      data: {
+        tenant_id: tenantId,
+        name: data.name,
+        goal_count: data.goalCount,
+        reward_description: data.rewardDescription,
+        trigger_menu_item_id: data.triggerMenuItemId,
+        reward_menu_item_id: data.rewardMenuItemId,
+      },
+    });
+  }
+
+  async listStampCards(tenantId: string) {
+    return this.prisma.stampCard.findMany({
+      where: { tenant_id: tenantId },
+      orderBy: { created_at: 'desc' },
+    });
+  }
+
+  async toggleStampCard(tenantId: string, id: string) {
+    const card = await this.prisma.stampCard.findFirst({
+      where: { id, tenant_id: tenantId },
+    });
+    if (!card) throw new NotFoundException('Stamp card not found');
+    return this.prisma.stampCard.update({
+      where: { id },
+      data: { is_active: !card.is_active },
+    });
+  }
+
+  // ─── MOD-02: Award Stamps on Settlement ─────────────────────────────────
+  async awardStamps(
+    tenantId: string,
+    customerPhone: string,
+    orderItems: { item_id: string; quantity: number }[],
+  ) {
+    const activeCards = await this.prisma.stampCard.findMany({
+      where: { tenant_id: tenantId, is_active: true },
+    });
+
+    const results: any[] = [];
+
+    for (const card of activeCards) {
+      let stampsEarned = 0;
+      for (const oi of orderItems) {
+        if (
+          !card.trigger_menu_item_id ||
+          card.trigger_menu_item_id === oi.item_id
+        ) {
+          stampsEarned += oi.quantity;
+        }
+      }
+
+      if (stampsEarned > 0) {
+        const progress = await this.prisma.stampProgress.upsert({
+          where: {
+            tenant_id_stamp_card_id_customer_phone: {
+              tenant_id: tenantId,
+              stamp_card_id: card.id,
+              customer_phone: customerPhone,
+            },
+          },
+          update: {
+            count: { increment: stampsEarned },
+          },
+          create: {
+            tenant_id: tenantId,
+            stamp_card_id: card.id,
+            customer_phone: customerPhone,
+            count: stampsEarned,
+          },
+        });
+
+        // Check completion
+        if (progress.count >= card.goal_count && !progress.completed_at) {
+          await this.prisma.stampProgress.update({
+            where: { id: progress.id },
+            data: { completed_at: new Date() },
+          });
+          results.push({ cardId: card.id, name: card.name, completed: true });
+        } else {
+          results.push({
+            cardId: card.id,
+            name: card.name,
+            completed: false,
+            count: progress.count,
+          });
+        }
+      }
+    }
+
+    return results;
+  }
+
+  // ─── MOD-02: Sync Customer → LoyaltyAccount on Earn ──────────────────────
+  async ensureAccount(tenantId: string, phone: string) {
+    const existing = await this.prisma.loyaltyAccount.findUnique({
+      where: {
+        tenant_id_customer_phone: {
+          tenant_id: tenantId,
+          customer_phone: phone,
+        },
+      },
+    });
+    if (existing) return existing;
+    return this.prisma.loyaltyAccount.create({
+      data: {
+        tenant_id: tenantId,
+        customer_phone: phone,
+      },
     });
   }
 }

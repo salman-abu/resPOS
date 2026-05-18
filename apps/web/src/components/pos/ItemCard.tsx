@@ -61,13 +61,7 @@ export function ItemCard({
   const handleClick = (e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (managerMode) {
-      if (
-        confirm(
-          `Mark "${item.name}" as ${isAvailable ? 'SOLD OUT' : 'AVAILABLE'}?`,
-        )
-      ) {
-        onAdd(item); // We will hijack onAdd for manager mode action in page.tsx
-      }
+      onAdd(item);
     } else {
       if (isAvailable) onAdd(item);
     }
@@ -145,14 +139,14 @@ export function ItemCard({
           {!managerMode && isAvailable && (
             <button
               className={cn(
-                'h-6 w-6 flex items-center justify-center border active:scale-[0.85] transition-transform duration-75',
+                'h-11 w-11 flex items-center justify-center border active:scale-[0.85] transition-transform duration-75',
                 inCartQty > 0
                   ? 'bg-success-default text-content-inverse border-success-default'
                   : 'bg-surface-sunken text-content-secondary border-border-strong active:bg-border-strong active:text-content-inverse',
               )}
               onClick={handleClick}
             >
-              <Plus className="h-3.5 w-3.5" />
+              <Plus className="h-4 w-4" />
             </button>
           )}
         </div>

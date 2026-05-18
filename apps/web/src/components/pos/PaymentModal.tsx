@@ -99,7 +99,7 @@ function Row({
       <span
         className={cn(
           'text-xs font-bold uppercase tracking-wider',
-          muted ? 'text-slate-500' : 'text-slate-400',
+          muted ? 'text-content-muted' : 'text-content-secondary',
         )}
       >
         {label}
@@ -107,7 +107,7 @@ function Row({
       <span
         className={cn(
           'font-mono tracking-tight',
-          bold ? 'text-slate-100 font-black' : 'text-slate-300 font-bold',
+          bold ? 'text-content-primary font-black' : 'text-content-primary font-bold',
         )}
         style={{
           fontVariantNumeric: 'tabular-nums',
@@ -166,6 +166,30 @@ export default function PaymentModal({
             (oi: any) => !oi.invoice_id && oi.status !== 'VOID',
           ),
         );
+
+        // Check if there is an existing unpaid invoice for this order
+        if (data.invoices && data.invoices.length > 0) {
+          const unpaidInvoice = data.invoices.find((inv: any) => {
+            const paid = inv.payments
+              .filter((p: any) => p.status === 'SUCCESS')
+              .reduce((s: any, p: any) => s + p.amount, 0);
+            return paid < inv.total;
+          });
+
+          if (unpaidInvoice) {
+            setInvoiceId(unpaidInvoice.id);
+            setInvoiceData({ invoice: unpaidInvoice });
+            setStep('payment');
+            const alreadyPaid = unpaidInvoice.payments
+              .filter((p: any) => p.status === 'SUCCESS')
+              .reduce((s: any, p: any) => s + p.amount, 0);
+            const rem = unpaidInvoice.total - alreadyPaid;
+            setLines([
+              { id: nid(), method: 'CASH', amount: fmt(rem) },
+            ]);
+            setError(null);
+          }
+        }
       }
     } catch (e) {
       console.error('Fetch Order Error:', e);
@@ -173,8 +197,8 @@ export default function PaymentModal({
   }, [orderId]);
 
   useEffect(() => {
-    if (isSplitMode) fetchOrderDetails();
-  }, [isSplitMode, fetchOrderDetails]);
+    fetchOrderDetails();
+  }, [fetchOrderDetails]);
 
   const splitTotal = selectedItemIds.reduce((acc, id) => {
     const item = orderItems.find((oi) => oi.id === id);
@@ -203,7 +227,7 @@ export default function PaymentModal({
     (s, l) => s + (Number(l.amount) || 0) * 100,
     0,
   );
-  const balance = billTotal - paidSoFar;
+  const balance = (invoiceData?.invoice?.total ?? billTotal) - paidSoFar;
 
   const addLine = () =>
     setLines((p) => [...p, { id: nid(), method: 'CASH', amount: '' }]);
@@ -317,12 +341,12 @@ export default function PaymentModal({
       style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(4px)' }}
     >
       <div
-        className="relative w-full max-w-lg rounded-sm overflow-hidden border-2 border-slate-700"
-        style={{ background: '#0B0F19' }}
+        className="relative w-full max-w-lg rounded-sm overflow-hidden border-2 border-border-subtle"
+        style={{ background: 'var(--surface-base)' }}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b-2 border-slate-800 bg-slate-950">
+        <div className="flex items-center justify-between px-6 py-4 border-b-2 border-border-strong bg-surface-base">
           <div>
-            <h2 className="text-lg font-black text-slate-100 uppercase tracking-widest">
+            <h2 className="text-lg font-black text-content-primary uppercase tracking-widest">
               {step === 'billing'
                 ? 'Generate Bill'
                 : step === 'payment'
@@ -330,30 +354,30 @@ export default function PaymentModal({
                   : 'Settled!'}
             </h2>
             {tableNumber && (
-              <p className="text-xs mt-0.5 text-slate-500 font-mono tracking-tight uppercase">
+              <p className="text-xs mt-0.5 text-content-muted font-mono tracking-tight uppercase">
                 Table {tableNumber}
               </p>
             )}
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-slate-500 active:text-slate-300 active:scale-[0.92] transition-all"
+            className="p-3 min-w-[44px] min-h-[44px] flex items-center justify-center text-content-muted active:text-content-primary active:scale-[0.92] transition-all"
           >
             <X size={18} />
           </button>
         </div>
 
-        <div className="p-6 space-y-5 max-h-[75vh] overflow-y-auto bg-slate-900">
+        <div className="p-6 space-y-5 max-h-[75vh] overflow-y-auto bg-surface-card">
           {step === 'success' && (
             <div className="text-center py-8 space-y-4">
               <div className="w-20 h-20 bg-lime-500/10 border-2 border-lime-500/30 flex items-center justify-center mx-auto">
                 <CheckCircle2 size={40} className="text-lime-400" />
               </div>
               <div>
-                <p className="text-xl font-black text-slate-100 uppercase tracking-widest">
+                <p className="text-xl font-black text-content-primary uppercase tracking-widest">
                   Payment Complete
                 </p>
-                <p className="text-sm mt-1 text-slate-500 font-mono tracking-tight uppercase">
+                <p className="text-sm mt-1 text-content-muted font-mono tracking-tight uppercase">
                   Invoice #{invoiceData?.invoice?.invoice_number}
                 </p>
               </div>
@@ -372,7 +396,7 @@ export default function PaymentModal({
               )}
               <button
                 onClick={onClose}
-                className="w-full py-3 border-2 border-cyan-500 bg-cyan-500 text-slate-900 font-black text-sm uppercase tracking-widest active:bg-cyan-400 active:scale-[0.97] transition-all duration-75"
+                className="w-full py-3 border-2 border-cyan-500 bg-cyan-500 text-content-inverse font-black text-sm uppercase tracking-widest active:bg-cyan-400 active:scale-[0.97] transition-all duration-75"
               >
                 Done
               </button>
@@ -383,7 +407,7 @@ export default function PaymentModal({
             <div className="space-y-6">
               {/* Split Toggle */}
               <div className="flex items-center justify-between">
-                <h3 className="font-black text-lg text-slate-100 uppercase tracking-widest">
+                <h3 className="font-black text-lg text-content-primary uppercase tracking-widest">
                   Bill Summary
                 </h3>
                 <button
@@ -391,8 +415,8 @@ export default function PaymentModal({
                   className={cn(
                     'px-4 py-1.5 text-xs font-black uppercase tracking-widest border-2 active:scale-[0.97] transition-all duration-75',
                     isSplitMode
-                      ? 'bg-fuchsia-500 text-slate-900 border-fuchsia-400'
-                      : 'bg-slate-800 text-slate-300 border-slate-700 active:bg-slate-700',
+                      ? 'bg-fuchsia-500 text-content-inverse border-fuchsia-400'
+                      : 'bg-surface-sunken text-content-primary border-border-subtle active:bg-slate-700',
                   )}
                 >
                   {isSplitMode ? 'Exit Split' : 'Split by Items'}
@@ -401,7 +425,7 @@ export default function PaymentModal({
 
               {isSplitMode ? (
                 <div className="space-y-3 max-h-[40vh] overflow-y-auto pr-2 scrollbar-none">
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2">
+                  <p className="text-[10px] font-black text-content-muted uppercase tracking-[0.2em] mb-2">
                     Select items for this payment
                   </p>
                   {orderItems.map((item) => (
@@ -418,7 +442,7 @@ export default function PaymentModal({
                         'p-3 border-2 cursor-pointer flex justify-between items-center active:scale-[0.98] transition-transform duration-75',
                         selectedItemIds.includes(item.id)
                           ? 'bg-fuchsia-500/10 border-fuchsia-500/40'
-                          : 'bg-slate-800 border-slate-700 active:border-slate-600',
+                          : 'bg-surface-sunken border-border-subtle active:border-border-strong',
                       )}
                     >
                       <div className="flex items-center gap-3">
@@ -426,8 +450,8 @@ export default function PaymentModal({
                           className={cn(
                             'h-5 w-5 border-2 flex items-center justify-center transition-all',
                             selectedItemIds.includes(item.id)
-                              ? 'bg-fuchsia-500 border-fuchsia-400 text-slate-900'
-                              : 'border-slate-600',
+                              ? 'bg-fuchsia-500 border-fuchsia-400 text-content-inverse'
+                              : 'border-border-strong',
                           )}
                         >
                           {selectedItemIds.includes(item.id) && (
@@ -435,16 +459,16 @@ export default function PaymentModal({
                           )}
                         </div>
                         <div>
-                          <p className="font-bold text-sm text-slate-100 tracking-tight">
+                          <p className="font-bold text-sm text-content-primary tracking-tight">
                             {item.item.name}
                           </p>
-                          <p className="text-[10px] text-slate-500 font-mono tracking-tight">
+                          <p className="text-[10px] text-content-muted font-mono tracking-tight">
                             Qty: {item.quantity}
                           </p>
                         </div>
                       </div>
                       <span
-                        className="font-black text-sm text-slate-100 font-mono tracking-tight"
+                        className="font-black text-sm text-content-primary font-mono tracking-tight"
                         style={{ fontVariantNumeric: 'tabular-nums' }}
                       >
                         ₹{fmt(item.unit_price * item.quantity)}
@@ -452,14 +476,14 @@ export default function PaymentModal({
                     </div>
                   ))}
                   {orderItems.length === 0 && (
-                    <p className="text-center py-10 text-slate-500 font-black uppercase text-[10px] tracking-[0.2em]">
+                    <p className="text-center py-10 text-content-muted font-black uppercase text-[10px] tracking-[0.2em]">
                       No items left to bill
                     </p>
                   )}
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="border-2 border-slate-800 bg-slate-950 p-4 space-y-2">
+                  <div className="border-2 border-border-strong bg-surface-base p-4 space-y-2">
                     <Row label="Subtotal" val={`₹${fmt(totals.subtotal)}`} />
                     <Row
                       label="Taxes"
@@ -491,15 +515,15 @@ export default function PaymentModal({
 
               <div className="p-5 bg-cyan-500 flex justify-between items-center border-2 border-cyan-400">
                 <div className="flex flex-col">
-                  <span className="text-[10px] font-black text-slate-900 uppercase tracking-[0.2em]">
+                  <span className="text-[10px] font-black text-content-inverse uppercase tracking-[0.2em]">
                     Payable Now
                   </span>
-                  <span className="text-sm font-bold text-slate-900/70">
+                  <span className="text-sm font-bold text-content-inverse/70">
                     Inclusive of all taxes
                   </span>
                 </div>
                 <span
-                  className="text-4xl font-black text-slate-900 tracking-tight font-mono"
+                  className="text-4xl font-black text-content-inverse tracking-tight font-mono"
                   style={{ fontVariantNumeric: 'tabular-nums' }}
                 >
                   ₹{fmt(effectiveTotal)}
@@ -508,11 +532,11 @@ export default function PaymentModal({
 
               {!isSplitMode && (
                 <div className="space-y-4">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] block">
+                  <label className="text-[10px] font-black text-content-muted uppercase tracking-[0.2em] block">
                     Discount (Optional)
                   </label>
                   <div className="flex gap-2">
-                    <div className="flex overflow-hidden border-2 border-slate-700 bg-slate-950">
+                    <div className="flex overflow-hidden border-2 border-border-subtle bg-surface-base">
                       {(['FLAT', 'PERCENT'] as const).map((t) => (
                         <button
                           key={t}
@@ -520,8 +544,8 @@ export default function PaymentModal({
                           className={cn(
                             'px-4 py-2 text-xs font-black uppercase tracking-widest active:scale-[0.97] transition-all duration-75',
                             dType === t
-                              ? 'bg-cyan-500 text-slate-900'
-                              : 'text-slate-400 active:bg-slate-800 active:text-slate-200',
+                              ? 'bg-cyan-500 text-content-inverse'
+                              : 'text-content-secondary active:bg-surface-sunken active:text-content-primary',
                           )}
                         >
                           {t === 'FLAT' ? '₹' : '%'}
@@ -533,21 +557,21 @@ export default function PaymentModal({
                       value={discount}
                       onChange={(e) => setDiscount(e.target.value)}
                       placeholder="Enter amount"
-                      className="flex-1 px-4 py-2 text-sm bg-slate-950 border-2 border-slate-700 outline-none focus:border-cyan-500 text-slate-100 font-mono tracking-tight placeholder:text-slate-600"
+                      className="flex-1 px-4 py-2 text-sm bg-surface-base border-2 border-border-subtle outline-none focus:border-cyan-500 text-content-primary font-mono tracking-tight placeholder:text-content-muted"
                     />
                   </div>
 
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] block">
+                  <label className="text-[10px] font-black text-content-muted uppercase tracking-[0.2em] block">
                     Loyalty Membership
                   </label>
                   {cartCustomer ? (
                     <div className="p-3 bg-lime-500/10 border-2 border-lime-500/30 flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 bg-lime-500 text-slate-900 flex items-center justify-center text-xs font-black">
+                        <div className="h-8 w-8 bg-lime-500 text-content-inverse flex items-center justify-center text-xs font-black">
                           {cartCustomer.name[0]}
                         </div>
                         <div>
-                          <p className="text-xs font-black text-slate-100 tracking-tight uppercase">
+                          <p className="text-xs font-black text-content-primary tracking-tight uppercase">
                             {cartCustomer.name}
                           </p>
                           <p className="text-[9px] text-lime-400 font-black uppercase tracking-[0.2em]">
@@ -557,8 +581,8 @@ export default function PaymentModal({
                       </div>
                     </div>
                   ) : (
-                    <div className="p-3 border-2 border-dashed border-slate-700 text-center">
-                      <p className="text-[10px] text-slate-500 font-black uppercase italic tracking-[0.2em]">
+                    <div className="p-3 border-2 border-dashed border-border-subtle text-center">
+                      <p className="text-[10px] text-content-muted font-black uppercase italic tracking-[0.2em]">
                         No customer attached
                       </p>
                     </div>
@@ -586,7 +610,7 @@ export default function PaymentModal({
                   status === 'BUSY' ||
                   (isSplitMode && selectedItemIds.length === 0)
                 }
-                className="w-full py-4 border-2 border-cyan-400 bg-cyan-500 text-slate-900 font-black text-sm flex items-center justify-center gap-3 active:bg-cyan-400 active:scale-[0.98] disabled:opacity-30 transition-all duration-75 uppercase tracking-widest"
+                className="w-full py-4 border-2 border-cyan-400 bg-cyan-500 text-content-inverse font-black text-sm flex items-center justify-center gap-3 active:bg-cyan-400 active:scale-[0.98] disabled:opacity-30 transition-all duration-75 uppercase tracking-widest"
               >
                 {status === 'BUSY' ? (
                   <Loader2 size={18} className="animate-spin" />
@@ -603,16 +627,16 @@ export default function PaymentModal({
           {step === 'payment' && invoiceData && (
             <>
               <div className="p-4 text-center bg-cyan-500 border-2 border-cyan-400">
-                <p className="text-xs font-black opacity-70 text-slate-900 uppercase tracking-[0.2em]">
+                <p className="text-xs font-black opacity-70 text-content-inverse uppercase tracking-[0.2em]">
                   Bill Total
                 </p>
                 <p
-                  className="text-3xl font-black text-slate-900 mt-0.5 font-mono tracking-tight"
+                  className="text-3xl font-black text-content-inverse mt-0.5 font-mono tracking-tight"
                   style={{ fontVariantNumeric: 'tabular-nums' }}
                 >
                   ₹{fmt(invoiceData.invoice.total)}
                 </p>
-                <p className="text-xs text-slate-900/70 mt-0.5 font-mono tracking-tight uppercase">
+                <p className="text-xs text-content-inverse/70 mt-0.5 font-mono tracking-tight uppercase">
                   {invoiceData.invoice.invoice_number}
                 </p>
               </div>
@@ -623,10 +647,10 @@ export default function PaymentModal({
                     ? 'bg-lime-500/10 border-lime-500/30'
                     : balance < 0
                       ? 'bg-amber-500/10 border-amber-500/30'
-                      : 'bg-slate-950 border-slate-800',
+                      : 'bg-surface-base border-border-strong',
                 )}
               >
-                <span className="text-xs font-black text-slate-500 uppercase tracking-wider">
+                <span className="text-xs font-black text-content-muted uppercase tracking-wider">
                   {balance > 0
                     ? 'Remaining'
                     : balance < 0
@@ -640,7 +664,7 @@ export default function PaymentModal({
                       ? 'text-lime-400'
                       : balance < 0
                         ? 'text-amber-400'
-                        : 'text-slate-100',
+                        : 'text-content-primary',
                   )}
                   style={{ fontVariantNumeric: 'tabular-nums' }}
                 >
@@ -653,7 +677,7 @@ export default function PaymentModal({
                   return (
                     <div
                       key={line.id}
-                      className="p-3 space-y-2 bg-slate-950 border-2 border-slate-800"
+                      className="p-3 space-y-2 bg-surface-base border-2 border-border-strong"
                     >
                       <div className="flex items-center gap-2">
                         <div className="flex gap-1 flex-1 flex-wrap">
@@ -668,10 +692,10 @@ export default function PaymentModal({
                                     updateLine(line.id, { method: m })
                                   }
                                   className={cn(
-                                    'flex items-center gap-1 px-2 py-1.5 text-xs font-black uppercase tracking-wider border-2 active:scale-[0.97] transition-all duration-75',
+                                    'flex items-center gap-1 px-2 py-3 text-xs font-black uppercase tracking-wider border-2 active:scale-[0.97] transition-all duration-75',
                                     line.method === m
                                       ? `${M.bg} ${M.border} text-white`
-                                      : 'border-slate-700 text-slate-500 active:bg-slate-800 active:text-slate-300',
+                                      : 'border-border-subtle text-content-muted active:bg-surface-sunken active:text-content-primary',
                                   )}
                                 >
                                   <MI size={12} />
@@ -706,7 +730,7 @@ export default function PaymentModal({
                             onChange={(e) =>
                               updateLine(line.id, { amount: e.target.value })
                             }
-                            className="w-full pl-7 pr-3 py-2 text-sm font-black outline-none bg-slate-900 text-slate-100 font-mono tracking-tight placeholder:text-slate-600"
+                            className="w-full pl-7 pr-3 py-2 text-sm font-black outline-none bg-surface-card text-content-primary font-mono tracking-tight placeholder:text-content-muted"
                             style={{
                               border: `2px solid ${meta.color}44`,
                               fontVariantNumeric: 'tabular-nums',
@@ -734,7 +758,7 @@ export default function PaymentModal({
                               onClick={() =>
                                 updateLine(line.id, { amount: String(a) })
                               }
-                              className="px-2 py-1 text-xs font-black bg-slate-900 border-2 border-slate-700 text-slate-400 active:bg-slate-800 active:text-slate-200 active:scale-[0.92] transition-all duration-75"
+                              className="px-2 py-2.5 text-xs font-black bg-surface-card border-2 border-border-subtle text-content-secondary active:bg-surface-sunken active:text-content-primary active:scale-[0.92] transition-all duration-75"
                               style={{ fontVariantNumeric: 'tabular-nums' }}
                             >
                               ₹{a}
@@ -750,7 +774,7 @@ export default function PaymentModal({
                           onChange={(e) =>
                             updateLine(line.id, { upi_ref: e.target.value })
                           }
-                          className="w-full px-3 py-2 text-xs outline-none bg-slate-900 border-2 border-slate-700 text-slate-100 font-mono tracking-tight placeholder:text-slate-600"
+                          className="w-full px-3 py-2 text-xs outline-none bg-surface-card border-2 border-border-subtle text-content-primary font-mono tracking-tight placeholder:text-content-muted"
                         />
                       )}
                       {line.method === 'CARD' && (
@@ -763,7 +787,7 @@ export default function PaymentModal({
                               transaction_id: e.target.value,
                             })
                           }
-                          className="w-full px-3 py-2 text-xs outline-none bg-slate-900 border-2 border-slate-700 text-slate-100 font-mono tracking-tight placeholder:text-slate-600"
+                          className="w-full px-3 py-2 text-xs outline-none bg-surface-card border-2 border-border-subtle text-content-primary font-mono tracking-tight placeholder:text-content-muted"
                         />
                       )}
                     </div>
@@ -771,7 +795,7 @@ export default function PaymentModal({
                 })}
                 <button
                   onClick={addLine}
-                  className="w-full py-2.5 text-sm font-black flex items-center justify-center gap-2 border-2 border-dashed border-slate-700 text-slate-500 active:bg-slate-800 active:text-slate-300 active:scale-[0.98] transition-all duration-75 uppercase tracking-widest"
+                  className="w-full py-2.5 text-sm font-black flex items-center justify-center gap-2 border-2 border-dashed border-border-subtle text-content-muted active:bg-surface-sunken active:text-content-primary active:scale-[0.98] transition-all duration-75 uppercase tracking-widest"
                 >
                   <Plus size={14} /> Split Payment
                 </button>
@@ -784,7 +808,7 @@ export default function PaymentModal({
               <button
                 onClick={handleSettle}
                 disabled={loading || balance > 0}
-                className="w-full py-3.5 border-2 border-lime-400 bg-lime-500 text-slate-900 font-black text-sm flex items-center justify-center gap-2 disabled:opacity-40 active:bg-lime-400 active:scale-[0.98] transition-all duration-75 uppercase tracking-widest"
+                className="w-full py-3.5 border-2 border-lime-400 bg-lime-500 text-content-inverse font-black text-sm flex items-center justify-center gap-2 disabled:opacity-40 active:bg-lime-400 active:scale-[0.98] transition-all duration-75 uppercase tracking-widest"
               >
                 {loading ? (
                   <Loader2 size={18} className="animate-spin" />

@@ -41,6 +41,7 @@ export declare class KdsController {
         kot_number: string;
         printed_at: Date | null;
         fired_by_id: string;
+        training_session_id: string | null;
     })[]>;
     markItemDone(req: any, kotId: string, itemId: string, done: boolean): Promise<{
         success: boolean;

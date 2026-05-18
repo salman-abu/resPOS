@@ -42,6 +42,7 @@ import ThermalBill from '@/components/pos/ThermalBill';
 import { ItemCustomiserModal } from '@/components/pos/ItemCustomiserModal';
 import { ErrorBoundary } from '@/components/shared';
 import { useCartStore, calcCartTotals } from '@/store/cart';
+import { useToast } from '@/components/ui/Toast';
 import {
   isMenuCacheStale,
   seedMenuCache,
@@ -83,6 +84,7 @@ const NEON_BG: string[] = [
 ];
 
 export default function POSPage() {
+  const { success, error: toastError } = useToast();
   const searchParams = useSearchParams();
   const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
@@ -185,12 +187,14 @@ export default function POSPage() {
     const childPaxParam = searchParams.get('child_pax');
     const totalPaxParam = searchParams.get('pax_count');
 
-    if (!tableId) {
+    if (!tableId && useCartStore.getState().order_type === 'DINE_IN') {
       router.replace('/pos/tables');
       return;
     }
 
-    setTable(tableId, tableNum ?? tableId);
+    if (tableId) {
+      setTable(tableId, tableNum ?? tableId ?? '');
+    }
 
     if (adultPaxParam || childPaxParam) {
       useCartStore
@@ -269,6 +273,19 @@ export default function POSPage() {
       window.removeEventListener('offline', off);
     };
   }, []);
+
+  // MOD-08: Handle upsell add-item events from CartSidebar
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { itemId } = (e as CustomEvent).detail;
+      const item = items.find((i) => i.id === itemId);
+      if (item) {
+        useCartStore.getState().addItem(item);
+      }
+    };
+    window.addEventListener('add-upsell-item', handler);
+    return () => window.removeEventListener('add-upsell-item', handler);
+  }, [items]);
 
   // Offline-first menu load
   const loadMenu = useCallback(
@@ -393,10 +410,10 @@ export default function POSPage() {
               updateItemAvailability(item.id, newStatus).catch(console.error);
             });
           } else {
-            alert('Failed to update availability');
+            toastError('Failed to update availability');
           }
         } catch (e) {
-          alert('Network error updating availability');
+          toastError('Network error updating availability');
         }
         return;
       }
@@ -504,7 +521,7 @@ export default function POSPage() {
       setKotOpen(false);
     } catch (error: any) {
       console.error('Fire KOT Error:', error);
-      alert(error.message || 'Failed to fire KOT. Please try again.');
+      toastError(error.message || 'Failed to fire KOT. Please try again.');
     }
   };
 
@@ -563,7 +580,7 @@ export default function POSPage() {
         }
       }
     } catch (error: any) {
-      alert(error.message);
+      toastError(error.message);
     }
   };
 
@@ -577,7 +594,7 @@ export default function POSPage() {
       const roundItems = await res.json();
 
       if (!roundItems.length) {
-        alert('No previous rounds found to repeat.');
+        toastError('No previous rounds found to repeat.');
         return;
       }
 
@@ -596,7 +613,7 @@ export default function POSPage() {
         );
       });
     } catch (e: any) {
-      alert(e.message);
+      toastError(e.message);
     }
   };
 
@@ -615,11 +632,11 @@ export default function POSPage() {
         body: JSON.stringify({ tab_name: tabName }),
       });
       if (!res.ok) throw new Error('Failed to open tab');
-      alert(`Order saved as Tab: ${tabName}`);
+      success(`Order saved as Tab: ${tabName}`);
       clearCart();
       router.replace('/pos/tables');
     } catch (e: any) {
-      alert(e.message);
+      toastError(e.message);
     }
   };
 
@@ -641,7 +658,7 @@ export default function POSPage() {
         });
         if (!res.ok) throw new Error('Failed to hold items');
       } catch (e: any) {
-        alert(e.message);
+        toastError(e.message);
         return;
       }
     }
@@ -683,7 +700,7 @@ export default function POSPage() {
   const [splitOpen, setSplitOpen] = useState(false);
   const handleSplitPay = () => {
     if (!active_order_id) {
-      alert('Please fire the order before splitting the bill.');
+      toastError('Please fire the order before splitting the bill.');
       return;
     }
     setSplitOpen(true);
@@ -737,7 +754,7 @@ export default function POSPage() {
             </span>
             <button
               onClick={() => setShowNudge(false)}
-              className="text-warning-default/60 active:text-warning-default transition-colors active:scale-[0.92]"
+              className="p-2 text-warning-default/60 active:text-warning-default transition-colors active:scale-[0.92]"
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -824,13 +841,13 @@ export default function POSPage() {
           {/* ── Items Grid ────────────────────────────────────────────────────── */}
           <div className="flex-1 overflow-y-auto px-4 pb-4 pt-2 scrollbar-thin bg-surface-base">
             {loading ? (
-              <div className="grid grid-cols-4 xl:grid-cols-5 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
                 {Array.from({ length: 15 }).map((_, i) => (
                   <ItemCardSkeleton key={i} />
                 ))}
               </div>
             ) : selectedCategoryId === null ? (
-              <div className="grid grid-cols-4 gap-2 p-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 p-2">
                 {categories.map((cat, idx) => {
                   const neon = NEON_BG[idx % NEON_BG.length];
                   return (
@@ -878,7 +895,7 @@ export default function POSPage() {
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-4 xl:grid-cols-5 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
                 {displayedItems.map((item) => (
                   <ItemCard
                     key={item.id}

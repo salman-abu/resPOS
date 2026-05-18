@@ -50,6 +50,7 @@ let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(pas
             sub: payload.sub,
             tenantId: payload.tenantId,
             role: payload.role,
+            mode: payload.mode || 'LIVE',
             user,
         };
     }

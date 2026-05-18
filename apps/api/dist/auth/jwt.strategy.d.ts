@@ -13,11 +13,13 @@ export declare class JwtStrategy extends JwtStrategy_base {
         level: any;
         tenantId?: undefined;
         role?: undefined;
+        mode?: undefined;
         user?: undefined;
     } | {
         sub: any;
         tenantId: any;
         role: any;
+        mode: any;
         user: {
             tenant: {
                 id: string;
@@ -33,6 +35,11 @@ export declare class JwtStrategy extends JwtStrategy_base {
                 subscription_ends_at: Date | null;
                 settings: import("@prisma/client/runtime/library").JsonValue | null;
                 is_active: boolean;
+                fssai_licence_number: string | null;
+                fssai_expiry_date: Date | null;
+                fssai_alert_sent_at_60: Date | null;
+                fssai_alert_sent_at_30: Date | null;
+                fssai_alert_sent_at_7: Date | null;
             };
         } & {
             id: string;

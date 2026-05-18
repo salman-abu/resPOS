@@ -1,13 +1,20 @@
+'use client';
+
 import Link from 'next/link';
+import { useState } from 'react';
 import {
   ArrowRight,
   UtensilsCrossed,
   MonitorSmartphone,
   LineChart,
   ShieldCheck,
+  Menu,
+  X,
 } from 'lucide-react';
 
 export default function LandingPage() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-50 selection:bg-blue-500/30 overflow-hidden relative font-sans">
       {/* Background Glows */}
@@ -44,7 +51,40 @@ export default function LandingPage() {
             Staff PIN Pad <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
+        <button
+          className="md:hidden p-2 text-slate-300"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+        >
+          {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        </button>
       </nav>
+
+      {/* Mobile Menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden absolute top-[88px] left-0 right-0 bg-slate-900 border-b border-slate-800 z-50 flex flex-col p-4 space-y-4">
+          <Link
+            href="/login"
+            className="text-slate-300 p-2"
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            Owner Login
+          </Link>
+          <Link
+            href="/super-admin/login"
+            className="text-red-400 p-2"
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            God Mode
+          </Link>
+          <Link
+            href="/pos/pin"
+            className="bg-blue-600 text-white p-2 rounded-lg text-center"
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            Staff PIN Pad
+          </Link>
+        </div>
+      )}
 
       {/* Hero Section */}
       <main className="relative z-10 flex flex-col items-center text-center px-4 pt-24 pb-20 max-w-5xl mx-auto">

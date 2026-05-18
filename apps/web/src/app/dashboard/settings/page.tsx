@@ -12,6 +12,7 @@ import {
   ChevronRight,
   Loader2,
   Globe,
+  FileCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { API_BASE } from '@/lib/api';
@@ -23,7 +24,8 @@ type Tab =
   | 'notifications'
   | 'payments'
   | 'integrations'
-  | 'security';
+  | 'security'
+  | 'compliance';
 
 const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
   {
@@ -45,6 +47,11 @@ const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
     key: 'payments',
     label: 'Payments',
     icon: <CreditCard className="h-4 w-4" />,
+  },
+  {
+    key: 'compliance',
+    label: 'Compliance',
+    icon: <FileCheck className="h-4 w-4" />,
   },
   {
     key: 'integrations',
@@ -147,6 +154,11 @@ export default function SettingsPage() {
     description: 'Authentic Indian flavours — Order online, pay on delivery',
     delivery_fee: 29,
   });
+  const [fssai, setFssai] = useState({
+    licence_number: '',
+    expiry_date: '',
+    daysUntilExpiry: null as number | null,
+  });
 
   useEffect(() => {
     async function fetchSettings() {
@@ -200,6 +212,25 @@ export default function SettingsPage() {
             }
           }
         }
+
+        // Fetch FSSAI settings (MOD-10)
+        try {
+          const fssaiRes = await fetch(`${API_BASE}/tenant/settings/fssai`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (fssaiRes.ok) {
+            const fssaiData = await fssaiRes.json();
+            setFssai({
+              licence_number: fssaiData.licenceNumber || '',
+              expiry_date: fssaiData.expiryDate
+                ? fssaiData.expiryDate.split('T')[0]
+                : '',
+              daysUntilExpiry: fssaiData.daysUntilExpiry,
+            });
+          }
+        } catch (fssaiErr) {
+          console.error('Failed to fetch FSSAI settings', fssaiErr);
+        }
       } catch (err) {
         console.error(err);
       } finally {
@@ -252,7 +283,20 @@ export default function SettingsPage() {
         },
       );
 
-      if (res.ok && sfRes.ok) {
+      // Save FSSAI settings (MOD-10)
+      const fssaiRes = await fetch(`${API_BASE}/tenant/settings/fssai`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          licence_number: fssai.licence_number,
+          expiry_date: fssai.expiry_date,
+        }),
+      });
+
+      if (res.ok && sfRes.ok && fssaiRes.ok) {
         setSaved(true);
         setTimeout(() => setSaved(false), 2000);
       }
@@ -581,6 +625,61 @@ export default function SettingsPage() {
                     Automatically applied to all dine-in bills.
                   </p>
                 </div>
+              </div>
+            </Section>
+          )}
+
+          {tab === 'compliance' && (
+            <Section title="FSSAI Licence Compliance">
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-semibold text-content-secondary mb-1 block">
+                    FSSAI Licence Number
+                  </label>
+                  <input
+                    value={fssai.licence_number}
+                    onChange={(e) =>
+                      setFssai({ ...fssai, licence_number: e.target.value })
+                    }
+                    placeholder="e.g. 12345678901234"
+                    className="w-full px-3 py-2 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-brand-300"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-content-secondary mb-1 block">
+                    Expiry Date
+                  </label>
+                  <input
+                    type="date"
+                    value={fssai.expiry_date}
+                    onChange={(e) =>
+                      setFssai({ ...fssai, expiry_date: e.target.value })
+                    }
+                    className="w-full px-3 py-2 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-brand-300"
+                  />
+                </div>
+                {fssai.daysUntilExpiry !== null && (
+                  <div
+                    className={cn(
+                      'rounded-xl px-3 py-2 text-sm font-semibold',
+                      fssai.daysUntilExpiry <= 7
+                        ? 'bg-red-50 text-red-700 border border-red-100'
+                        : fssai.daysUntilExpiry <= 30
+                          ? 'bg-orange-50 text-orange-700 border border-orange-100'
+                          : fssai.daysUntilExpiry <= 60
+                            ? 'bg-amber-50 text-amber-700 border border-amber-100'
+                            : 'bg-emerald-50 text-emerald-700 border border-emerald-100',
+                    )}
+                  >
+                    {fssai.daysUntilExpiry < 0
+                      ? 'Licence expired'
+                      : `${fssai.daysUntilExpiry} days until expiry`}
+                  </div>
+                )}
+                <p className="text-xs text-content-muted">
+                  This number will be printed on all bills (legally required in
+                  India). Alerts are sent at 60, 30, and 7 days before expiry.
+                </p>
               </div>
             </Section>
           )}

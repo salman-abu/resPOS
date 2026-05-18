@@ -257,19 +257,19 @@ export default function DashboardPage() {
           <button
             onClick={() => fetchData(true)}
             disabled={refreshing}
-            className="h-9 w-9 rounded-xl bg-surface-3 border border-border flex items-center justify-center text-content-secondary hover:bg-surface-4 hover:text-content-primary transition-all"
+            className="h-9 w-9 rounded-xl bg-surface-sunken border border-border flex items-center justify-center text-content-secondary hover:bg-surface-base hover:text-content-primary transition-all"
           >
             <RefreshCw
               className={cn('h-4 w-4', refreshing && 'animate-spin')}
             />
           </button>
-          <button className="relative h-9 w-9 rounded-xl bg-surface-3 border border-border flex items-center justify-center text-content-secondary hover:bg-surface-4 transition-all">
+          <button aria-label="Notifications" className="relative h-9 w-9 rounded-xl bg-surface-sunken border border-border flex items-center justify-center text-content-secondary hover:bg-surface-base transition-all">
             <Bell className="h-4 w-4" />
             <span className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full" />
           </button>
           <Link
-            href="/pos"
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold transition-all shadow-sm"
+            href="/pos/tables"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-default hover:bg-brand-strong text-white text-sm font-semibold transition-all shadow-sm"
           >
             <ShoppingBag className="h-4 w-4" /> Open POS
           </Link>
@@ -384,8 +384,8 @@ export default function DashboardPage() {
                       className={cn(
                         'text-xs px-2.5 py-1 rounded-full font-semibold transition-all',
                         filter === f
-                          ? 'bg-brand-600 text-white shadow-sm'
-                          : 'bg-surface-3 text-content-secondary hover:text-content-primary',
+                          ? 'bg-brand-default text-white shadow-sm'
+                          : 'bg-surface-sunken text-content-secondary hover:text-content-primary',
                       )}
                     >
                       {f === 'all'
@@ -426,7 +426,7 @@ export default function DashboardPage() {
                 </h2>
                 <Link
                   href="/dashboard/analytics"
-                  className="text-xs text-brand-600 hover:text-brand-700 flex items-center gap-1 font-medium"
+                  className="text-xs text-brand-default hover:text-brand-strong flex items-center gap-1 font-medium"
                 >
                   Full report <ArrowRight className="h-3 w-3" />
                 </Link>
@@ -478,7 +478,7 @@ export default function DashboardPage() {
                             {item.qty} sold
                           </span>
                         </div>
-                        <div className="h-1.5 bg-surface-3 rounded-full overflow-hidden">
+                        <div className="h-1.5 bg-surface-sunken rounded-full overflow-hidden">
                           <div
                             className="h-full bg-brand-default rounded-full transition-all duration-700"
                             style={{
@@ -507,7 +507,7 @@ export default function DashboardPage() {
                 </h2>
                 <Link
                   href="/pos/tables"
-                  className="text-xs text-brand-600 hover:text-brand-700 flex items-center gap-1 font-medium"
+                  className="text-xs text-brand-default hover:text-brand-strong flex items-center gap-1 font-medium"
                 >
                   Full map <ArrowRight className="h-3 w-3" />
                 </Link>
@@ -531,7 +531,7 @@ export default function DashboardPage() {
                       className={cn(
                         'rounded-xl border flex flex-col items-center justify-center py-2.5 text-center text-xs font-bold',
                         TABLE_STYLE[t.s] ??
-                          'bg-surface-3 text-content-muted border-border',
+                          'bg-surface-sunken text-content-muted border-border',
                       )}
                     >
                       <span className="text-sm font-black">{t.n}</span>

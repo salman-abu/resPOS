@@ -2,13 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { MonitorSmartphone, Copy, CheckCircle2, Zap } from 'lucide-react';
+import { MonitorSmartphone, Copy, CheckCircle2, Zap, GraduationCap } from 'lucide-react';
 import { getAuthToken } from '@respos/utils';
+import { cn } from '@/lib/utils';
 
 export default function TerminalsPage() {
   const router = useRouter();
   const [copied, setCopied] = useState(false);
   const [tenantId, setTenantId] = useState('');
+  const [trainingMode, setTrainingMode] = useState(false);
 
   useEffect(() => {
     // Decode tenant ID from the stored JWT token
@@ -17,6 +19,7 @@ export default function TerminalsPage() {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
         setTenantId(payload.tenantId ?? '');
+        setTrainingMode(payload.mode === 'TRAINING');
       } catch {
         setTenantId('');
       }
@@ -95,6 +98,73 @@ export default function TerminalsPage() {
           >
             Pair & Launch POS
           </button>
+        </div>
+
+        {/* MOD-06: Training Mode Toggle */}
+        <div className="bg-white rounded-3xl border border-border p-8 shadow-sm flex flex-col">
+          <div className="bg-amber-50 w-12 h-12 rounded-2xl flex items-center justify-center mb-6">
+            <GraduationCap className="w-6 h-6 text-amber-600" />
+          </div>
+          <h2 className="text-xl font-bold mb-2">Training Mode</h2>
+          <p className="text-content-muted text-sm mb-6 leading-relaxed flex-1">
+            Enable sandbox mode for this terminal. All orders, voids, and
+            payments will be isolated and auto-purged every 24 hours.
+          </p>
+
+          <div
+            className={cn(
+              'flex items-center justify-between p-4 rounded-xl border-2 mb-4',
+              trainingMode
+                ? 'bg-amber-50 border-amber-200'
+                : 'bg-surface-2 border-border',
+            )}
+          >
+            <span className="font-semibold text-sm">
+              {trainingMode ? 'Training Active' : 'Training Inactive'}
+            </span>
+            <button
+              onClick={() => {
+                const token = getAuthToken();
+                if (!token) return;
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                const terminalId =
+                  localStorage.getItem('terminal_id') || 'default-terminal';
+                const action = trainingMode ? 'end' : 'start';
+                fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1'}/training/${action}`, {
+                  method: 'POST',
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({ terminal_id: terminalId }),
+                })
+                  .then((res) => {
+                    if (res.ok) {
+                      setTrainingMode(!trainingMode);
+                    }
+                  })
+                  .catch(console.error);
+              }}
+              className={cn(
+                'relative h-8 w-14 rounded-full transition-colors duration-200',
+                trainingMode ? 'bg-amber-500' : 'bg-slate-200',
+              )}
+            >
+              <span
+                className={cn(
+                  'absolute top-0.5 left-0.5 h-7 w-7 rounded-full bg-white shadow-sm transition-transform duration-200',
+                  trainingMode && 'translate-x-6',
+                )}
+              />
+            </button>
+          </div>
+
+          {trainingMode && (
+            <div className="text-xs text-amber-700 bg-amber-100 rounded-xl p-3">
+              ⚠️ All data created in this session is isolated and will be
+              permanently deleted when training mode ends or after 24 hours.
+            </div>
+          )}
         </div>
       </div>
     </div>

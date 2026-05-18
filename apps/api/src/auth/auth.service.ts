@@ -45,7 +45,12 @@ export class AuthService {
     };
   }
 
-  async loginWithPin(tenantId: string, userId: string, pin: string) {
+  async loginWithPin(
+    tenantId: string,
+    userId: string,
+    pin: string,
+    mode: 'LIVE' | 'TRAINING' = 'LIVE',
+  ) {
     const user = await this.prisma.user.findFirst({
       where: { id: userId, tenant_id: tenantId, is_active: true },
     });
@@ -60,7 +65,12 @@ export class AuthService {
       throw new UnauthorizedException('Invalid PIN');
     }
 
-    const payload = { sub: user.id, tenantId: user.tenant_id, role: user.role };
+    const payload = {
+      sub: user.id,
+      tenantId: user.tenant_id,
+      role: user.role,
+      mode,
+    };
     return {
       access_token: this.jwtService.sign(payload),
       user: {
@@ -68,11 +78,16 @@ export class AuthService {
         name: user.name,
         role: user.role,
         tenant_id: user.tenant_id,
+        mode,
       },
     };
   }
 
-  async loginOwner(email: string, pin: string) {
+  async loginOwner(
+    email: string,
+    pin: string,
+    mode: 'LIVE' | 'TRAINING' = 'LIVE',
+  ) {
     const user = await this.prisma.user.findFirst({
       where: { email, is_active: true },
     });
@@ -86,7 +101,12 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const payload = { sub: user.id, tenantId: user.tenant_id, role: user.role };
+    const payload = {
+      sub: user.id,
+      tenantId: user.tenant_id,
+      role: user.role,
+      mode,
+    };
     return {
       access_token: this.jwtService.sign(payload),
       user: {
@@ -94,6 +114,7 @@ export class AuthService {
         name: user.name,
         role: user.role,
         tenant_id: user.tenant_id,
+        mode,
       },
     };
   }

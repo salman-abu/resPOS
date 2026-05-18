@@ -10,6 +10,8 @@ import {
   AlertCircle,
   Wine,
   ArrowRight,
+  FileText,
+  Send,
 } from 'lucide-react';
 import { API_BASE } from '@/lib/api';
 import { getAuthToken } from '@respos/utils';
@@ -29,6 +31,7 @@ export function ShiftCloseModal({ open, onClose }: ShiftCloseModalProps) {
   const [isPrinting, setIsPrinting] = useState(false);
   const [openTabs, setOpenTabs] = useState<any[]>([]);
   const [fetchingTabs, setFetchingTabs] = useState(false);
+  const [reportPreview, setReportPreview] = useState<any>(null);
 
   useEffect(() => {
     if (open) {
@@ -54,7 +57,19 @@ export function ShiftCloseModal({ open, onClose }: ShiftCloseModalProps) {
     if (hasOpenTabs) return;
     setIsPrinting(true);
     try {
-      await new Promise((r) => setTimeout(r, 1000));
+      // Generate shift report (MOD-09)
+      const shiftId = shift.shiftId;
+      if (shiftId) {
+        const reportRes = await fetch(`${API}/shifts/${shiftId}/close-and-report`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${getAuthToken()}` },
+        });
+        if (reportRes.ok) {
+          const report = await reportRes.json();
+          setReportPreview(report);
+        }
+      }
+      await new Promise((r) => setTimeout(r, 800));
       shift.closeShift();
       logout();
       router.replace('/login');
@@ -220,6 +235,61 @@ export function ShiftCloseModal({ open, onClose }: ShiftCloseModalProps) {
               )}
             </div>
           </div>
+
+          {/* MOD-09: Report Preview */}
+          {reportPreview && (
+            <div className="bg-slate-800 border-2 border-slate-700 overflow-hidden">
+              <div className="px-4 py-3 bg-slate-950 border-b-2 border-slate-800 font-black text-sm text-cyan-400 uppercase tracking-wider flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Shift Report Preview
+              </div>
+              <div className="p-4 space-y-3">
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <span className="text-slate-500 text-xs font-bold uppercase">Total Sales</span>
+                    <p className="font-bold text-slate-100">
+                      ₹{(reportPreview.total_sales_paise / 100).toFixed(2)}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 text-xs font-bold uppercase">Orders</span>
+                    <p className="font-bold text-slate-100">{reportPreview.total_orders}</p>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 text-xs font-bold uppercase">Void Count</span>
+                    <p className="font-bold text-rose-400">{reportPreview.void_count}</p>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 text-xs font-bold uppercase">Cash / UPI / Card</span>
+                    <p className="font-bold text-slate-100">
+                      ₹{(reportPreview.cash_paise / 100).toFixed(0)} /{' '}
+                      ₹{(reportPreview.upi_paise / 100).toFixed(0)} /{' '}
+                      ₹{(reportPreview.card_paise / 100).toFixed(0)}
+                    </p>
+                  </div>
+                </div>
+                {reportPreview.top_items && reportPreview.top_items.length > 0 && (
+                  <div>
+                    <span className="text-slate-500 text-xs font-bold uppercase block mb-1">Top Items</span>
+                    <div className="space-y-1">
+                      {reportPreview.top_items.map((item: any, i: number) => (
+                        <div key={i} className="flex justify-between text-sm">
+                          <span className="text-slate-300">{item.name}</span>
+                          <span className="font-mono text-slate-400">
+                            {item.count}x · ₹{(item.revenuePaise / 100).toFixed(0)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div className="flex items-center gap-2 text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 p-2 rounded">
+                  <Send className="h-3 w-3" />
+                  WhatsApp summary will be sent to owner
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Footer Actions */}

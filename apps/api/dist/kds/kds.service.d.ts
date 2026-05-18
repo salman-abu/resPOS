@@ -45,6 +45,7 @@ export declare class KdsService {
         kot_number: string;
         printed_at: Date | null;
         fired_by_id: string;
+        training_session_id: string | null;
     })[]>;
     markItemDone(tenantId: string, kotId: string, orderItemId: string, done: boolean): Promise<{
         success: boolean;

@@ -33,7 +33,7 @@ export function CategoryTabs({
         {Array.from({ length: 7 }).map((_, i) => (
           <div
             key={i}
-            className="h-9 w-24 flex-shrink-0 rounded-sm bg-slate-700 animate-pulse"
+            className="h-9 w-24 flex-shrink-0 rounded-sm bg-surface-sunken animate-pulse"
           />
         ))}
       </div>
@@ -48,8 +48,8 @@ export function CategoryTabs({
         className={cn(
           'flex-shrink-0 px-4 py-2 rounded-sm text-sm font-black border-2 uppercase tracking-widest whitespace-nowrap active:scale-[0.97] transition-transform duration-75',
           selectedId === null
-            ? 'bg-slate-100 text-slate-900 border-slate-100'
-            : 'bg-slate-800 text-slate-400 border-slate-700 active:bg-slate-700 active:text-slate-200',
+            ? 'bg-brand-default text-content-inverse border-brand-default'
+            : 'bg-surface-sunken text-content-secondary border-border-subtle active:bg-surface-base active:text-content-primary',
         )}
       >
         <UtensilsCrossed className="inline-block h-3.5 w-3.5 mr-1.5 -mt-0.5" />
@@ -67,7 +67,7 @@ export function CategoryTabs({
               'flex-shrink-0 px-4 py-2 rounded-sm text-sm font-black border-2 uppercase tracking-widest whitespace-nowrap active:scale-[0.97] transition-transform duration-75',
               isActive
                 ? activeClass
-                : 'bg-slate-800 text-slate-400 border-slate-700 active:bg-slate-700 active:text-slate-200',
+                : 'bg-surface-sunken text-content-secondary border-border-subtle active:bg-surface-base active:text-content-primary',
             )}
           >
             {cat.name}
