@@ -88,7 +88,8 @@ function elapsed(dateStr: string) {
 }
 
 export default function TablesPage() {
-  const { zones, setZones, loading, setLoading, updateTableStatus } = useTableStore();
+  const { zones, setZones, loading, setLoading, updateTableStatus } =
+    useTableStore();
   const [error, setError] = useState('');
   const [filter, setFilter] = useState<string>('ALL');
   const router = useRouter();
